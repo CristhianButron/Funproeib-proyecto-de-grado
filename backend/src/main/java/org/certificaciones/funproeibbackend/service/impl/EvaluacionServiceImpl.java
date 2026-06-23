@@ -77,6 +77,7 @@ public class EvaluacionServiceImpl implements EvaluacionService {
     }
 
     @Override
+    @Transactional(readOnly = true)
     public EvaluacionResponse obtenerPorPostulacion(Long idPostulacion) {
         Evaluacion evaluacion = evaluacionRepository.findByPostulacionId(idPostulacion)
                 .orElseThrow(() -> new ResourceNotFoundException("No existe evaluación para la postulación con id: " + idPostulacion));

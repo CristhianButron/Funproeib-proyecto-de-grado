@@ -66,11 +66,13 @@ public class PostulacionServiceImpl implements PostulacionService {
     }
 
     @Override
+    @Transactional(readOnly = true)
     public PostulacionResponse obtenerPorId(Long id) {
         return mapToResponse(buscarPostulacion(id));
     }
 
     @Override
+    @Transactional(readOnly = true)
     public List<PostulacionResponse> listarPorPrograma(Long idPrograma) {
         return postulacionRepository.findByProgramaId(idPrograma).stream()
                 .map(this::mapToResponse)
@@ -78,6 +80,7 @@ public class PostulacionServiceImpl implements PostulacionService {
     }
 
     @Override
+    @Transactional(readOnly = true)
     public List<PostulacionResponse> listarPorUsuario(Long idUsuario) {
         return postulacionRepository.findByUsuarioId(idUsuario).stream()
                 .map(this::mapToResponse)
@@ -85,6 +88,7 @@ public class PostulacionServiceImpl implements PostulacionService {
     }
 
     @Override
+    @Transactional(readOnly = true)
     public List<PostulacionResponse> listarPorEstado(EstadoPostulacion estado) {
         return postulacionRepository.findByEstado(estado).stream()
                 .map(this::mapToResponse)

@@ -58,6 +58,7 @@ public class DocumentoServiceImpl implements DocumentoService {
     }
 
     @Override
+    @Transactional(readOnly = true)
     public List<DocumentoResponse> listarPorPostulacion(Long idPostulacion) {
         return documentoRepository.findByPostulacionId(idPostulacion).stream()
                 .map(this::mapToResponse)
