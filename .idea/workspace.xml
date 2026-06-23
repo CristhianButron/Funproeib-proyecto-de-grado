@@ -1,0 +1,171 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project version="4">
+  <component name="AutoImportSettings">
+    <option name="autoReloadType" value="SELECTIVE" />
+  </component>
+  <component name="ChangeListManager">
+    <list default="true" id="a079e754-1335-48ed-b843-39a5cc78fa37" name="Changes" comment="Creacion de entidades para Postulacion" />
+    <option name="SHOW_DIALOG" value="false" />
+    <option name="HIGHLIGHT_CONFLICTS" value="true" />
+    <option name="HIGHLIGHT_NON_ACTIVE_CHANGELIST" value="false" />
+    <option name="LAST_RESOLUTION" value="IGNORE" />
+  </component>
+  <component name="FileTemplateManagerImpl">
+    <option name="RECENT_TEMPLATES">
+      <list>
+        <option value="Class" />
+        <option value="Interface" />
+      </list>
+    </option>
+  </component>
+  <component name="Git.Settings">
+    <option name="RECENT_GIT_ROOT_PATH" value="$PROJECT_DIR$" />
+  </component>
+  <component name="KubernetesApiPersistence">{}</component>
+  <component name="KubernetesApiProvider">{
+  &quot;isMigrated&quot;: true
+}</component>
+  <component name="MavenImportPreferences">
+    <option name="generalSettings">
+      <MavenGeneralSettings>
+        <option name="mavenHomeTypeForPersistence" value="WRAPPER" />
+      </MavenGeneralSettings>
+    </option>
+  </component>
+  <component name="NextEditCompletionFeaturesState">
+    <decayedCancelled>
+      <entry key="MS100" value="1.5302666442737842E-6" />
+      <entry key="MS500" value="0.09827382511394839" />
+      <entry key="S2" value="1.0065356313527307" />
+      <entry key="S5" value="2.2079025767925646" />
+      <entry key="S10" value="3.6490754251528323" />
+      <entry key="S30" value="5.934827313598379" />
+      <entry key="S60" value="6.857793878608316" />
+      <entry key="M2" value="7.3981221525191865" />
+      <entry key="M5" value="7.751381116738028" />
+      <entry key="M10" value="7.874336803559438" />
+      <entry key="M15" value="7.915920469230618" />
+      <entry key="M30" value="7.957807384831166" />
+      <entry key="H1" value="7.978865326060008" />
+      <entry key="H2" value="7.98942305213146" />
+      <entry key="H4" value="7.994709120922938" />
+      <entry key="D1" value="7.999117852567427" />
+      <entry key="W1" value="7.999873970749735" />
+    </decayedCancelled>
+    <decayedSelected>
+      <entry key="MS100" value="1.0" />
+      <entry key="MS500" value="1.0" />
+      <entry key="S2" value="1.0" />
+      <entry key="S5" value="1.0" />
+      <entry key="S10" value="1.0" />
+      <entry key="S30" value="1.0" />
+      <entry key="S60" value="1.0" />
+      <entry key="M2" value="1.0" />
+      <entry key="M5" value="1.0" />
+      <entry key="M10" value="1.0" />
+      <entry key="M15" value="1.0" />
+      <entry key="M30" value="1.0" />
+      <entry key="H1" value="1.0" />
+      <entry key="H2" value="1.0" />
+      <entry key="H4" value="1.0" />
+      <entry key="D1" value="1.0" />
+      <entry key="W1" value="1.0" />
+    </decayedSelected>
+    <decayedShown>
+      <entry key="MS100" value="5.499187548250441E-5" />
+      <entry key="MS500" value="0.23750296931591117" />
+      <entry key="S2" value="1.6162636679769267" />
+      <entry key="S5" value="3.0268968350534347" />
+      <entry key="S10" value="4.552178872145679" />
+      <entry key="S30" value="6.900049422659035" />
+      <entry key="S60" value="7.839942133957257" />
+      <entry key="M2" value="8.38906267238346" />
+      <entry key="M5" value="8.747722578409487" />
+      <entry key="M10" value="8.872501501629056" />
+      <entry key="M15" value="8.914695575393514" />
+      <entry key="M30" value="8.957194253584488" />
+      <entry key="H1" value="8.978558588463132" />
+      <entry key="H2" value="8.989269640227619" />
+      <entry key="H4" value="8.994632404180628" />
+      <entry key="D1" value="8.999105064943851" />
+      <entry key="W1" value="8.999872143909618" />
+    </decayedShown>
+  </component>
+  <component name="ProjectColorInfo">{
+  &quot;associatedIndex&quot;: 1,
+  &quot;fromUser&quot;: false
+}</component>
+  <component name="ProjectId" id="3FLS52ktimqpYd03viTPjgxyUQw" />
+  <component name="ProjectViewState">
+    <option name="hideEmptyMiddlePackages" value="true" />
+    <option name="showLibraryContents" value="true" />
+  </component>
+  <component name="PropertiesComponent"><![CDATA[{
+  "keyToString": {
+    "ModuleVcsDetector.initialDetectionPerformed": "true",
+    "RequestMappingsPanelOrder0": "0",
+    "RequestMappingsPanelOrder1": "1",
+    "RequestMappingsPanelWidth0": "75",
+    "RequestMappingsPanelWidth1": "75",
+    "RunOnceActivity.ShowReadmeOnStart": "true",
+    "RunOnceActivity.git.unshallow": "true",
+    "RunOnceActivity.typescript.service.memoryLimit.init": "true",
+    "Spring Boot.FunproeibBackendApplication.executor": "Run",
+    "codeWithMe.voiceChat.enabledByDefault": "false",
+    "com.intellij.ml.llm.matterhorn.ej.ui.settings.DefaultModelSelectionForGA.v1": "true",
+    "git-widget-placeholder": "main",
+    "junie.onboarding.icon.badge.shown": "true",
+    "kotlin-language-version-configured": "true",
+    "node.js.detected.package.eslint": "true",
+    "node.js.detected.package.tslint": "true",
+    "node.js.selected.package.eslint": "(autodetect)",
+    "node.js.selected.package.tslint": "(autodetect)",
+    "nodejs_package_manager_path": "npm",
+    "project.structure.last.edited": "Project",
+    "project.structure.proportion": "0.15",
+    "project.structure.side.proportion": "0.0",
+    "settings.editor.selected.configurable": "preferences.keymap",
+    "to.speed.mode.migration.done": "true",
+    "vue.rearranger.settings.migration": "true"
+  }
+}]]></component>
+  <component name="SharedIndexes">
+    <attachedChunks>
+      <set>
+        <option value="bundled-jdk-30f59d01ecdd-37e91769500f-intellij.indexing.shared.core-IU-261.24374.151" />
+        <option value="bundled-js-predefined-d6986cc7102b-31caf2ab9e3c-JavaScript-IU-261.24374.151" />
+      </set>
+    </attachedChunks>
+  </component>
+  <component name="StructureViewState">
+    <option name="selectedTab" value="Logical" />
+  </component>
+  <component name="TaskManager">
+    <task active="true" id="Default" summary="Default task">
+      <changelist id="a079e754-1335-48ed-b843-39a5cc78fa37" name="Changes" comment="" />
+      <created>1781852670989</created>
+      <option name="number" value="Default" />
+      <option name="presentableId" value="Default" />
+      <updated>1781852670989</updated>
+      <workItem from="1781852679471" duration="4225000" />
+      <workItem from="1781856935965" duration="1123000" />
+    </task>
+    <task id="LOCAL-00001" summary="Creacion de entidades para Postulacion">
+      <option name="closed" value="true" />
+      <created>1781857118804</created>
+      <option name="number" value="00001" />
+      <option name="presentableId" value="LOCAL-00001" />
+      <option name="project" value="LOCAL" />
+      <updated>1781857118804</updated>
+    </task>
+    <option name="localTasksCounter" value="2" />
+    <servers />
+  </component>
+  <component name="TypeScriptGeneratedFilesManager">
+    <option name="version" value="3" />
+  </component>
+  <component name="VcsManagerConfiguration">
+    <MESSAGE value="Creacion de entidades para Postulacion" />
+    <option name="LAST_COMMIT_MESSAGE" value="Creacion de entidades para Postulacion" />
+  </component>
+</project>
