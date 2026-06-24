@@ -1,5 +1,7 @@
 package org.certificaciones.funproeibbackend.model;
 
+import org.certificaciones.funproeibbackend.model.enums.Genero;
+import org.certificaciones.funproeibbackend.model.enums.NivelEducativo;
 import org.certificaciones.funproeibbackend.model.enums.RolUsuario;
 import jakarta.persistence.*;
 import lombok.*;
@@ -41,4 +43,32 @@ public class Usuario {
     @Column(name = "activo")
     @Builder.Default
     private Boolean activo = true;
+
+    // --- Campos de perfil del postulante ---
+
+    @Enumerated(EnumType.STRING)
+    @Column(name = "genero", length = 25)
+    private Genero genero;
+
+    @Column(name = "fecha_nacimiento")
+    private LocalDate fechaNacimiento;
+
+    @Column(name = "autoidentificacion_etnica", length = 100)
+    private String autoidentificacionEtnica;
+
+    @Enumerated(EnumType.STRING)
+    @Column(name = "nivel_educativo", length = 30)
+    private NivelEducativo nivelEducativo;
+
+    @Column(name = "pais_origen", length = 100)
+    private String paisOrigen;
+
+    @Column(name = "departamento_origen", length = 100)
+    private String departamentoOrigen;
+
+    @Column(name = "municipio_origen", length = 100)
+    private String municipioOrigen;
+
+    @Column(name = "telefono", length = 20)
+    private String telefono;
 }

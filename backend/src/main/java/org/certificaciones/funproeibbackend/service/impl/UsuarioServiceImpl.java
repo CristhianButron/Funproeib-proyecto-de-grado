@@ -14,6 +14,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDate;
+import java.time.Period;
 import java.util.List;
 
 @Service
@@ -38,16 +39,24 @@ public class UsuarioServiceImpl implements UsuarioService {
                 .correo(request.getCorreo())
                 .contrasenaHash(passwordEncoder.encode(request.getContrasena()))
                 .ci(request.getCi())
-                .rol(RolUsuario.POSTULANTE) // por defecto todo registro nuevo es postulante
+                .rol(RolUsuario.POSTULANTE)
                 .fechaRegistro(LocalDate.now())
                 .activo(true)
+                .genero(request.getGenero())
+                .fechaNacimiento(request.getFechaNacimiento())
+                .autoidentificacionEtnica(request.getAutoidentificacionEtnica())
+                .nivelEducativo(request.getNivelEducativo())
+                .paisOrigen(request.getPaisOrigen())
+                .departamentoOrigen(request.getDepartamentoOrigen())
+                .municipioOrigen(request.getMunicipioOrigen())
+                .telefono(request.getTelefono())
                 .build();
 
-        Usuario guardado = usuarioRepository.save(usuario);
-        return mapToResponse(guardado);
+        return mapToResponse(usuarioRepository.save(usuario));
     }
 
     @Override
+    @Transactional(readOnly = true)
     public UsuarioResponse obtenerPorId(Long id) {
         Usuario usuario = usuarioRepository.findById(id)
                 .orElseThrow(() -> new ResourceNotFoundException("Usuario no encontrado con id: " + id));
@@ -55,6 +64,7 @@ public class UsuarioServiceImpl implements UsuarioService {
     }
 
     @Override
+    @Transactional(readOnly = true)
     public List<UsuarioResponse> listarTodos() {
         return usuarioRepository.findAll().stream()
                 .map(this::mapToResponse)
@@ -62,6 +72,11 @@ public class UsuarioServiceImpl implements UsuarioService {
     }
 
     private UsuarioResponse mapToResponse(Usuario usuario) {
+        Integer edad = null;
+        if (usuario.getFechaNacimiento() != null) {
+            edad = Period.between(usuario.getFechaNacimiento(), LocalDate.now()).getYears();
+        }
+
         return UsuarioResponse.builder()
                 .id(usuario.getId())
                 .nombreCompleto(usuario.getNombreCompleto())
@@ -70,6 +85,15 @@ public class UsuarioServiceImpl implements UsuarioService {
                 .rol(usuario.getRol())
                 .fechaRegistro(usuario.getFechaRegistro())
                 .activo(usuario.getActivo())
+                .genero(usuario.getGenero())
+                .fechaNacimiento(usuario.getFechaNacimiento())
+                .edad(edad)
+                .autoidentificacionEtnica(usuario.getAutoidentificacionEtnica())
+                .nivelEducativo(usuario.getNivelEducativo())
+                .paisOrigen(usuario.getPaisOrigen())
+                .departamentoOrigen(usuario.getDepartamentoOrigen())
+                .municipioOrigen(usuario.getMunicipioOrigen())
+                .telefono(usuario.getTelefono())
                 .build();
     }
 }

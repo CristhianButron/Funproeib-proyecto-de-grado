@@ -1,6 +1,8 @@
 package org.certificaciones.funproeibbackend.repository;
 
 import org.certificaciones.funproeibbackend.model.Usuario;
+import org.certificaciones.funproeibbackend.model.enums.Genero;
+import org.certificaciones.funproeibbackend.model.enums.NivelEducativo;
 import org.certificaciones.funproeibbackend.model.enums.RolUsuario;
 import org.springframework.data.jpa.repository.JpaRepository;
 
@@ -18,4 +20,12 @@ public interface UsuarioRepository extends JpaRepository<Usuario, Long> {
     boolean existsByCi(String ci);
 
     List<Usuario> findByRol(RolUsuario rol);
+
+    List<Usuario> findByGenero(Genero genero);
+
+    List<Usuario> findByNivelEducativo(NivelEducativo nivelEducativo);
+
+    List<Usuario> findByPaisOrigen(String paisOrigen);
+
+    List<Usuario> findByAutoidentificacionEtnica(String autoidentificacionEtnica);
 }
