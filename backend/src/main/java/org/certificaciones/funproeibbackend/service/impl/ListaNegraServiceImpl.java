@@ -51,8 +51,7 @@ public class ListaNegraServiceImpl implements ListaNegraService {
 
     @Override
     public List<ListaNegraResponse> listarActivos() {
-        return listaNegraRepository.findAll().stream()
-                .filter(ListaNegra::getActivo)
+        return listaNegraRepository.findByActivoTrue().stream()
                 .map(this::mapToResponse)
                 .toList();
     }

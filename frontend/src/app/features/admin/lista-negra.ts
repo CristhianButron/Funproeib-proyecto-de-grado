@@ -96,7 +96,7 @@ export class ListaNegraComponent implements OnInit {
     this.cargando.set(true);
     this.listaNegraService.listarActivos().subscribe({
       next: (d) => { this.entradas.set(d); this.cargando.set(false); },
-      error: () => this.cargando.set(false),
+      error: () => { this.cargando.set(false); this.notificar('Error al cargar la lista negra. Verifica que el servidor esté corriendo.', true); },
     });
   }
 

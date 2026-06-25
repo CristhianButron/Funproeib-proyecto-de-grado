@@ -7,6 +7,8 @@ import java.util.List;
 
 public interface ListaNegraRepository extends JpaRepository<ListaNegra, Long> {
 
+    List<ListaNegra> findByActivoTrue();
+
     List<ListaNegra> findByCiPostulanteAndActivoTrue(String ciPostulante);
 
     boolean existsByCiPostulanteAndActivoTrue(String ciPostulante);
