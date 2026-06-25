@@ -50,6 +50,7 @@ public class ListaNegraServiceImpl implements ListaNegraService {
     }
 
     @Override
+    @Transactional(readOnly = true)
     public List<ListaNegraResponse> listarActivos() {
         return listaNegraRepository.findByActivoTrue().stream()
                 .map(this::mapToResponse)
