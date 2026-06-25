@@ -1,5 +1,6 @@
 package org.certificaciones.funproeibbackend.controller;
 
+import org.certificaciones.funproeibbackend.dto.LoginRequest;
 import org.certificaciones.funproeibbackend.dto.UsuarioRegistroRequest;
 import org.certificaciones.funproeibbackend.dto.UsuarioResponse;
 import org.certificaciones.funproeibbackend.service.UsuarioService;
@@ -21,6 +22,11 @@ public class UsuarioController {
     @PostMapping("/registro")
     public ResponseEntity<UsuarioResponse> registrar(@Valid @RequestBody UsuarioRegistroRequest request) {
         return ResponseEntity.status(HttpStatus.CREATED).body(usuarioService.registrar(request));
+    }
+
+    @PostMapping("/login")
+    public ResponseEntity<UsuarioResponse> login(@Valid @RequestBody LoginRequest request) {
+        return ResponseEntity.ok(usuarioService.login(request));
     }
 
     @GetMapping("/{id}")

@@ -1,5 +1,6 @@
 package org.certificaciones.funproeibbackend.service.impl;
 
+import org.certificaciones.funproeibbackend.dto.LoginRequest;
 import org.certificaciones.funproeibbackend.dto.UsuarioRegistroRequest;
 import org.certificaciones.funproeibbackend.dto.UsuarioResponse;
 import org.certificaciones.funproeibbackend.exception.BusinessException;
@@ -53,6 +54,23 @@ public class UsuarioServiceImpl implements UsuarioService {
                 .build();
 
         return mapToResponse(usuarioRepository.save(usuario));
+    }
+
+    @Override
+    @Transactional(readOnly = true)
+    public UsuarioResponse login(LoginRequest request) {
+        Usuario usuario = usuarioRepository.findByCorreo(request.getCorreo())
+                .orElseThrow(() -> new BusinessException("Correo o contraseña incorrectos"));
+
+        if (!passwordEncoder.matches(request.getContrasena(), usuario.getContrasenaHash())) {
+            throw new BusinessException("Correo o contraseña incorrectos");
+        }
+
+        if (Boolean.FALSE.equals(usuario.getActivo())) {
+            throw new BusinessException("La cuenta está desactivada");
+        }
+
+        return mapToResponse(usuario);
     }
 
     @Override

@@ -1,6 +1,7 @@
 package org.certificaciones.funproeibbackend.service.impl;
 
 import org.certificaciones.funproeibbackend.dto.ReqDocumentoRequest;
+import org.certificaciones.funproeibbackend.dto.ReqDocumentoResponse;
 import org.certificaciones.funproeibbackend.exception.ResourceNotFoundException;
 import org.certificaciones.funproeibbackend.model.Programa;
 import org.certificaciones.funproeibbackend.model.ReqDocumento;
@@ -22,7 +23,7 @@ public class ReqDocumentoServiceImpl implements ReqDocumentoService {
 
     @Override
     @Transactional
-    public ReqDocumento crear(ReqDocumentoRequest request) {
+    public ReqDocumentoResponse crear(ReqDocumentoRequest request) {
         Programa programa = programaRepository.findById(request.getIdPrograma())
                 .orElseThrow(() -> new ResourceNotFoundException("Programa no encontrado con id: " + request.getIdPrograma()));
 
@@ -34,11 +35,26 @@ public class ReqDocumentoServiceImpl implements ReqDocumentoService {
                 .tipoPermitido(request.getTipoPermitido())
                 .build();
 
-        return reqDocumentoRepository.save(reqDocumento);
+        return mapToResponse(reqDocumentoRepository.save(reqDocumento));
     }
 
     @Override
-    public List<ReqDocumento> listarPorPrograma(Long idPrograma) {
-        return reqDocumentoRepository.findByProgramaId(idPrograma);
+    @Transactional(readOnly = true)
+    public List<ReqDocumentoResponse> listarPorPrograma(Long idPrograma) {
+        return reqDocumentoRepository.findByProgramaId(idPrograma).stream()
+                .map(this::mapToResponse)
+                .toList();
+    }
+
+    private ReqDocumentoResponse mapToResponse(ReqDocumento r) {
+        return ReqDocumentoResponse.builder()
+                .id(r.getId())
+                .idPrograma(r.getPrograma().getId())
+                .nombrePrograma(r.getPrograma().getNombre())
+                .nombreDocumento(r.getNombreDocumento())
+                .descripcion(r.getDescripcion())
+                .obligatorio(r.getObligatorio())
+                .tipoPermitido(r.getTipoPermitido())
+                .build();
     }
 }

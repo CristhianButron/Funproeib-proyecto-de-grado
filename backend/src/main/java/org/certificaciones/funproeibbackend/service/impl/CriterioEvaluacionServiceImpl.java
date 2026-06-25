@@ -38,6 +38,7 @@ public class CriterioEvaluacionServiceImpl implements CriterioEvaluacionService 
     }
 
     @Override
+    @Transactional(readOnly = true)
     public List<CriterioEvaluacionResponse> listarPorPrograma(Long idPrograma) {
         return criterioRepository.findByProgramaId(idPrograma).stream()
                 .map(this::mapToResponse)

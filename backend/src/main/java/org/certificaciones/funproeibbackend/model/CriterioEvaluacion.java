@@ -28,6 +28,6 @@ public class CriterioEvaluacion {
     @Column(name = "descripcion", length = 255)
     private String descripcion;
 
-    @Column(name = "peso", precision = 4, scale = 2)
+    @Column(name = "peso", precision = 5, scale = 2)
     private BigDecimal peso;
 }

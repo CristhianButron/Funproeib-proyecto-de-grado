@@ -1,11 +1,11 @@
 package org.certificaciones.funproeibbackend.service;
 
 import org.certificaciones.funproeibbackend.dto.ReqDocumentoRequest;
-import org.certificaciones.funproeibbackend.model.ReqDocumento;
+import org.certificaciones.funproeibbackend.dto.ReqDocumentoResponse;
 
 import java.util.List;
 
 public interface ReqDocumentoService {
-    ReqDocumento crear(ReqDocumentoRequest request);
-    List<ReqDocumento> listarPorPrograma(Long idPrograma);
+    ReqDocumentoResponse crear(ReqDocumentoRequest request);
+    List<ReqDocumentoResponse> listarPorPrograma(Long idPrograma);
 }

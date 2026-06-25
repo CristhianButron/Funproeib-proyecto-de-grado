@@ -7,11 +7,11 @@ import org.certificaciones.funproeibbackend.exception.ResourceNotFoundException;
 import org.certificaciones.funproeibbackend.model.Documento;
 import org.certificaciones.funproeibbackend.model.Postulacion;
 import org.certificaciones.funproeibbackend.model.ReqDocumento;
-import org.certificaciones.funproeibbackend.model.enums.EstadoPostulacion;
 import org.certificaciones.funproeibbackend.repository.DocumentoRepository;
 import org.certificaciones.funproeibbackend.repository.PostulacionRepository;
 import org.certificaciones.funproeibbackend.repository.ReqDocumentoRepository;
 import org.certificaciones.funproeibbackend.service.DocumentoService;
+import org.certificaciones.funproeibbackend.service.PostulacionCompletitudService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -26,6 +26,7 @@ public class DocumentoServiceImpl implements DocumentoService {
     private final DocumentoRepository documentoRepository;
     private final PostulacionRepository postulacionRepository;
     private final ReqDocumentoRepository reqDocumentoRepository;
+    private final PostulacionCompletitudService completitudService;
 
     @Override
     @Transactional
@@ -51,8 +52,8 @@ public class DocumentoServiceImpl implements DocumentoService {
 
         Documento guardado = documentoRepository.save(documento);
 
-        // si todos los requisitos obligatorios están cargados, avanzar la postulación a PENDIENTE
-        actualizarEstadoPostulacion(postulacion);
+        // Revisa si con este documento la postulación queda completa (docs + preguntas)
+        completitudService.revisar(postulacion.getId());
 
         return mapToResponse(guardado);
     }
@@ -83,22 +84,6 @@ public class DocumentoServiceImpl implements DocumentoService {
         }
         documentos.forEach(d -> d.setVerificado(true));
         documentoRepository.saveAll(documentos);
-    }
-
-    private void actualizarEstadoPostulacion(Postulacion postulacion) {
-        List<ReqDocumento> obligatorios = reqDocumentoRepository.findByProgramaId(postulacion.getPrograma().getId())
-                .stream().filter(ReqDocumento::getObligatorio).toList();
-
-        List<Documento> cargados = documentoRepository.findByPostulacionId(postulacion.getId());
-
-        boolean todosPresentes = obligatorios.stream().allMatch(req ->
-                cargados.stream().anyMatch(doc -> doc.getReqDocumento().getId().equals(req.getId()))
-        );
-
-        if (todosPresentes && postulacion.getEstado().equals(EstadoPostulacion.INCOMPLETA)) {
-            postulacion.setEstado(EstadoPostulacion.PENDIENTE);
-            postulacionRepository.save(postulacion);
-        }
     }
 
     private DocumentoResponse mapToResponse(Documento d) {
