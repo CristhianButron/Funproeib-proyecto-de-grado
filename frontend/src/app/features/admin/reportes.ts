@@ -136,6 +136,12 @@ const LABEL_TIPO: Record<TipoPrograma, string> = {
       }
     </div>
 
+    @if (error()) {
+      <div class="bg-error-container text-on-error-container rounded-xl px-4 py-3 mb-6 text-sm font-semibold flex items-center gap-2">
+        <span class="material-symbols-outlined text-[18px]">error</span> {{ error() }}
+      </div>
+    }
+
     <!-- Resultados -->
     <div class="bg-white rounded-xl shadow-card border border-outline-variant overflow-hidden">
       @if (cargando()) {
@@ -207,8 +213,9 @@ export class ReportesComponent implements OnInit {
   departamentos = signal<string[]>([]);
   inscritos = signal<InscritoReporte[]>([]);
   cargando = signal(false);
+  error = signal<string | null>(null);
 
-  filtro = signal<ReporteFiltro>({ estado: 'ACEPTADA' });
+  filtro = signal<ReporteFiltro>({});
 
   programasFiltrados = computed(() => {
     const tipo = this.filtro().tipoPrograma;
@@ -254,9 +261,14 @@ export class ReportesComponent implements OnInit {
 
   generar(): void {
     this.cargando.set(true);
+    this.error.set(null);
     this.reporteService.listarInscritos(this.filtro()).subscribe({
       next: (d) => { this.inscritos.set(d); this.cargando.set(false); },
-      error: () => this.cargando.set(false),
+      error: () => {
+        this.inscritos.set([]);
+        this.cargando.set(false);
+        this.error.set('No se pudo cargar el reporte. Verifica que el servidor esté disponible.');
+      },
     });
   }
 
