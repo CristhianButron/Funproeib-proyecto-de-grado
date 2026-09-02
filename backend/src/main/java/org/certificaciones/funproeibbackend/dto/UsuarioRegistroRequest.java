@@ -9,9 +9,16 @@ import java.time.LocalDate;
 @Data
 public class UsuarioRegistroRequest {
 
-    @NotBlank(message = "El nombre completo es obligatorio")
-    @Size(max = 150)
-    private String nombreCompleto;
+    @NotBlank(message = "El nombre es obligatorio")
+    @Size(max = 80)
+    private String nombre;
+
+    @NotBlank(message = "El apellido paterno es obligatorio")
+    @Size(max = 80)
+    private String apellidoPaterno;
+
+    @Size(max = 80)
+    private String apellidoMaterno;
 
     @NotBlank(message = "El correo es obligatorio")
     @Email(message = "El correo no tiene un formato válido")
@@ -38,12 +45,8 @@ public class UsuarioRegistroRequest {
     @NotNull(message = "El nivel educativo es obligatorio")
     private NivelEducativo nivelEducativo;
 
-    @NotBlank(message = "El país de origen es obligatorio")
-    private String paisOrigen;
-
-    private String departamentoOrigen;
-
-    private String municipioOrigen;
+    @NotNull(message = "La ciudad de origen es obligatoria")
+    private Long idCiudad;
 
     private String telefono;
 }

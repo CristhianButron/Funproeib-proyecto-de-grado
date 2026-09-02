@@ -4,8 +4,10 @@ import org.certificaciones.funproeibbackend.dto.LoginRequest;
 import org.certificaciones.funproeibbackend.dto.UsuarioRegistroRequest;
 import org.certificaciones.funproeibbackend.dto.UsuarioResponse;
 import org.certificaciones.funproeibbackend.exception.BusinessException;
+import org.certificaciones.funproeibbackend.model.Ciudad;
 import org.certificaciones.funproeibbackend.model.Usuario;
 import org.certificaciones.funproeibbackend.model.enums.RolUsuario;
+import org.certificaciones.funproeibbackend.repository.CiudadRepository;
 import org.certificaciones.funproeibbackend.repository.UsuarioRepository;
 import org.certificaciones.funproeibbackend.service.impl.UsuarioServiceImpl;
 import org.junit.jupiter.api.DisplayName;
@@ -28,6 +30,7 @@ import static org.mockito.Mockito.*;
 class UsuarioServiceImplTest {
 
     @Mock private UsuarioRepository usuarioRepository;
+    @Mock private CiudadRepository ciudadRepository;
     @Mock private PasswordEncoder passwordEncoder;
 
     @InjectMocks private UsuarioServiceImpl service;
@@ -36,13 +39,18 @@ class UsuarioServiceImplTest {
     @DisplayName("El registro asigna rol POSTULANTE por defecto")
     void registrar_asignaRolPostulante() {
         UsuarioRegistroRequest req = new UsuarioRegistroRequest();
-        req.setNombreCompleto("Ana Quispe");
+        req.setNombre("Ana");
+        req.setApellidoPaterno("Quispe");
         req.setCorreo("ana@correo.com");
         req.setContrasena("clave1234");
         req.setCi("999888");
+        req.setIdCiudad(1L);
+
+        Ciudad ciudad = Ciudad.builder().id(1L).nombre("La Paz").build();
 
         when(usuarioRepository.existsByCorreo("ana@correo.com")).thenReturn(false);
         when(usuarioRepository.existsByCi("999888")).thenReturn(false);
+        when(ciudadRepository.findById(1L)).thenReturn(Optional.of(ciudad));
         when(passwordEncoder.encode("clave1234")).thenReturn("HASH");
         when(usuarioRepository.save(any(Usuario.class))).thenAnswer(inv -> inv.getArgument(0));
 
@@ -69,7 +77,7 @@ class UsuarioServiceImplTest {
     void login_credencialesCorrectas_devuelveUsuario() {
         Usuario usuario = Usuario.builder().id(1L).correo("admin@funproeib.org")
                 .contrasenaHash("HASH").rol(RolUsuario.ADMIN).activo(true)
-                .nombreCompleto("Admin").build();
+                .nombre("Admin").build();
         LoginRequest req = new LoginRequest();
         req.setCorreo("admin@funproeib.org");
         req.setContrasena("admin12345");

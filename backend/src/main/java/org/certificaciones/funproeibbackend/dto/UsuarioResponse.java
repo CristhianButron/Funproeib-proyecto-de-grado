@@ -11,6 +11,9 @@ import java.time.LocalDate;
 @Builder
 public class UsuarioResponse {
     private Long id;
+    private String nombre;
+    private String apellidoPaterno;
+    private String apellidoMaterno;
     private String nombreCompleto;
     private String correo;
     private String ci;
@@ -24,8 +27,9 @@ public class UsuarioResponse {
     private Integer edad;
     private String autoidentificacionEtnica;
     private NivelEducativo nivelEducativo;
-    private String paisOrigen;
-    private String departamentoOrigen;
-    private String municipioOrigen;
+    private Long idCiudad;
+    private String ciudad;
+    private Long idPais;
+    private String pais;
     private String telefono;
 }

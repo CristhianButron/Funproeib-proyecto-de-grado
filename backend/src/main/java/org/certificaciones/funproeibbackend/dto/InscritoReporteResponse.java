@@ -23,9 +23,8 @@ public class InscritoReporteResponse {
     private LocalDate fechaNacimiento;
     private NivelEducativo nivelEducativo;
     private String autoidentificacionEtnica;
-    private String paisOrigen;
-    private String departamentoOrigen;
-    private String municipioOrigen;
+    private String pais;
+    private String ciudad;
 
     private Long idPrograma;
     private String nombrePrograma;

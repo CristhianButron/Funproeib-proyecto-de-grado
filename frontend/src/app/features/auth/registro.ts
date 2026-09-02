@@ -1,7 +1,10 @@
-import { Component, signal } from '@angular/core';
+import { Component, OnInit, signal } from '@angular/core';
 import { FormBuilder, FormGroup, Validators, ReactiveFormsModule } from '@angular/forms';
 import { Router, RouterLink } from '@angular/router';
 import { AuthService } from '../../core/services/auth.service';
+import { UbicacionService } from '../../core/services/ubicacion.service';
+import { CiudadResponse, PaisResponse } from '../../core/models/ubicacion.model';
+import { UsuarioRegistroRequest } from '../../core/models/usuario.model';
 
 @Component({
   selector: 'app-registro',
@@ -28,11 +31,21 @@ import { AuthService } from '../../core/services/auth.service';
 
         <div>
           <h2 class="text-sm font-bold text-primary uppercase tracking-wide border-b border-outline-variant pb-2 mb-4">Datos de acceso</h2>
-          <div class="grid sm:grid-cols-2 gap-4">
-            <div class="sm:col-span-2">
-              <label class="block text-sm font-semibold mb-1">Nombre completo *</label>
-              <input formControlName="nombreCompleto" class="campo" placeholder="Nombre y apellidos" />
+          <div class="grid sm:grid-cols-3 gap-4 mb-4">
+            <div>
+              <label class="block text-sm font-semibold mb-1">Nombre(s) *</label>
+              <input formControlName="nombre" class="campo" placeholder="Ej: Juan" />
             </div>
+            <div>
+              <label class="block text-sm font-semibold mb-1">Apellido paterno *</label>
+              <input formControlName="apellidoPaterno" class="campo" placeholder="Ej: Mamani" />
+            </div>
+            <div>
+              <label class="block text-sm font-semibold mb-1">Apellido materno</label>
+              <input formControlName="apellidoMaterno" class="campo" placeholder="Ej: Quispe" />
+            </div>
+          </div>
+          <div class="grid sm:grid-cols-2 gap-4">
             <div>
               <label class="block text-sm font-semibold mb-1">Correo electrónico *</label>
               <input type="email" formControlName="correo" class="campo" placeholder="correo@ejemplo.com" />
@@ -91,24 +104,26 @@ import { AuthService } from '../../core/services/auth.service';
 
         <div>
           <h2 class="text-sm font-bold text-primary uppercase tracking-wide border-b border-outline-variant pb-2 mb-4">Procedencia geográfica</h2>
-          <div class="grid sm:grid-cols-3 gap-4">
+          <div class="grid sm:grid-cols-2 gap-4">
             <div>
               <label class="block text-sm font-semibold mb-1">País *</label>
-              <input formControlName="paisOrigen" class="campo" placeholder="Bolivia" />
+              <select class="campo" (change)="onPaisChange($event)">
+                <option value="">Seleccione un país...</option>
+                @for (p of paises(); track p.id) { <option [value]="p.id">{{ p.nombre }}</option> }
+              </select>
             </div>
             <div>
-              <label class="block text-sm font-semibold mb-1">Departamento</label>
-              <input formControlName="departamentoOrigen" class="campo" placeholder="Cochabamba" />
-            </div>
-            <div>
-              <label class="block text-sm font-semibold mb-1">Municipio</label>
-              <input formControlName="municipioOrigen" class="campo" placeholder="Cercado" />
+              <label class="block text-sm font-semibold mb-1">Ciudad *</label>
+              <select class="campo" [disabled]="!idPaisSeleccionado()" (change)="onCiudadChange($event)">
+                <option value="">{{ idPaisSeleccionado() ? 'Seleccione una ciudad...' : 'Primero elige un país' }}</option>
+                @for (c of ciudades(); track c.id) { <option [value]="c.id">{{ c.nombre }}</option> }
+              </select>
             </div>
           </div>
         </div>
 
         <div class="flex items-center gap-3 pt-2">
-          <button type="submit" [disabled]="form.invalid || cargando()"
+          <button type="submit" [disabled]="form.invalid || !idCiudadSeleccionada() || cargando()"
             class="px-6 py-3 rounded-lg font-bold bg-primary text-white hover:bg-primary-dark transition-colors disabled:opacity-50 flex items-center gap-2">
             <span class="material-symbols-outlined">how_to_reg</span>
             {{ cargando() ? 'Registrando...' : 'Crear cuenta y postular' }}
@@ -135,16 +150,29 @@ import { AuthService } from '../../core/services/auth.service';
       transition: all .15s;
     }
     .campo:focus { border-color: #1e3a8a; box-shadow: 0 0 0 2px rgba(30,58,138,.2); }
+    .campo:disabled { background: #f2f2f5; color: #9ca3af; }
   `],
 })
-export class RegistroComponent {
+export class RegistroComponent implements OnInit {
   form: FormGroup;
   cargando = signal(false);
   error = signal<string | null>(null);
 
-  constructor(private fb: FormBuilder, private auth: AuthService, private router: Router) {
+  paises = signal<PaisResponse[]>([]);
+  ciudades = signal<CiudadResponse[]>([]);
+  idPaisSeleccionado = signal<number | null>(null);
+  idCiudadSeleccionada = signal<number | null>(null);
+
+  constructor(
+    private fb: FormBuilder,
+    private auth: AuthService,
+    private router: Router,
+    private ubicacionService: UbicacionService,
+  ) {
     this.form = this.fb.group({
-      nombreCompleto: ['', [Validators.required, Validators.maxLength(150)]],
+      nombre: ['', [Validators.required, Validators.maxLength(80)]],
+      apellidoPaterno: ['', [Validators.required, Validators.maxLength(80)]],
+      apellidoMaterno: ['', Validators.maxLength(80)],
       correo: ['', [Validators.required, Validators.email]],
       contrasena: ['', [Validators.required, Validators.minLength(8)]],
       ci: ['', Validators.required],
@@ -153,17 +181,34 @@ export class RegistroComponent {
       fechaNacimiento: ['', Validators.required],
       nivelEducativo: ['', Validators.required],
       autoidentificacionEtnica: [''],
-      paisOrigen: ['Bolivia', Validators.required],
-      departamentoOrigen: [''],
-      municipioOrigen: [''],
     });
   }
 
+  ngOnInit(): void {
+    this.ubicacionService.listarPaises().subscribe(d => this.paises.set(d));
+  }
+
+  onPaisChange(event: Event): void {
+    const idPais = (event.target as HTMLSelectElement).value;
+    this.ciudades.set([]);
+    this.idCiudadSeleccionada.set(null);
+    this.idPaisSeleccionado.set(idPais ? +idPais : null);
+    if (idPais) {
+      this.ubicacionService.listarCiudades(+idPais).subscribe(d => this.ciudades.set(d));
+    }
+  }
+
+  onCiudadChange(event: Event): void {
+    const idCiudad = (event.target as HTMLSelectElement).value;
+    this.idCiudadSeleccionada.set(idCiudad ? +idCiudad : null);
+  }
+
   registrar(): void {
-    if (this.form.invalid) return;
+    if (this.form.invalid || !this.idCiudadSeleccionada()) return;
     this.cargando.set(true);
     this.error.set(null);
-    this.auth.registrar(this.form.value).subscribe({
+    const request: UsuarioRegistroRequest = { ...this.form.value, idCiudad: this.idCiudadSeleccionada() };
+    this.auth.registrar(request).subscribe({
       next: () => {
         this.cargando.set(false);
         this.router.navigate(['/portal']);

@@ -81,7 +81,7 @@ import { UsuarioResponse } from '../../core/models/usuario.model';
               <div><p class="text-xs text-on-surface-variant uppercase">Género</p><p class="font-semibold">{{ u.genero }}</p></div>
               <div><p class="text-xs text-on-surface-variant uppercase">Nivel educativo</p><p class="font-semibold">{{ u.nivelEducativo }}</p></div>
               <div><p class="text-xs text-on-surface-variant uppercase">Autoidentificación</p><p class="font-semibold">{{ u.autoidentificacionEtnica || '—' }}</p></div>
-              <div><p class="text-xs text-on-surface-variant uppercase">Procedencia</p><p class="font-semibold">{{ u.paisOrigen }}{{ u.departamentoOrigen ? ', ' + u.departamentoOrigen : '' }}</p></div>
+              <div><p class="text-xs text-on-surface-variant uppercase">Procedencia</p><p class="font-semibold">{{ u.ciudad }}{{ u.pais ? ', ' + u.pais : '' }}</p></div>
             </div>
           }
 

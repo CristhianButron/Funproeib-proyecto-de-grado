@@ -7,6 +7,4 @@ import java.util.List;
 
 public interface ReporteService {
     List<InscritoReporteResponse> listarInscritos(ReporteInscritosFiltro filtro);
-    List<String> listarPaisesDisponibles();
-    List<String> listarDepartamentosDisponibles();
 }

@@ -15,8 +15,8 @@ public class ReporteInscritosFiltro {
     private EstadoPostulacion estado;
     private Genero genero;
     private NivelEducativo nivelEducativo;
-    private String paisOrigen;
-    private String departamentoOrigen;
+    private Long idPais;
+    private Long idCiudad;
     private LocalDate fechaDesde;
     private LocalDate fechaHasta;
 }

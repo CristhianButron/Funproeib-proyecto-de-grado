@@ -8,8 +8,8 @@ export interface ReporteFiltro {
   estado?: EstadoPostulacion | null;
   genero?: Genero | null;
   nivelEducativo?: NivelEducativo | null;
-  paisOrigen?: string | null;
-  departamentoOrigen?: string | null;
+  idPais?: number | null;
+  idCiudad?: number | null;
   fechaDesde?: string | null;
   fechaHasta?: string | null;
 }
@@ -26,9 +26,8 @@ export interface InscritoReporte {
   fechaNacimiento?: string;
   nivelEducativo: NivelEducativo;
   autoidentificacionEtnica?: string;
-  paisOrigen: string;
-  departamentoOrigen?: string;
-  municipioOrigen?: string;
+  pais?: string;
+  ciudad?: string;
   idPrograma: number;
   nombrePrograma: string;
   tipoPrograma: TipoPrograma;

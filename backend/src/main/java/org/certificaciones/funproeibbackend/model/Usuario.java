@@ -21,8 +21,14 @@ public class Usuario {
     @Column(name = "id_usuario")
     private Long id;
 
-    @Column(name = "nombre_completo", nullable = false, length = 150)
-    private String nombreCompleto;
+    @Column(name = "nombre", nullable = false, length = 80)
+    private String nombre;
+
+    @Column(name = "apellido_paterno", nullable = false, length = 80)
+    private String apellidoPaterno;
+
+    @Column(name = "apellido_materno", length = 80)
+    private String apellidoMaterno;
 
     @Column(name = "correo", nullable = false, unique = true, length = 100)
     private String correo;
@@ -60,15 +66,28 @@ public class Usuario {
     @Column(name = "nivel_educativo", length = 30)
     private NivelEducativo nivelEducativo;
 
-    @Column(name = "pais_origen", length = 100)
-    private String paisOrigen;
-
-    @Column(name = "departamento_origen", length = 100)
-    private String departamentoOrigen;
-
-    @Column(name = "municipio_origen", length = 100)
-    private String municipioOrigen;
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "id_ciudad")
+    private Ciudad ciudad;
 
     @Column(name = "telefono", length = 20)
     private String telefono;
+
+    /**
+     * Nombre completo derivado (no persistido) para mostrar en listados y
+     * reportes sin duplicar el dato en la base.
+     */
+    public String getNombreCompleto() {
+        StringBuilder sb = new StringBuilder();
+        if (nombre != null && !nombre.isBlank()) sb.append(nombre);
+        if (apellidoPaterno != null && !apellidoPaterno.isBlank()) {
+            if (sb.length() > 0) sb.append(' ');
+            sb.append(apellidoPaterno);
+        }
+        if (apellidoMaterno != null && !apellidoMaterno.isBlank()) {
+            if (sb.length() > 0) sb.append(' ');
+            sb.append(apellidoMaterno);
+        }
+        return sb.toString();
+    }
 }

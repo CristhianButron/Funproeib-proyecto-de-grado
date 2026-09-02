@@ -3,7 +3,9 @@ export type Genero = 'MASCULINO' | 'FEMENINO' | 'OTRO' | 'PREFIERO_NO_INDICAR';
 export type NivelEducativo = 'SECUNDARIA' | 'TECNICO_MEDIO' | 'TECNICO_SUPERIOR' | 'LICENCIATURA' | 'ESPECIALIZACION' | 'MAESTRIA' | 'DOCTORADO';
 
 export interface UsuarioRegistroRequest {
-  nombreCompleto: string;
+  nombre: string;
+  apellidoPaterno: string;
+  apellidoMaterno?: string;
   correo: string;
   contrasena: string;
   ci: string;
@@ -11,9 +13,7 @@ export interface UsuarioRegistroRequest {
   fechaNacimiento: string;
   autoidentificacionEtnica?: string;
   nivelEducativo: NivelEducativo;
-  paisOrigen: string;
-  departamentoOrigen?: string;
-  municipioOrigen?: string;
+  idCiudad: number;
   telefono?: string;
 }
 
@@ -24,6 +24,9 @@ export interface LoginRequest {
 
 export interface UsuarioResponse {
   id: number;
+  nombre: string;
+  apellidoPaterno: string;
+  apellidoMaterno?: string;
   nombreCompleto: string;
   correo: string;
   ci: string;
@@ -35,8 +38,9 @@ export interface UsuarioResponse {
   edad: number;
   autoidentificacionEtnica?: string;
   nivelEducativo: NivelEducativo;
-  paisOrigen: string;
-  departamentoOrigen?: string;
-  municipioOrigen?: string;
+  idCiudad?: number;
+  ciudad?: string;
+  idPais?: number;
+  pais?: string;
   telefono?: string;
 }

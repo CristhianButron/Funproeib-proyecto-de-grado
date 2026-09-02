@@ -5,8 +5,10 @@ import org.certificaciones.funproeibbackend.dto.UsuarioRegistroRequest;
 import org.certificaciones.funproeibbackend.dto.UsuarioResponse;
 import org.certificaciones.funproeibbackend.exception.BusinessException;
 import org.certificaciones.funproeibbackend.exception.ResourceNotFoundException;
+import org.certificaciones.funproeibbackend.model.Ciudad;
 import org.certificaciones.funproeibbackend.model.Usuario;
 import org.certificaciones.funproeibbackend.model.enums.RolUsuario;
+import org.certificaciones.funproeibbackend.repository.CiudadRepository;
 import org.certificaciones.funproeibbackend.repository.UsuarioRepository;
 import org.certificaciones.funproeibbackend.service.UsuarioService;
 import lombok.RequiredArgsConstructor;
@@ -23,6 +25,7 @@ import java.util.List;
 public class UsuarioServiceImpl implements UsuarioService {
 
     private final UsuarioRepository usuarioRepository;
+    private final CiudadRepository ciudadRepository;
     private final PasswordEncoder passwordEncoder;
 
     @Override
@@ -35,8 +38,13 @@ public class UsuarioServiceImpl implements UsuarioService {
             throw new BusinessException("Ya existe un usuario registrado con ese CI");
         }
 
+        Ciudad ciudad = ciudadRepository.findById(request.getIdCiudad())
+                .orElseThrow(() -> new ResourceNotFoundException("Ciudad no encontrada con id: " + request.getIdCiudad()));
+
         Usuario usuario = Usuario.builder()
-                .nombreCompleto(request.getNombreCompleto())
+                .nombre(request.getNombre())
+                .apellidoPaterno(request.getApellidoPaterno())
+                .apellidoMaterno(request.getApellidoMaterno())
                 .correo(request.getCorreo())
                 .contrasenaHash(passwordEncoder.encode(request.getContrasena()))
                 .ci(request.getCi())
@@ -47,9 +55,7 @@ public class UsuarioServiceImpl implements UsuarioService {
                 .fechaNacimiento(request.getFechaNacimiento())
                 .autoidentificacionEtnica(request.getAutoidentificacionEtnica())
                 .nivelEducativo(request.getNivelEducativo())
-                .paisOrigen(request.getPaisOrigen())
-                .departamentoOrigen(request.getDepartamentoOrigen())
-                .municipioOrigen(request.getMunicipioOrigen())
+                .ciudad(ciudad)
                 .telefono(request.getTelefono())
                 .build();
 
@@ -97,6 +103,9 @@ public class UsuarioServiceImpl implements UsuarioService {
 
         return UsuarioResponse.builder()
                 .id(usuario.getId())
+                .nombre(usuario.getNombre())
+                .apellidoPaterno(usuario.getApellidoPaterno())
+                .apellidoMaterno(usuario.getApellidoMaterno())
                 .nombreCompleto(usuario.getNombreCompleto())
                 .correo(usuario.getCorreo())
                 .ci(usuario.getCi())
@@ -108,9 +117,10 @@ public class UsuarioServiceImpl implements UsuarioService {
                 .edad(edad)
                 .autoidentificacionEtnica(usuario.getAutoidentificacionEtnica())
                 .nivelEducativo(usuario.getNivelEducativo())
-                .paisOrigen(usuario.getPaisOrigen())
-                .departamentoOrigen(usuario.getDepartamentoOrigen())
-                .municipioOrigen(usuario.getMunicipioOrigen())
+                .idCiudad(usuario.getCiudad() != null ? usuario.getCiudad().getId() : null)
+                .ciudad(usuario.getCiudad() != null ? usuario.getCiudad().getNombre() : null)
+                .idPais(usuario.getCiudad() != null && usuario.getCiudad().getPais() != null ? usuario.getCiudad().getPais().getId() : null)
+                .pais(usuario.getCiudad() != null && usuario.getCiudad().getPais() != null ? usuario.getCiudad().getPais().getNombre() : null)
                 .telefono(usuario.getTelefono())
                 .build();
     }

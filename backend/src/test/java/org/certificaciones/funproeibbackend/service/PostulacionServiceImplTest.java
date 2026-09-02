@@ -45,7 +45,7 @@ class PostulacionServiceImplTest {
 
     @BeforeEach
     void setUp() {
-        usuario = Usuario.builder().id(1L).ci("123456").nombreCompleto("Juan Mamani").build();
+        usuario = Usuario.builder().id(1L).ci("123456").nombre("Juan").apellidoPaterno("Mamani").build();
         programa = Programa.builder().id(2L).nombre("Diplomado EIB")
                 .estado(EstadoPrograma.ABIERTO).cuposDisponibles(10).build();
         request = new PostulacionRequest();

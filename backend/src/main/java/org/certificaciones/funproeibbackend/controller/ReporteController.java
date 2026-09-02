@@ -23,14 +23,4 @@ public class ReporteController {
     public ResponseEntity<List<InscritoReporteResponse>> listarInscritos(@ModelAttribute ReporteInscritosFiltro filtro) {
         return ResponseEntity.ok(reporteService.listarInscritos(filtro));
     }
-
-    @GetMapping("/paises")
-    public ResponseEntity<List<String>> listarPaises() {
-        return ResponseEntity.ok(reporteService.listarPaisesDisponibles());
-    }
-
-    @GetMapping("/departamentos")
-    public ResponseEntity<List<String>> listarDepartamentos() {
-        return ResponseEntity.ok(reporteService.listarDepartamentosDisponibles());
-    }
 }

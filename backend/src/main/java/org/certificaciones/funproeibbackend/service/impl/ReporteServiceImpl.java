@@ -6,7 +6,6 @@ import org.certificaciones.funproeibbackend.model.Postulacion;
 import org.certificaciones.funproeibbackend.model.Programa;
 import org.certificaciones.funproeibbackend.model.Usuario;
 import org.certificaciones.funproeibbackend.repository.PostulacionRepository;
-import org.certificaciones.funproeibbackend.repository.UsuarioRepository;
 import org.certificaciones.funproeibbackend.service.ReporteService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
@@ -21,7 +20,6 @@ import java.util.List;
 public class ReporteServiceImpl implements ReporteService {
 
     private final PostulacionRepository postulacionRepository;
-    private final UsuarioRepository usuarioRepository;
 
     @Override
     @Transactional(readOnly = true)
@@ -32,25 +30,13 @@ public class ReporteServiceImpl implements ReporteService {
                         filtro.getEstado(),
                         filtro.getGenero(),
                         filtro.getNivelEducativo(),
-                        filtro.getPaisOrigen(),
-                        filtro.getDepartamentoOrigen(),
+                        filtro.getIdPais(),
+                        filtro.getIdCiudad(),
                         filtro.getFechaDesde(),
                         filtro.getFechaHasta())
                 .stream()
                 .map(this::mapToResponse)
                 .toList();
-    }
-
-    @Override
-    @Transactional(readOnly = true)
-    public List<String> listarPaisesDisponibles() {
-        return usuarioRepository.buscarPaisesDistintos();
-    }
-
-    @Override
-    @Transactional(readOnly = true)
-    public List<String> listarDepartamentosDisponibles() {
-        return usuarioRepository.buscarDepartamentosDistintos();
     }
 
     private InscritoReporteResponse mapToResponse(Postulacion p) {
@@ -74,9 +60,8 @@ public class ReporteServiceImpl implements ReporteService {
                 .fechaNacimiento(u.getFechaNacimiento())
                 .nivelEducativo(u.getNivelEducativo())
                 .autoidentificacionEtnica(u.getAutoidentificacionEtnica())
-                .paisOrigen(u.getPaisOrigen())
-                .departamentoOrigen(u.getDepartamentoOrigen())
-                .municipioOrigen(u.getMunicipioOrigen())
+                .pais(u.getCiudad() != null && u.getCiudad().getPais() != null ? u.getCiudad().getPais().getNombre() : null)
+                .ciudad(u.getCiudad() != null ? u.getCiudad().getNombre() : null)
                 .idPrograma(pr.getId())
                 .nombrePrograma(pr.getNombre())
                 .tipoPrograma(pr.getTipo())

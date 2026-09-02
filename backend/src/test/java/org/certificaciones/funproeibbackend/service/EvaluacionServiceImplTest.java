@@ -49,8 +49,8 @@ class EvaluacionServiceImplTest {
     @BeforeEach
     void setUp() {
         programa = Programa.builder().id(2L).nombre("Diplomado EIB").build();
-        postulante = Usuario.builder().id(1L).nombreCompleto("Juan Mamani").build();
-        evaluador = Usuario.builder().id(9L).nombreCompleto("Evaluador Admin").build();
+        postulante = Usuario.builder().id(1L).nombre("Juan").apellidoPaterno("Mamani").build();
+        evaluador = Usuario.builder().id(9L).nombre("Evaluador").apellidoPaterno("Admin").build();
         postulacion = Postulacion.builder().id(5L).programa(programa).usuario(postulante)
                 .estado(EstadoPostulacion.PENDIENTE).build();
 

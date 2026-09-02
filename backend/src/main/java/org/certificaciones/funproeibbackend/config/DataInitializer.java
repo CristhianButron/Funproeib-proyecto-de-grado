@@ -4,9 +4,11 @@ import org.certificaciones.funproeibbackend.model.Usuario;
 import org.certificaciones.funproeibbackend.model.enums.Genero;
 import org.certificaciones.funproeibbackend.model.enums.NivelEducativo;
 import org.certificaciones.funproeibbackend.model.enums.RolUsuario;
+import org.certificaciones.funproeibbackend.repository.CiudadRepository;
 import org.certificaciones.funproeibbackend.repository.UsuarioRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.boot.CommandLineRunner;
+import org.springframework.core.annotation.Order;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Component;
 
@@ -19,17 +21,20 @@ import java.time.LocalDate;
  * Credenciales: admin@funproeib.org / admin12345
  */
 @Component
+@Order(2)
 @RequiredArgsConstructor
 public class DataInitializer implements CommandLineRunner {
 
     private final UsuarioRepository usuarioRepository;
+    private final CiudadRepository ciudadRepository;
     private final PasswordEncoder passwordEncoder;
 
     @Override
     public void run(String... args) {
         if (!usuarioRepository.existsByCorreo("admin@funproeib.org")) {
             Usuario admin = Usuario.builder()
-                    .nombreCompleto("Administrador Funproeib")
+                    .nombre("Administrador")
+                    .apellidoPaterno("Funproeib")
                     .correo("admin@funproeib.org")
                     .contrasenaHash(passwordEncoder.encode("admin12345"))
                     .ci("0000000")
@@ -39,7 +44,7 @@ public class DataInitializer implements CommandLineRunner {
                     .genero(Genero.PREFIERO_NO_INDICAR)
                     .fechaNacimiento(LocalDate.of(1990, 1, 1))
                     .nivelEducativo(NivelEducativo.MAESTRIA)
-                    .paisOrigen("Bolivia")
+                    .ciudad(ciudadRepository.findFirstByNombreIgnoreCase("La Paz").orElse(null))
                     .build();
             usuarioRepository.save(admin);
             System.out.println(">>> Usuario ADMIN creado: admin@funproeib.org / admin12345");

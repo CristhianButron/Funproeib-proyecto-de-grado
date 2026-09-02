@@ -5,11 +5,13 @@ import { UsuarioResponse } from '../models/usuario.model';
 function usuario(rol: 'ADMIN' | 'POSTULANTE'): UsuarioResponse {
   return {
     id: rol === 'ADMIN' ? 1 : 2,
-    nombreCompleto: rol === 'ADMIN' ? 'Admin' : 'Postulante',
+    nombre: rol === 'ADMIN' ? 'Admin' : 'Postulante',
+    apellidoPaterno: 'Funproeib',
+    nombreCompleto: rol === 'ADMIN' ? 'Admin Funproeib' : 'Postulante Funproeib',
     correo: 'x@y.com', ci: '123', rol,
     fechaRegistro: '2026-01-01', activo: true,
     genero: 'OTRO', fechaNacimiento: '1990-01-01', edad: 36,
-    nivelEducativo: 'LICENCIATURA', paisOrigen: 'Bolivia',
+    nivelEducativo: 'LICENCIATURA', pais: 'Bolivia', ciudad: 'La Paz',
   };
 }
 

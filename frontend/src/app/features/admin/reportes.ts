@@ -2,10 +2,12 @@ import { Component, OnInit, computed, signal } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { ReporteService } from '../../core/services/reporte.service';
 import { ProgramaService } from '../../core/services/programa.service';
+import { UbicacionService } from '../../core/services/ubicacion.service';
 import { InscritoReporte, ReporteFiltro } from '../../core/models/reporte.model';
 import { ProgramaResponse, TipoPrograma } from '../../core/models/programa.model';
 import { EstadoPostulacion } from '../../core/models/postulacion.model';
 import { Genero, NivelEducativo } from '../../core/models/usuario.model';
+import { CiudadResponse, PaisResponse } from '../../core/models/ubicacion.model';
 
 const LABEL_GENERO: Record<Genero, string> = {
   MASCULINO: 'Masculino',
@@ -87,17 +89,17 @@ const LABEL_TIPO: Record<TipoPrograma, string> = {
 
         <div>
           <label class="etiqueta">País de origen</label>
-          <select class="campo" [ngModel]="filtro().paisOrigen ?? ''" (ngModelChange)="actualizar('paisOrigen', $event || null)">
+          <select class="campo" [ngModel]="filtro().idPais ?? ''" (ngModelChange)="setPais($event ? +$event : null)">
             <option value="">Todos</option>
-            @for (p of paises(); track p) { <option [value]="p">{{ p }}</option> }
+            @for (p of paises(); track p.id) { <option [value]="p.id">{{ p.nombre }}</option> }
           </select>
         </div>
 
         <div>
-          <label class="etiqueta">Departamento</label>
-          <select class="campo" [ngModel]="filtro().departamentoOrigen ?? ''" (ngModelChange)="actualizar('departamentoOrigen', $event || null)">
-            <option value="">Todos</option>
-            @for (d of departamentos(); track d) { <option [value]="d">{{ d }}</option> }
+          <label class="etiqueta">Ciudad</label>
+          <select class="campo" [disabled]="!filtro().idPais" [ngModel]="filtro().idCiudad ?? ''" (ngModelChange)="actualizar('idCiudad', $event ? +$event : null)">
+            <option value="">Todas</option>
+            @for (c of ciudades(); track c.id) { <option [value]="c.id">{{ c.nombre }}</option> }
           </select>
         </div>
 
@@ -171,7 +173,7 @@ const LABEL_TIPO: Record<TipoPrograma, string> = {
                   <td class="px-6 py-4 text-sm">{{ LABEL_GENERO[i.genero] }}</td>
                   <td class="px-6 py-4 text-sm">{{ i.edad ?? '—' }}</td>
                   <td class="px-6 py-4 text-sm">{{ LABEL_NIVEL[i.nivelEducativo] }}</td>
-                  <td class="px-6 py-4 text-sm">{{ i.paisOrigen }}{{ i.departamentoOrigen ? ', ' + i.departamentoOrigen : '' }}</td>
+                  <td class="px-6 py-4 text-sm">{{ i.ciudad }}{{ i.pais ? ', ' + i.pais : '' }}</td>
                   <td class="px-6 py-4 text-sm">
                     <p class="font-medium">{{ i.nombrePrograma }}</p>
                     <p class="text-xs text-on-surface-variant">{{ LABEL_TIPO[i.tipoPrograma] }}{{ i.edicion ? ' · ' + i.edicion : '' }}</p>
@@ -209,8 +211,8 @@ export class ReportesComponent implements OnInit {
   estados: EstadoPostulacion[] = ['INCOMPLETA', 'PENDIENTE', 'EVALUADA', 'ACEPTADA', 'RECHAZADA', 'BLOQUEADA'];
 
   programas = signal<ProgramaResponse[]>([]);
-  paises = signal<string[]>([]);
-  departamentos = signal<string[]>([]);
+  paises = signal<PaisResponse[]>([]);
+  ciudades = signal<CiudadResponse[]>([]);
   inscritos = signal<InscritoReporte[]>([]);
   cargando = signal(false);
   error = signal<string | null>(null);
@@ -231,12 +233,12 @@ export class ReportesComponent implements OnInit {
   constructor(
     private reporteService: ReporteService,
     private programaService: ProgramaService,
+    private ubicacionService: UbicacionService,
   ) {}
 
   ngOnInit(): void {
     this.programaService.listarTodos().subscribe(d => this.programas.set(d));
-    this.reporteService.listarPaises().subscribe(d => this.paises.set(d));
-    this.reporteService.listarDepartamentos().subscribe(d => this.departamentos.set(d));
+    this.ubicacionService.listarPaises().subscribe(d => this.paises.set(d));
     this.generar();
   }
 
@@ -249,6 +251,15 @@ export class ReportesComponent implements OnInit {
     this.generar();
   }
 
+  setPais(idPais: number | null): void {
+    this.ciudades.set([]);
+    this.filtro.update(f => ({ ...f, idPais, idCiudad: null }));
+    if (idPais) {
+      this.ubicacionService.listarCiudades(idPais).subscribe(d => this.ciudades.set(d));
+    }
+    this.generar();
+  }
+
   actualizar<K extends keyof ReporteFiltro>(clave: K, valor: ReporteFiltro[K]): void {
     this.filtro.update(f => ({ ...f, [clave]: valor }));
     this.generar();
@@ -256,6 +267,7 @@ export class ReportesComponent implements OnInit {
 
   limpiar(): void {
     this.filtro.set({});
+    this.ciudades.set([]);
     this.generar();
   }
 
@@ -273,10 +285,10 @@ export class ReportesComponent implements OnInit {
   }
 
   exportarCsv(): void {
-    const encabezados = ['Nombre', 'CI', 'Correo', 'Teléfono', 'Género', 'Edad', 'Nivel educativo', 'País', 'Departamento', 'Programa', 'Tipo', 'Edición', 'Fecha postulación', 'Estado'];
+    const encabezados = ['Nombre', 'CI', 'Correo', 'Teléfono', 'Género', 'Edad', 'Nivel educativo', 'Ciudad', 'País', 'Programa', 'Tipo', 'Edición', 'Fecha postulación', 'Estado'];
     const filas = this.inscritos().map(i => [
       i.nombreCompleto, i.ci, i.correo, i.telefono ?? '', LABEL_GENERO[i.genero], i.edad ?? '',
-      LABEL_NIVEL[i.nivelEducativo], i.paisOrigen, i.departamentoOrigen ?? '', i.nombrePrograma,
+      LABEL_NIVEL[i.nivelEducativo], i.ciudad ?? '', i.pais ?? '', i.nombrePrograma,
       LABEL_TIPO[i.tipoPrograma], i.edicion ?? '', i.fechaPostulacion, i.estado,
     ]);
     const escapar = (v: unknown) => `"${String(v).replace(/"/g, '""')}"`;

@@ -17,12 +17,4 @@ export class ReporteService {
     const query = params.toString();
     return this.api.get<InscritoReporte[]>(`/reportes/inscritos${query ? '?' + query : ''}`);
   }
-
-  listarPaises(): Observable<string[]> {
-    return this.api.get<string[]>('/reportes/paises');
-  }
-
-  listarDepartamentos(): Observable<string[]> {
-    return this.api.get<string[]>('/reportes/departamentos');
-  }
 }

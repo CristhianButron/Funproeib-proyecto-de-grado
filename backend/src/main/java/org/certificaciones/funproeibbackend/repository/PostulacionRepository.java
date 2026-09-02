@@ -28,13 +28,15 @@ public interface PostulacionRepository extends JpaRepository<Postulacion, Long> 
     @Query("SELECT p FROM Postulacion p " +
             "JOIN FETCH p.usuario u " +
             "JOIN FETCH p.programa pr " +
+            "LEFT JOIN u.ciudad c " +
+            "LEFT JOIN c.pais pa " +
             "WHERE (:tipoPrograma IS NULL OR pr.tipo = :tipoPrograma) " +
             "AND (:idPrograma IS NULL OR pr.id = :idPrograma) " +
             "AND (:estado IS NULL OR p.estado = :estado) " +
             "AND (:genero IS NULL OR u.genero = :genero) " +
             "AND (:nivelEducativo IS NULL OR u.nivelEducativo = :nivelEducativo) " +
-            "AND (:paisOrigen IS NULL OR u.paisOrigen = :paisOrigen) " +
-            "AND (:departamentoOrigen IS NULL OR u.departamentoOrigen = :departamentoOrigen) " +
+            "AND (:idPais IS NULL OR pa.id = :idPais) " +
+            "AND (:idCiudad IS NULL OR c.id = :idCiudad) " +
             "AND (:fechaDesde IS NULL OR p.fechaPostulacion >= :fechaDesde) " +
             "AND (:fechaHasta IS NULL OR p.fechaPostulacion <= :fechaHasta) " +
             "ORDER BY p.fechaPostulacion DESC")
@@ -44,8 +46,8 @@ public interface PostulacionRepository extends JpaRepository<Postulacion, Long> 
             @Param("estado") EstadoPostulacion estado,
             @Param("genero") Genero genero,
             @Param("nivelEducativo") NivelEducativo nivelEducativo,
-            @Param("paisOrigen") String paisOrigen,
-            @Param("departamentoOrigen") String departamentoOrigen,
+            @Param("idPais") Long idPais,
+            @Param("idCiudad") Long idCiudad,
             @Param("fechaDesde") LocalDate fechaDesde,
             @Param("fechaHasta") LocalDate fechaHasta);
 }
