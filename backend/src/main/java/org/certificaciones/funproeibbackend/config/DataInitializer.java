@@ -44,7 +44,7 @@ public class DataInitializer implements CommandLineRunner {
                     .genero(Genero.PREFIERO_NO_INDICAR)
                     .fechaNacimiento(LocalDate.of(1990, 1, 1))
                     .nivelEducativo(NivelEducativo.MAESTRIA)
-                    .ciudad(ciudadRepository.findFirstByNombreIgnoreCase("La Paz").orElse(null))
+                    .ciudad(ciudadRepository.findFirstByNombreIgnoreCaseAndPaisNombreIgnoreCase("La Paz", "Bolivia").orElse(null))
                     .build();
             usuarioRepository.save(admin);
             System.out.println(">>> Usuario ADMIN creado: admin@funproeib.org / admin12345");

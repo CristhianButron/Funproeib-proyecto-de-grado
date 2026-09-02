@@ -10,5 +10,5 @@ public interface CiudadRepository extends JpaRepository<Ciudad, Long> {
 
     List<Ciudad> findByPaisIdOrderByNombreAsc(Long idPais);
 
-    Optional<Ciudad> findFirstByNombreIgnoreCase(String nombre);
+    Optional<Ciudad> findFirstByNombreIgnoreCaseAndPaisNombreIgnoreCase(String nombre, String nombrePais);
 }
