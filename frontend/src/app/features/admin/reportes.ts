@@ -5,7 +5,6 @@ import { ProgramaService } from '../../core/services/programa.service';
 import { UbicacionService } from '../../core/services/ubicacion.service';
 import { BeneficiarioReporte, ReporteFiltro } from '../../core/models/reporte.model';
 import { ProgramaResponse, TipoPrograma } from '../../core/models/programa.model';
-import { EstadoPostulacion } from '../../core/models/postulacion.model';
 import { Genero, NivelEducativo } from '../../core/models/usuario.model';
 import { CiudadResponse, PaisResponse } from '../../core/models/ubicacion.model';
 
@@ -39,7 +38,7 @@ const LABEL_TIPO: Record<TipoPrograma, string> = {
   <div>
     <div class="mb-6">
       <h1 class="text-3xl font-extrabold text-primary-dark">Reportes de beneficiarios</h1>
-      <p class="text-on-surface-variant">Filtra y cruza datos de las personas beneficiadas por talleres y diplomados.</p>
+      <p class="text-on-surface-variant">Personas que completaron talleres y diplomados ya finalizados, de todo el histórico. No incluye postulaciones en trámite.</p>
     </div>
 
     <!-- Filtros -->
@@ -72,14 +71,6 @@ const LABEL_TIPO: Record<TipoPrograma, string> = {
         </div>
 
         <div>
-          <label class="etiqueta">Estado de postulación</label>
-          <select class="campo" [ngModel]="filtro().estado ?? ''" (ngModelChange)="actualizar('estado', $event || null)">
-            <option value="">Todos</option>
-            @for (e of estados; track e) { <option [value]="e">{{ e }}</option> }
-          </select>
-        </div>
-
-        <div>
           <label class="etiqueta">Nivel educativo</label>
           <select class="campo" [ngModel]="filtro().nivelEducativo ?? ''" (ngModelChange)="actualizar('nivelEducativo', $event || null)">
             <option value="">Todos</option>
@@ -104,12 +95,12 @@ const LABEL_TIPO: Record<TipoPrograma, string> = {
         </div>
 
         <div>
-          <label class="etiqueta">Postulado desde</label>
+          <label class="etiqueta">Programa finalizó desde</label>
           <input type="date" class="campo" [ngModel]="filtro().fechaDesde ?? ''" (ngModelChange)="actualizar('fechaDesde', $event || null)" />
         </div>
 
         <div>
-          <label class="etiqueta">Postulado hasta</label>
+          <label class="etiqueta">Programa finalizó hasta</label>
           <input type="date" class="campo" [ngModel]="filtro().fechaHasta ?? ''" (ngModelChange)="actualizar('fechaHasta', $event || null)" />
         </div>
       </div>
@@ -159,8 +150,7 @@ const LABEL_TIPO: Record<TipoPrograma, string> = {
                 <th class="px-6 py-3 text-xs font-bold text-on-surface-variant uppercase">Nivel educativo</th>
                 <th class="px-6 py-3 text-xs font-bold text-on-surface-variant uppercase">Procedencia</th>
                 <th class="px-6 py-3 text-xs font-bold text-on-surface-variant uppercase">Programa</th>
-                <th class="px-6 py-3 text-xs font-bold text-on-surface-variant uppercase">Fecha</th>
-                <th class="px-6 py-3 text-xs font-bold text-on-surface-variant uppercase">Estado</th>
+                <th class="px-6 py-3 text-xs font-bold text-on-surface-variant uppercase">Finalizó</th>
               </tr>
             </thead>
             <tbody class="divide-y divide-outline-variant">
@@ -178,11 +168,10 @@ const LABEL_TIPO: Record<TipoPrograma, string> = {
                     <p class="font-medium">{{ b.nombrePrograma }}</p>
                     <p class="text-xs text-on-surface-variant">{{ LABEL_TIPO[b.tipoPrograma] }}{{ b.edicion ? ' · ' + b.edicion : '' }}</p>
                   </td>
-                  <td class="px-6 py-4 text-sm">{{ b.fechaPostulacion }}</td>
-                  <td class="px-6 py-4"><span class="px-3 py-1 rounded-full text-xs font-bold" [class]="badge(b.estado)">{{ b.estado }}</span></td>
+                  <td class="px-6 py-4 text-sm">{{ b.fechaFinPrograma }}</td>
                 </tr>
               } @empty {
-                <tr><td colspan="8" class="px-6 py-10 text-center text-on-surface-variant">Ningún beneficiario coincide con los filtros seleccionados.</td></tr>
+                <tr><td colspan="7" class="px-6 py-10 text-center text-on-surface-variant">Ningún beneficiario coincide con los filtros seleccionados.</td></tr>
               }
             </tbody>
           </table>
@@ -208,7 +197,6 @@ export class ReportesComponent implements OnInit {
   generos: Genero[] = ['MASCULINO', 'FEMENINO', 'OTRO', 'PREFIERO_NO_INDICAR'];
   niveles: NivelEducativo[] = ['SECUNDARIA', 'TECNICO_MEDIO', 'TECNICO_SUPERIOR', 'LICENCIATURA', 'ESPECIALIZACION', 'MAESTRIA', 'DOCTORADO'];
   tipos: TipoPrograma[] = ['DIPLOMADO', 'CURSO', 'TALLER'];
-  estados: EstadoPostulacion[] = ['INCOMPLETA', 'PENDIENTE', 'EVALUADA', 'ACEPTADA', 'RECHAZADA', 'BLOQUEADA'];
 
   programas = signal<ProgramaResponse[]>([]);
   paises = signal<PaisResponse[]>([]);
@@ -217,11 +205,15 @@ export class ReportesComponent implements OnInit {
   cargando = signal(false);
   error = signal<string | null>(null);
 
-  filtro = signal<ReporteFiltro>({ estado: 'ACEPTADA' });
+  filtro = signal<ReporteFiltro>({});
 
+  // Solo programas ya finalizados pueden tener beneficiarios en este reporte.
   programasFiltrados = computed(() => {
+    const hoy = new Date().toISOString().slice(0, 10);
     const tipo = this.filtro().tipoPrograma;
-    return tipo ? this.programas().filter(p => p.tipo === tipo) : this.programas();
+    return this.programas()
+      .filter(p => p.fechaFin < hoy)
+      .filter(p => !tipo || p.tipo === tipo);
   });
 
   resumenGenero = computed(() => {
@@ -285,11 +277,11 @@ export class ReportesComponent implements OnInit {
   }
 
   exportarCsv(): void {
-    const encabezados = ['Nombre', 'CI', 'Correo', 'Teléfono', 'Género', 'Edad', 'Nivel educativo', 'Ciudad', 'País', 'Programa', 'Tipo', 'Edición', 'Fecha postulación', 'Estado'];
+    const encabezados = ['Nombre', 'CI', 'Correo', 'Teléfono', 'Género', 'Edad', 'Nivel educativo', 'Ciudad', 'País', 'Programa', 'Tipo', 'Edición', 'Programa finalizó'];
     const filas = this.beneficiarios().map(b => [
       b.nombreCompleto, b.ci, b.correo, b.telefono ?? '', LABEL_GENERO[b.genero], b.edad ?? '',
       LABEL_NIVEL[b.nivelEducativo], b.ciudad ?? '', b.pais ?? '', b.nombrePrograma,
-      LABEL_TIPO[b.tipoPrograma], b.edicion ?? '', b.fechaPostulacion, b.estado,
+      LABEL_TIPO[b.tipoPrograma], b.edicion ?? '', b.fechaFinPrograma,
     ]);
     const escapar = (v: unknown) => `"${String(v).replace(/"/g, '""')}"`;
     const csv = [encabezados, ...filas].map(fila => fila.map(escapar).join(',')).join('\n');
@@ -300,17 +292,5 @@ export class ReportesComponent implements OnInit {
     enlace.download = `reporte-beneficiarios-${new Date().toISOString().slice(0, 10)}.csv`;
     enlace.click();
     URL.revokeObjectURL(url);
-  }
-
-  badge(estado: string): string {
-    const map: Record<string, string> = {
-      INCOMPLETA: 'bg-surface-high text-on-surface-variant',
-      PENDIENTE: 'bg-primary-fixed text-primary',
-      EVALUADA: 'bg-secondary-light text-on-secondary-container',
-      ACEPTADA: 'bg-secondary-light text-on-secondary-container',
-      RECHAZADA: 'bg-error-container text-on-error-container',
-      BLOQUEADA: 'bg-error-container text-on-error-container',
-    };
-    return map[estado] ?? 'bg-surface-high text-on-surface-variant';
   }
 }

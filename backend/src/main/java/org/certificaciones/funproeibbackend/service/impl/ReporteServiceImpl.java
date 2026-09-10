@@ -24,10 +24,9 @@ public class ReporteServiceImpl implements ReporteService {
     @Override
     @Transactional(readOnly = true)
     public List<BeneficiarioReporteResponse> listarBeneficiarios(ReporteBeneficiariosFiltro filtro) {
-        return postulacionRepository.buscarParaReporte(
+        return postulacionRepository.buscarBeneficiarios(
                         filtro.getTipoPrograma(),
                         filtro.getIdPrograma(),
-                        filtro.getEstado(),
                         filtro.getGenero(),
                         filtro.getNivelEducativo(),
                         filtro.getIdPais(),
@@ -67,7 +66,7 @@ public class ReporteServiceImpl implements ReporteService {
                 .tipoPrograma(pr.getTipo())
                 .edicion(pr.getEdicion())
                 .fechaPostulacion(p.getFechaPostulacion())
-                .estado(p.getEstado())
+                .fechaFinPrograma(pr.getFechaFin())
                 .build();
     }
 }

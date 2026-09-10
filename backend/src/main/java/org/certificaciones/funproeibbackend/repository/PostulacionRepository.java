@@ -35,25 +35,32 @@ public interface PostulacionRepository extends JpaRepository<Postulacion, Long> 
             @Param("estado") EstadoPostulacion estado,
             @Param("tipoPrograma") TipoPrograma tipoPrograma);
 
+    /**
+     * Beneficiarios reales: postulaciones ACEPTADAS a programas que ya
+     * finalizaron (fecha_fin ya pasada). Alguien aceptado en un programa que
+     * todavía está en curso no cuenta como beneficiario todavía; alguien
+     * pendiente, rechazado o incompleto nunca cuenta. No es un filtro
+     * opcional: es la definición misma del reporte.
+     */
     @Query("SELECT p FROM Postulacion p " +
             "JOIN FETCH p.usuario u " +
             "JOIN FETCH p.programa pr " +
             "LEFT JOIN u.ciudad c " +
             "LEFT JOIN c.pais pa " +
-            "WHERE (:tipoPrograma IS NULL OR pr.tipo = :tipoPrograma) " +
+            "WHERE p.estado = org.certificaciones.funproeibbackend.model.enums.EstadoPostulacion.ACEPTADA " +
+            "AND pr.fechaFin < CURRENT_DATE " +
+            "AND (:tipoPrograma IS NULL OR pr.tipo = :tipoPrograma) " +
             "AND (:idPrograma IS NULL OR pr.id = :idPrograma) " +
-            "AND (:estado IS NULL OR p.estado = :estado) " +
             "AND (:genero IS NULL OR u.genero = :genero) " +
             "AND (:nivelEducativo IS NULL OR u.nivelEducativo = :nivelEducativo) " +
             "AND (:idPais IS NULL OR pa.id = :idPais) " +
             "AND (:idCiudad IS NULL OR c.id = :idCiudad) " +
-            "AND p.fechaPostulacion >= COALESCE(:fechaDesde, p.fechaPostulacion) " +
-            "AND p.fechaPostulacion <= COALESCE(:fechaHasta, p.fechaPostulacion) " +
-            "ORDER BY p.fechaPostulacion DESC")
-    List<Postulacion> buscarParaReporte(
+            "AND pr.fechaFin >= COALESCE(:fechaDesde, pr.fechaFin) " +
+            "AND pr.fechaFin <= COALESCE(:fechaHasta, pr.fechaFin) " +
+            "ORDER BY pr.fechaFin DESC")
+    List<Postulacion> buscarBeneficiarios(
             @Param("tipoPrograma") TipoPrograma tipoPrograma,
             @Param("idPrograma") Long idPrograma,
-            @Param("estado") EstadoPostulacion estado,
             @Param("genero") Genero genero,
             @Param("nivelEducativo") NivelEducativo nivelEducativo,
             @Param("idPais") Long idPais,
