@@ -37,56 +37,62 @@ import { PreguntaResponse } from '../../core/models/pregunta.model';
       <input [(ngModel)]="busqueda" (ngModelChange)="busquedaSignal.set($event)" class="flex-1 outline-none text-sm" placeholder="Buscar por nombre o tipo..." />
     </div>
 
-    <!-- Tabla -->
-    <div class="bg-white rounded-xl shadow-card border border-outline-variant overflow-hidden">
-      @if (cargando()) {
-        <p class="p-6 text-on-surface-variant">Cargando...</p>
-      } @else {
-        <table class="w-full text-left">
-          <thead class="bg-surface-low">
-            <tr>
-              <th class="px-6 py-3 text-xs font-bold text-on-surface-variant uppercase">Programa</th>
-              <th class="px-6 py-3 text-xs font-bold text-on-surface-variant uppercase">Tipo</th>
-              <th class="px-6 py-3 text-xs font-bold text-on-surface-variant uppercase">Fechas</th>
-              <th class="px-6 py-3 text-xs font-bold text-on-surface-variant uppercase text-center">Cupos</th>
-              <th class="px-6 py-3 text-xs font-bold text-on-surface-variant uppercase">Estado</th>
-              <th class="px-6 py-3 text-xs font-bold text-on-surface-variant uppercase text-right">Acciones</th>
-            </tr>
-          </thead>
-          <tbody class="divide-y divide-outline-variant">
-            @for (p of programasFiltrados(); track p.id) {
-              <tr class="hover:bg-surface-low transition-colors">
-                <td class="px-6 py-4 font-semibold text-primary">{{ p.nombre }}</td>
-                <td class="px-6 py-4 text-sm text-on-surface-variant">{{ p.tipo }}</td>
-                <td class="px-6 py-4 text-sm">{{ p.fechaInicio }} → {{ p.fechaFin }}</td>
-                <td class="px-6 py-4 text-center font-bold">{{ p.cuposDisponibles }}</td>
-                <td class="px-6 py-4">
-                  <select [ngModel]="p.estado" (ngModelChange)="cambiarEstado(p, $event)"
-                    class="text-xs font-bold rounded-full px-3 py-1 border-0 cursor-pointer" [class]="badge(p.estado)">
-                    <option value="BORRADOR">BORRADOR</option>
-                    <option value="ACTIVO">ACTIVO</option>
-                    <option value="ABIERTO">ABIERTO</option>
-                    <option value="CERRADO">CERRADO</option>
-                  </select>
-                </td>
-                <td class="px-6 py-4 text-right">
-                  <div class="flex items-center gap-1 justify-end">
-                    <button (click)="abrirEditar(p)" class="px-2 py-1.5 rounded-lg text-on-surface-variant hover:bg-surface-high transition-colors text-sm font-semibold flex items-center gap-1" title="Editar">
-                      <span class="material-symbols-outlined text-[18px]">edit</span>
-                    </button>
-                    <button (click)="configurar(p)" class="px-3 py-1.5 rounded-lg text-primary hover:bg-primary-fixed transition-colors text-sm font-semibold flex items-center gap-1">
-                      <span class="material-symbols-outlined text-[18px]">tune</span> Configurar
-                    </button>
-                  </div>
-                </td>
-              </tr>
-            } @empty {
-              <tr><td colspan="6" class="px-6 py-10 text-center text-on-surface-variant">No hay programas que coincidan.</td></tr>
-            }
-          </tbody>
-        </table>
+    <!-- Resumen por estado -->
+    <div class="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
+      @for (e of estados; track e) {
+        <div class="bg-white p-4 rounded-xl shadow-card border-l-4" [class]="colorBorde(e)">
+          <p class="text-xs text-on-surface-variant uppercase font-bold">{{ e }}</p>
+          <p class="text-2xl font-extrabold" [class]="colorTexto(e)">{{ contarEstado(e) }}</p>
+        </div>
       }
     </div>
+
+    <!-- Tarjetas de programas -->
+    @if (cargando()) {
+      <p class="p-6 text-on-surface-variant">Cargando...</p>
+    } @else {
+      <div class="grid sm:grid-cols-2 lg:grid-cols-3 gap-5">
+        @for (p of programasFiltrados(); track p.id) {
+          <div class="bg-white rounded-xl shadow-card hover:shadow-card-hover transition-shadow border-l-4 flex flex-col" [class]="colorBorde(p.estado)">
+            <div class="p-5 flex-1">
+              <div class="flex items-center justify-between mb-3">
+                <span class="inline-flex items-center gap-1 text-xs font-bold uppercase text-on-surface-variant">
+                  <span class="material-symbols-outlined text-[16px]">{{ iconoTipo(p.tipo) }}</span> {{ p.tipo }}
+                </span>
+                <span class="px-3 py-1 rounded-full text-xs font-bold" [class]="badge(p.estado)">{{ p.estado }}</span>
+              </div>
+              <h3 class="font-bold text-lg text-on-surface leading-tight">{{ p.nombre }}</h3>
+              @if (p.edicion) { <p class="text-xs text-on-surface-variant mt-0.5">Edición {{ p.edicion }}</p> }
+              <div class="mt-4 space-y-2 text-sm text-on-surface-variant">
+                <p class="flex items-center gap-2"><span class="material-symbols-outlined text-[18px] text-primary">event</span>{{ p.fechaInicio }} → {{ p.fechaFin }}</p>
+                <p class="flex items-center gap-2"><span class="material-symbols-outlined text-[18px] text-primary">groups</span>{{ p.cuposDisponibles }} cupos</p>
+              </div>
+            </div>
+            <div class="border-t border-outline-variant px-5 py-3 flex items-center justify-between gap-2">
+              <select [ngModel]="p.estado" (ngModelChange)="cambiarEstado(p, $event)" class="text-xs font-semibold rounded-lg px-2 py-1.5 border border-outline-variant bg-white cursor-pointer">
+                <option value="BORRADOR">Borrador</option>
+                <option value="ACTIVO">Activo</option>
+                <option value="ABIERTO">Abierto</option>
+                <option value="CERRADO">Cerrado</option>
+              </select>
+              <div class="flex items-center gap-1">
+                <button (click)="abrirEditar(p)" class="p-1.5 rounded-lg text-on-surface-variant hover:bg-surface-high transition-colors" title="Editar">
+                  <span class="material-symbols-outlined text-[18px]">edit</span>
+                </button>
+                <button (click)="configurar(p)" class="px-3 py-1.5 rounded-lg text-primary hover:bg-primary-fixed transition-colors text-xs font-bold flex items-center gap-1">
+                  <span class="material-symbols-outlined text-[16px]">tune</span> Configurar
+                </button>
+              </div>
+            </div>
+          </div>
+        } @empty {
+          <div class="col-span-full text-center py-16 text-on-surface-variant bg-white rounded-xl border border-outline-variant">
+            <span class="material-symbols-outlined text-5xl text-outline-variant">school</span>
+            <p class="mt-3">No hay programas que coincidan.</p>
+          </div>
+        }
+      </div>
+    }
   </div>
 
   <!-- Modal crear/editar -->
@@ -221,6 +227,8 @@ import { PreguntaResponse } from '../../core/models/pregunta.model';
   `],
 })
 export class ProgramasAdminComponent implements OnInit {
+  estados: EstadoPrograma[] = ['BORRADOR', 'ACTIVO', 'ABIERTO', 'CERRADO'];
+
   programas = signal<ProgramaResponse[]>([]);
   busqueda = '';
   busquedaSignal = signal('');
@@ -339,6 +347,39 @@ export class ProgramasAdminComponent implements OnInit {
       CERRADO: 'bg-error-container text-on-error-container',
     };
     return map[estado] ?? '';
+  }
+
+  colorBorde(estado: string): string {
+    const map: Record<string, string> = {
+      BORRADOR: 'border-outline-variant',
+      ACTIVO: 'border-primary',
+      ABIERTO: 'border-secondary',
+      CERRADO: 'border-error',
+    };
+    return map[estado] ?? 'border-outline-variant';
+  }
+
+  colorTexto(estado: string): string {
+    const map: Record<string, string> = {
+      BORRADOR: 'text-on-surface-variant',
+      ACTIVO: 'text-primary',
+      ABIERTO: 'text-secondary',
+      CERRADO: 'text-error',
+    };
+    return map[estado] ?? 'text-on-surface-variant';
+  }
+
+  iconoTipo(tipo: string): string {
+    const map: Record<string, string> = {
+      DIPLOMADO: 'school',
+      CURSO: 'menu_book',
+      TALLER: 'construction',
+    };
+    return map[tipo] ?? 'school';
+  }
+
+  contarEstado(estado: EstadoPrograma): number {
+    return this.programas().filter(p => p.estado === estado).length;
   }
 
   private notificar(msg: string, error: boolean): void {

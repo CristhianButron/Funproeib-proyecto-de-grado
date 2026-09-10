@@ -1,4 +1,4 @@
-import { Component, OnInit, signal } from '@angular/core';
+import { Component, OnInit, computed, signal } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { ProgramaService } from '../../core/services/programa.service';
 import { PostulacionService } from '../../core/services/postulacion.service';
@@ -39,16 +39,23 @@ import { RespuestaResponse } from '../../core/models/pregunta.model';
     @if (programaSel) {
       <div class="grid lg:grid-cols-2 gap-6">
         <div class="bg-white rounded-xl shadow-card border border-outline-variant overflow-hidden h-fit">
-          <div class="px-5 py-3 border-b border-outline-variant font-bold text-primary-dark">Postulaciones</div>
+          <div class="px-5 py-3 border-b border-outline-variant flex items-center justify-between">
+            <span class="font-bold text-primary-dark">Postulaciones</span>
+            @if (porAtenderCount() > 0) {
+              <span class="px-2.5 py-1 rounded-full text-xs font-bold bg-primary-fixed text-primary">{{ porAtenderCount() }} por atender</span>
+            }
+          </div>
           <div class="divide-y divide-outline-variant max-h-[70vh] overflow-y-auto custom-scrollbar">
-            @for (po of postulaciones(); track po.id) {
-              <button (click)="seleccionar(po)" class="w-full text-left px-5 py-3 hover:bg-surface-low transition-colors flex items-center justify-between"
+            @for (po of postulacionesOrdenadas(); track po.id) {
+              <button (click)="seleccionar(po)" class="w-full text-left pl-4 pr-5 py-3 hover:bg-surface-low transition-colors flex items-center gap-3 border-l-4"
+                [class]="colorBorde(po.estado)"
                 [class.bg-primary-fixed]="postulacionSel()?.id === po.id">
-                <div>
-                  <p class="font-semibold text-sm text-primary">{{ po.nombrePostulante }}</p>
+                <span class="material-symbols-outlined text-[20px] shrink-0" [class]="colorTexto(po.estado)">{{ iconoEstado(po.estado) }}</span>
+                <div class="flex-1 min-w-0">
+                  <p class="font-semibold text-sm text-primary truncate">{{ po.nombrePostulante }}</p>
                   <p class="text-xs text-on-surface-variant">{{ po.fechaPostulacion }}</p>
                 </div>
-                <span class="px-2 py-1 rounded-full text-xs font-bold" [class]="badge(po.estado)">{{ po.estado }}</span>
+                <span class="px-2 py-1 rounded-full text-xs font-bold shrink-0" [class]="badge(po.estado)">{{ po.estado }}</span>
               </button>
             } @empty { <p class="px-5 py-8 text-center text-on-surface-variant text-sm">Sin postulaciones.</p> }
           </div>
@@ -246,6 +253,51 @@ export class EvaluacionesComponent implements OnInit {
     };
     return map[estado] ?? 'bg-surface-high text-on-surface-variant';
   }
+
+  colorBorde(estado: string): string {
+    const map: Record<string, string> = {
+      INCOMPLETA: 'border-outline-variant',
+      PENDIENTE: 'border-primary',
+      EVALUADA: 'border-secondary',
+      ACEPTADA: 'border-secondary',
+      RECHAZADA: 'border-error',
+      BLOQUEADA: 'border-error',
+    };
+    return map[estado] ?? 'border-outline-variant';
+  }
+
+  colorTexto(estado: string): string {
+    const map: Record<string, string> = {
+      INCOMPLETA: 'text-on-surface-variant',
+      PENDIENTE: 'text-primary',
+      EVALUADA: 'text-secondary',
+      ACEPTADA: 'text-secondary',
+      RECHAZADA: 'text-error',
+      BLOQUEADA: 'text-error',
+    };
+    return map[estado] ?? 'text-on-surface-variant';
+  }
+
+  iconoEstado(estado: string): string {
+    const map: Record<string, string> = {
+      INCOMPLETA: 'edit_note',
+      PENDIENTE: 'hourglass_top',
+      EVALUADA: 'fact_check',
+      ACEPTADA: 'check_circle',
+      RECHAZADA: 'cancel',
+      BLOQUEADA: 'block',
+    };
+    return map[estado] ?? 'help';
+  }
+
+  postulacionesOrdenadas = computed(() => {
+    const orden: Record<string, number> = { PENDIENTE: 0, EVALUADA: 1, INCOMPLETA: 2, ACEPTADA: 3, RECHAZADA: 4, BLOQUEADA: 5 };
+    return [...this.postulaciones()].sort((a, b) => (orden[a.estado] ?? 9) - (orden[b.estado] ?? 9));
+  });
+
+  porAtenderCount = computed(() =>
+    this.postulaciones().filter(p => p.estado === 'PENDIENTE' || p.estado === 'EVALUADA').length
+  );
 
   private notificar(msg: string, error: boolean): void {
     this.mensaje.set(msg); this.mensajeError.set(error);
