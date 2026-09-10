@@ -1,5 +1,8 @@
 HELP.md
 target/
+
+### Documentos subidos por postulantes (no versionar) ###
+/uploads/
 .mvn/wrapper/maven-wrapper.jar
 !**/src/main/**/target/
 !**/src/test/**/target/

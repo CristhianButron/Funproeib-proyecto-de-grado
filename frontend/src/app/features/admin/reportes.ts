@@ -43,17 +43,15 @@ const LABEL_TIPO: Record<TipoPrograma, string> = {
 
     <!-- Filtros -->
     <div class="bg-white rounded-xl shadow-card border border-outline-variant p-5 mb-6 space-y-5">
-      <div>
-        <p class="text-xs font-bold text-on-surface-variant uppercase mb-2">Género</p>
-        <div class="flex flex-wrap gap-2">
-          <button (click)="setGenero(null)" class="chip" [class.chip-activo]="filtro().genero == null">Todos</button>
-          @for (g of generos; track g) {
-            <button (click)="setGenero(g)" class="chip" [class.chip-activo]="filtro().genero === g">{{ LABEL_GENERO[g] }}</button>
-          }
-        </div>
-      </div>
-
       <div class="grid grid-cols-2 md:grid-cols-4 gap-4">
+        <div>
+          <label class="etiqueta">Género</label>
+          <select class="campo" [ngModel]="filtro().genero ?? ''" (ngModelChange)="actualizar('genero', $event || null)">
+            <option value="">Todos</option>
+            @for (g of generos; track g) { <option [value]="g">{{ LABEL_GENERO[g] }}</option> }
+          </select>
+        </div>
+
         <div>
           <label class="etiqueta">Tipo de programa</label>
           <select class="campo" [ngModel]="filtro().tipoPrograma ?? ''" (ngModelChange)="setTipoPrograma($event || null)">
@@ -184,9 +182,6 @@ const LABEL_TIPO: Record<TipoPrograma, string> = {
     .campo { width:100%; padding:.5rem .7rem; border:1px solid #c5c5d3; border-radius:.5rem; outline:none; font-size:.875rem; }
     .campo:focus { border-color:#1e3a8a; box-shadow:0 0 0 2px rgba(30,58,138,.2); }
     .etiqueta { display:block; font-size:.7rem; font-weight:700; text-transform:uppercase; color:#6b7280; margin-bottom:.3rem; }
-    .chip { padding:.4rem 1rem; border-radius:999px; border:1px solid #c5c5d3; font-size:.8rem; font-weight:600; color:#4b5563; background:white; transition:all .15s; }
-    .chip:hover { border-color:#1e3a8a; color:#1e3a8a; }
-    .chip-activo { background:#1e3a8a; border-color:#1e3a8a; color:white; }
   `],
 })
 export class ReportesComponent implements OnInit {
@@ -232,10 +227,6 @@ export class ReportesComponent implements OnInit {
     this.programaService.listarTodos().subscribe(d => this.programas.set(d));
     this.ubicacionService.listarPaises().subscribe(d => this.paises.set(d));
     this.generar();
-  }
-
-  setGenero(g: Genero | null): void {
-    this.actualizar('genero', g);
   }
 
   setTipoPrograma(t: TipoPrograma | null): void {

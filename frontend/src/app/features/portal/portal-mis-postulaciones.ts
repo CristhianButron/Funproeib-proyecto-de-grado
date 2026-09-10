@@ -22,7 +22,7 @@ import { EvaluacionResponse } from '../../core/models/evaluacion.model';
     </div>
 
     @if (mensaje()) {
-      <div class="mb-4 p-3 rounded-lg text-sm flex items-center gap-2" [class]="mensajeError() ? 'bg-error-container text-on-error-container' : 'bg-secondary-light text-on-secondary-container'">
+      <div class="fixed top-5 left-1/2 -translate-x-1/2 z-[100] max-w-md w-[90vw] p-3 rounded-lg text-sm font-semibold shadow-xl flex items-center gap-2" [class]="mensajeError() ? 'bg-error-container text-on-error-container' : 'bg-secondary-light text-on-secondary-container'">
         <span class="material-symbols-outlined text-[20px]">{{ mensajeError() ? 'error' : 'check_circle' }}</span>
         {{ mensaje() }}
       </div>
@@ -63,18 +63,33 @@ import { EvaluacionResponse } from '../../core/models/evaluacion.model';
                         <p class="text-sm font-semibold">{{ req.nombreDocumento }}
                           <span class="text-xs ml-1" [class]="req.obligatorio ? 'text-error' : 'text-on-surface-variant'">{{ req.obligatorio ? '(obligatorio)' : '(opcional)' }}</span>
                         </p>
-                        <p class="text-xs text-on-surface-variant">{{ req.descripcion }} · {{ req.tipoPermitido }}</p>
+                        <p class="text-xs text-on-surface-variant">{{ req.descripcion }} · {{ labelTipo(req.tipoPermitido) }}</p>
                       </div>
                       @if (docDe(po.id, req.id); as doc) {
-                        <span class="px-3 py-1 rounded-full text-xs font-bold flex items-center gap-1" [class]="doc.verificado ? 'bg-secondary-light text-on-secondary-container' : 'bg-primary-fixed text-primary'">
-                          <span class="material-symbols-outlined text-[16px]">{{ doc.verificado ? 'verified' : 'schedule' }}</span>
-                          {{ doc.verificado ? 'Verificado' : 'Cargado' }}
-                        </span>
-                      } @else if (esEditable(po)) {
                         <div class="flex items-center gap-2">
-                          <input [(ngModel)]="rutas[po.id + '-' + req.id]" class="campo w-44" [placeholder]="req.tipoPermitido === 'PDF' ? 'archivo.pdf' : 'https://...'" />
-                          <button (click)="subir(po, req)" class="px-3 py-1.5 rounded-lg bg-primary text-white text-xs font-bold hover:bg-primary-dark transition-colors">Subir</button>
+                          <span class="px-3 py-1 rounded-full text-xs font-bold flex items-center gap-1" [class]="doc.verificado ? 'bg-secondary-light text-on-secondary-container' : 'bg-primary-fixed text-primary'">
+                            <span class="material-symbols-outlined text-[16px]">{{ doc.verificado ? 'verified' : 'schedule' }}</span>
+                            {{ doc.verificado ? 'Verificado' : 'Cargado' }}
+                          </span>
+                          <a [href]="verUrl(doc)" target="_blank" rel="noopener" class="text-xs font-semibold text-primary hover:underline flex items-center gap-1">
+                            <span class="material-symbols-outlined text-[16px]">visibility</span> Ver
+                          </a>
                         </div>
+                      } @else if (esEditable(po)) {
+                        @if (req.tipoPermitido === 'PDF') {
+                          <div class="flex items-center gap-2">
+                            <input type="file" accept=".pdf,.doc,.docx,.png,.jpg,.jpeg" (change)="archivoSeleccionado($event, po, req)" class="text-xs w-48" />
+                            <button (click)="subirArchivo(po, req)" [disabled]="subiendo[po.id + '-' + req.id]"
+                              class="px-3 py-1.5 rounded-lg bg-primary text-white text-xs font-bold hover:bg-primary-dark transition-colors disabled:opacity-50">
+                              {{ subiendo[po.id + '-' + req.id] ? 'Subiendo...' : 'Subir' }}
+                            </button>
+                          </div>
+                        } @else {
+                          <div class="flex items-center gap-2">
+                            <input [(ngModel)]="rutas[po.id + '-' + req.id]" class="campo w-44" placeholder="https://..." />
+                            <button (click)="subirEnlace(po, req)" class="px-3 py-1.5 rounded-lg bg-primary text-white text-xs font-bold hover:bg-primary-dark transition-colors">Subir</button>
+                          </div>
+                        }
                       } @else {
                         <span class="text-xs text-error font-semibold">No cargado</span>
                       }
@@ -150,6 +165,8 @@ export class PortalMisPostulacionesComponent implements OnInit {
   preguntasPorPrograma = signal<Record<number, PreguntaResponse[]>>({});
   evaluacionPorPostulacion = signal<Record<number, EvaluacionResponse>>({});
   rutas: Record<string, string> = {};
+  archivos: Record<string, File> = {};
+  subiendo: Record<string, boolean> = {};
   respTexto: Record<string, string> = {};
 
   constructor(
@@ -209,10 +226,10 @@ export class PortalMisPostulacionesComponent implements OnInit {
     return this.requisitosDe(po.idPrograma).filter(r => r.obligatorio).length;
   }
 
-  subir(po: PostulacionResponse, req: ReqDocumentoResponse): void {
+  subirEnlace(po: PostulacionResponse, req: ReqDocumentoResponse): void {
     const key = po.id + '-' + req.id;
     const ruta = this.rutas[key];
-    if (!ruta) { this.notificar('Ingresa la ruta o enlace del documento', true); return; }
+    if (!ruta) { this.notificar('Ingresa el enlace del documento', true); return; }
     this.documentoService.registrar({ idPostulacion: po.id, idReqDocumento: req.id, rutaArchivo: ruta, tipo: req.tipoPermitido as TipoDocumento })
       .subscribe({
         next: (doc) => {
@@ -222,6 +239,40 @@ export class PortalMisPostulacionesComponent implements OnInit {
         },
         error: (err) => this.notificar(err.error?.mensaje || 'Error al subir documento', true),
       });
+  }
+
+  archivoSeleccionado(event: Event, po: PostulacionResponse, req: ReqDocumentoResponse): void {
+    const input = event.target as HTMLInputElement;
+    const archivo = input.files?.[0];
+    if (archivo) this.archivos[po.id + '-' + req.id] = archivo;
+  }
+
+  subirArchivo(po: PostulacionResponse, req: ReqDocumentoResponse): void {
+    const key = po.id + '-' + req.id;
+    const archivo = this.archivos[key];
+    if (!archivo) { this.notificar('Selecciona un archivo primero', true); return; }
+    this.subiendo[key] = true;
+    this.documentoService.subirArchivo(po.id, req.id, archivo).subscribe({
+      next: (doc) => {
+        delete this.subiendo[key];
+        delete this.archivos[key];
+        this.documentosPorPostulacion.update(m => ({ ...m, [po.id]: [...(m[po.id] ?? []), doc] }));
+        this.refrescarEstado(po);
+        this.notificar('Documento cargado', false);
+      },
+      error: (err) => {
+        delete this.subiendo[key];
+        this.notificar(err.error?.mensaje || 'Error al subir el archivo', true);
+      },
+    });
+  }
+
+  verUrl(doc: DocumentoResponse): string {
+    return doc.tipo === 'ENLACE' ? doc.rutaArchivo : this.documentoService.urlArchivo(doc.id);
+  }
+
+  labelTipo(tipo: string): string {
+    return tipo === 'ENLACE' ? 'Enlace' : 'Archivo (PDF, Word o imagen)';
   }
 
   responder(po: PostulacionResponse, q: PreguntaResponse): void {

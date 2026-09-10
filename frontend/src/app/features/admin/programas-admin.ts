@@ -25,7 +25,7 @@ import { PreguntaResponse } from '../../core/models/pregunta.model';
     </div>
 
     @if (mensaje()) {
-      <div class="mb-4 p-3 rounded-lg text-sm flex items-center gap-2" [class]="mensajeError() ? 'bg-error-container text-on-error-container' : 'bg-secondary-light text-on-secondary-container'">
+      <div class="fixed top-5 left-1/2 -translate-x-1/2 z-[100] max-w-md w-[90vw] p-3 rounded-lg text-sm font-semibold shadow-xl flex items-center gap-2" [class]="mensajeError() ? 'bg-error-container text-on-error-container' : 'bg-secondary-light text-on-secondary-container'">
         <span class="material-symbols-outlined text-[20px]">{{ mensajeError() ? 'error' : 'check_circle' }}</span>
         {{ mensaje() }}
       </div>
@@ -165,7 +165,7 @@ import { PreguntaResponse } from '../../core/models/pregunta.model';
                     <p class="font-semibold text-sm">{{ r.nombreDocumento }}
                       <span class="text-xs font-bold ml-2" [class]="r.obligatorio ? 'text-error' : 'text-on-surface-variant'">{{ r.obligatorio ? 'Obligatorio' : 'Opcional' }}</span>
                     </p>
-                    <p class="text-xs text-on-surface-variant">{{ r.descripcion }} · {{ r.tipoPermitido }}</p>
+                    <p class="text-xs text-on-surface-variant">{{ r.descripcion }} · {{ r.tipoPermitido === 'ENLACE' ? 'Enlace' : 'Archivo' }}</p>
                   </div>
                 </div>
               } @empty { <p class="text-sm text-on-surface-variant">Sin requisitos aún.</p> }
@@ -173,7 +173,7 @@ import { PreguntaResponse } from '../../core/models/pregunta.model';
             <div class="grid grid-cols-2 gap-2 bg-surface rounded-lg p-3">
               <input [(ngModel)]="nuevoReq.nombreDocumento" class="campo col-span-2" placeholder="Nombre del documento (ej: Hoja de vida)" />
               <input [(ngModel)]="nuevoReq.descripcion" class="campo col-span-2" placeholder="Descripción (opcional)" />
-              <select [(ngModel)]="nuevoReq.tipoPermitido" class="campo"><option value="PDF">PDF</option><option value="ENLACE">Enlace</option></select>
+              <select [(ngModel)]="nuevoReq.tipoPermitido" class="campo"><option value="PDF">Archivo (PDF, Word o imagen)</option><option value="ENLACE">Enlace</option></select>
               <select [(ngModel)]="nuevoReq.obligatorio" class="campo"><option [ngValue]="true">Obligatorio</option><option [ngValue]="false">Opcional</option></select>
               <button (click)="agregarReq(pc.id)" class="col-span-2 py-2 rounded-lg bg-primary text-white font-semibold hover:bg-primary-dark transition-colors text-sm">+ Agregar requisito</button>
             </div>

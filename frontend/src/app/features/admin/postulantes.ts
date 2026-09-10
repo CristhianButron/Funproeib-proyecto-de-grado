@@ -92,15 +92,20 @@ import { UsuarioResponse } from '../../core/models/usuario.model';
                 <div class="flex items-center justify-between bg-surface-low rounded-lg px-4 py-2">
                   <div>
                     <p class="font-semibold text-sm">{{ d.nombreReqDocumento }}</p>
-                    <p class="text-xs text-on-surface-variant">{{ d.tipo }} · {{ d.fechaCarga }}</p>
+                    <p class="text-xs text-on-surface-variant">{{ d.tipo === 'ENLACE' ? 'Enlace' : 'Archivo' }} · {{ d.fechaCarga }}</p>
                   </div>
-                  @if (d.verificado) {
-                    <span class="px-3 py-1 rounded-full text-xs font-bold bg-secondary-light text-on-secondary-container flex items-center gap-1">
-                      <span class="material-symbols-outlined text-[16px]">verified</span> Verificado
-                    </span>
-                  } @else {
-                    <button (click)="verificar(d)" class="px-3 py-1 rounded-lg text-xs font-bold bg-primary text-white hover:bg-primary-dark transition-colors">Verificar</button>
-                  }
+                  <div class="flex items-center gap-2">
+                    <a [href]="verUrl(d)" target="_blank" rel="noopener" class="text-xs font-semibold text-primary hover:underline flex items-center gap-1">
+                      <span class="material-symbols-outlined text-[16px]">visibility</span> Ver
+                    </a>
+                    @if (d.verificado) {
+                      <span class="px-3 py-1 rounded-full text-xs font-bold bg-secondary-light text-on-secondary-container flex items-center gap-1">
+                        <span class="material-symbols-outlined text-[16px]">verified</span> Verificado
+                      </span>
+                    } @else {
+                      <button (click)="verificar(d)" class="px-3 py-1 rounded-lg text-xs font-bold bg-primary text-white hover:bg-primary-dark transition-colors">Verificar</button>
+                    }
+                  </div>
                 </div>
               } @empty {
                 <p class="text-sm text-on-surface-variant">El postulante aún no cargó documentos.</p>
@@ -172,6 +177,10 @@ export class PostulantesComponent implements OnInit {
 
   verificar(d: DocumentoResponse): void {
     this.documentoService.verificar(d.id).subscribe(actualizado => d.verificado = actualizado.verificado);
+  }
+
+  verUrl(d: DocumentoResponse): string {
+    return d.tipo === 'ENLACE' ? d.rutaArchivo : this.documentoService.urlArchivo(d.id);
   }
 
   cambiarEstado(po: PostulacionResponse, estado: EstadoPostulacion): void {
