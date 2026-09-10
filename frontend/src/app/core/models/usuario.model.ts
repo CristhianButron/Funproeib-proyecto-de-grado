@@ -1,6 +1,7 @@
 export type RolUsuario = 'POSTULANTE' | 'ADMIN' | 'EVALUADOR';
 export type Genero = 'MASCULINO' | 'FEMENINO' | 'OTRO' | 'PREFIERO_NO_INDICAR';
 export type NivelEducativo = 'SECUNDARIA' | 'TECNICO_MEDIO' | 'TECNICO_SUPERIOR' | 'LICENCIATURA' | 'ESPECIALIZACION' | 'MAESTRIA' | 'DOCTORADO';
+export type EstadoCivil = 'SOLTERO' | 'CASADO' | 'DIVORCIADO' | 'VIUDO' | 'UNION_LIBRE';
 
 export interface UsuarioRegistroRequest {
   nombre: string;
@@ -15,6 +16,10 @@ export interface UsuarioRegistroRequest {
   nivelEducativo: NivelEducativo;
   idCiudad: number;
   telefono?: string;
+  estadoCivil: EstadoCivil;
+  provinciaNacimiento?: string;
+  direccionDomicilio?: string;
+  carreras?: string[];
 }
 
 export interface LoginRequest {
@@ -43,4 +48,8 @@ export interface UsuarioResponse {
   idPais?: number;
   pais?: string;
   telefono?: string;
+  estadoCivil?: EstadoCivil;
+  provinciaNacimiento?: string;
+  direccionDomicilio?: string;
+  carreras?: string[];
 }

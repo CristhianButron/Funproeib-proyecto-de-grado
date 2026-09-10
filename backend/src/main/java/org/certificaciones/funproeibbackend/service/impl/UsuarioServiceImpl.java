@@ -7,6 +7,7 @@ import org.certificaciones.funproeibbackend.exception.BusinessException;
 import org.certificaciones.funproeibbackend.exception.ResourceNotFoundException;
 import org.certificaciones.funproeibbackend.model.Ciudad;
 import org.certificaciones.funproeibbackend.model.Usuario;
+import org.certificaciones.funproeibbackend.model.enums.NivelEducativo;
 import org.certificaciones.funproeibbackend.model.enums.RolUsuario;
 import org.certificaciones.funproeibbackend.repository.CiudadRepository;
 import org.certificaciones.funproeibbackend.repository.UsuarioRepository;
@@ -37,6 +38,10 @@ public class UsuarioServiceImpl implements UsuarioService {
         if (usuarioRepository.existsByCi(request.getCi())) {
             throw new BusinessException("Ya existe un usuario registrado con ese CI");
         }
+        if (request.getNivelEducativo() != NivelEducativo.SECUNDARIA
+                && (request.getCarreras() == null || request.getCarreras().isEmpty())) {
+            throw new BusinessException("Debe indicar al menos una carrera o profesión");
+        }
 
         Ciudad ciudad = ciudadRepository.findById(request.getIdCiudad())
                 .orElseThrow(() -> new ResourceNotFoundException("Ciudad no encontrada con id: " + request.getIdCiudad()));
@@ -57,6 +62,10 @@ public class UsuarioServiceImpl implements UsuarioService {
                 .nivelEducativo(request.getNivelEducativo())
                 .ciudad(ciudad)
                 .telefono(request.getTelefono())
+                .estadoCivil(request.getEstadoCivil())
+                .provinciaNacimiento(request.getProvinciaNacimiento())
+                .direccionDomicilio(request.getDireccionDomicilio())
+                .carreras(request.getCarreras() != null ? request.getCarreras() : List.of())
                 .build();
 
         return mapToResponse(usuarioRepository.save(usuario));
@@ -122,6 +131,10 @@ public class UsuarioServiceImpl implements UsuarioService {
                 .idPais(usuario.getCiudad() != null && usuario.getCiudad().getPais() != null ? usuario.getCiudad().getPais().getId() : null)
                 .pais(usuario.getCiudad() != null && usuario.getCiudad().getPais() != null ? usuario.getCiudad().getPais().getNombre() : null)
                 .telefono(usuario.getTelefono())
+                .estadoCivil(usuario.getEstadoCivil())
+                .provinciaNacimiento(usuario.getProvinciaNacimiento())
+                .direccionDomicilio(usuario.getDireccionDomicilio())
+                .carreras(List.copyOf(usuario.getCarreras()))
                 .build();
     }
 }

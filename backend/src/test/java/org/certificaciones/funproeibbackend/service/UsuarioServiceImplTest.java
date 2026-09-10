@@ -6,6 +6,7 @@ import org.certificaciones.funproeibbackend.dto.UsuarioResponse;
 import org.certificaciones.funproeibbackend.exception.BusinessException;
 import org.certificaciones.funproeibbackend.model.Ciudad;
 import org.certificaciones.funproeibbackend.model.Usuario;
+import org.certificaciones.funproeibbackend.model.enums.NivelEducativo;
 import org.certificaciones.funproeibbackend.model.enums.RolUsuario;
 import org.certificaciones.funproeibbackend.repository.CiudadRepository;
 import org.certificaciones.funproeibbackend.repository.UsuarioRepository;
@@ -18,6 +19,7 @@ import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.security.crypto.password.PasswordEncoder;
 
+import java.util.List;
 import java.util.Optional;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -45,6 +47,7 @@ class UsuarioServiceImplTest {
         req.setContrasena("clave1234");
         req.setCi("999888");
         req.setIdCiudad(1L);
+        req.setNivelEducativo(NivelEducativo.SECUNDARIA);
 
         Ciudad ciudad = Ciudad.builder().id(1L).nombre("La Paz").build();
 
@@ -70,6 +73,49 @@ class UsuarioServiceImplTest {
         assertThatThrownBy(() -> service.registrar(req))
                 .isInstanceOf(BusinessException.class)
                 .hasMessageContaining("correo");
+    }
+
+    @Test
+    @DisplayName("Rechaza el registro si el nivel educativo es superior a secundaria y no indica carrera")
+    void registrar_nivelSuperiorSinCarreras_lanzaExcepcion() {
+        UsuarioRegistroRequest req = new UsuarioRegistroRequest();
+        req.setCorreo("ana@correo.com");
+        req.setCi("999888");
+        req.setNivelEducativo(NivelEducativo.LICENCIATURA);
+        req.setCarreras(List.of());
+
+        when(usuarioRepository.existsByCorreo("ana@correo.com")).thenReturn(false);
+        when(usuarioRepository.existsByCi("999888")).thenReturn(false);
+
+        assertThatThrownBy(() -> service.registrar(req))
+                .isInstanceOf(BusinessException.class)
+                .hasMessageContaining("carrera");
+    }
+
+    @Test
+    @DisplayName("Permite el registro con nivel superior si indica al menos una carrera")
+    void registrar_nivelSuperiorConCarreras_permiteRegistro() {
+        UsuarioRegistroRequest req = new UsuarioRegistroRequest();
+        req.setNombre("Ana");
+        req.setApellidoPaterno("Quispe");
+        req.setCorreo("ana@correo.com");
+        req.setContrasena("clave1234");
+        req.setCi("999888");
+        req.setIdCiudad(1L);
+        req.setNivelEducativo(NivelEducativo.LICENCIATURA);
+        req.setCarreras(List.of("Licenciatura en Educación"));
+
+        Ciudad ciudad = Ciudad.builder().id(1L).nombre("La Paz").build();
+
+        when(usuarioRepository.existsByCorreo("ana@correo.com")).thenReturn(false);
+        when(usuarioRepository.existsByCi("999888")).thenReturn(false);
+        when(ciudadRepository.findById(1L)).thenReturn(Optional.of(ciudad));
+        when(passwordEncoder.encode("clave1234")).thenReturn("HASH");
+        when(usuarioRepository.save(any(Usuario.class))).thenAnswer(inv -> inv.getArgument(0));
+
+        UsuarioResponse res = service.registrar(req);
+
+        assertThat(res.getCarreras()).containsExactly("Licenciatura en Educación");
     }
 
     @Test

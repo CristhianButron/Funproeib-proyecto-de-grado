@@ -1,11 +1,13 @@
 package org.certificaciones.funproeibbackend.dto;
 
+import org.certificaciones.funproeibbackend.model.enums.EstadoCivil;
 import org.certificaciones.funproeibbackend.model.enums.Genero;
 import org.certificaciones.funproeibbackend.model.enums.NivelEducativo;
 import org.certificaciones.funproeibbackend.model.enums.RolUsuario;
 import lombok.Builder;
 import lombok.Data;
 import java.time.LocalDate;
+import java.util.List;
 
 @Data
 @Builder
@@ -32,4 +34,8 @@ public class UsuarioResponse {
     private Long idPais;
     private String pais;
     private String telefono;
+    private EstadoCivil estadoCivil;
+    private String provinciaNacimiento;
+    private String direccionDomicilio;
+    private List<String> carreras;
 }

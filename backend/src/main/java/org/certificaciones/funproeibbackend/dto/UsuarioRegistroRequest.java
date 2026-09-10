@@ -1,10 +1,12 @@
 package org.certificaciones.funproeibbackend.dto;
 
+import org.certificaciones.funproeibbackend.model.enums.EstadoCivil;
 import org.certificaciones.funproeibbackend.model.enums.Genero;
 import org.certificaciones.funproeibbackend.model.enums.NivelEducativo;
 import jakarta.validation.constraints.*;
 import lombok.Data;
 import java.time.LocalDate;
+import java.util.List;
 
 @Data
 public class UsuarioRegistroRequest {
@@ -45,8 +47,24 @@ public class UsuarioRegistroRequest {
     @NotNull(message = "El nivel educativo es obligatorio")
     private NivelEducativo nivelEducativo;
 
-    @NotNull(message = "La ciudad de origen es obligatoria")
+    @NotNull(message = "La ciudad actual de residencia es obligatoria")
     private Long idCiudad;
 
     private String telefono;
+
+    @NotNull(message = "El estado civil es obligatorio")
+    private EstadoCivil estadoCivil;
+
+    @Size(max = 100)
+    private String provinciaNacimiento;
+
+    @Size(max = 255)
+    private String direccionDomicilio;
+
+    /**
+     * Carreras o profesiones del postulante. Se exige al menos una cuando el
+     * nivel educativo declarado es superior a secundaria (validado en el servicio,
+     * ya que depende del valor de otro campo).
+     */
+    private List<@NotBlank @Size(max = 150) String> carreras;
 }

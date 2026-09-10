@@ -1,11 +1,14 @@
 package org.certificaciones.funproeibbackend.model;
 
+import org.certificaciones.funproeibbackend.model.enums.EstadoCivil;
 import org.certificaciones.funproeibbackend.model.enums.Genero;
 import org.certificaciones.funproeibbackend.model.enums.NivelEducativo;
 import org.certificaciones.funproeibbackend.model.enums.RolUsuario;
 import jakarta.persistence.*;
 import lombok.*;
 import java.time.LocalDate;
+import java.util.ArrayList;
+import java.util.List;
 
 @Entity
 @Table(name = "usuario")
@@ -72,6 +75,22 @@ public class Usuario {
 
     @Column(name = "telefono", length = 20)
     private String telefono;
+
+    @Enumerated(EnumType.STRING)
+    @Column(name = "estado_civil", length = 20)
+    private EstadoCivil estadoCivil;
+
+    @Column(name = "provincia_nacimiento", length = 100)
+    private String provinciaNacimiento;
+
+    @Column(name = "direccion_domicilio", length = 255)
+    private String direccionDomicilio;
+
+    @ElementCollection(fetch = FetchType.LAZY)
+    @CollectionTable(name = "usuario_carrera", joinColumns = @JoinColumn(name = "id_usuario"))
+    @Column(name = "carrera", length = 150)
+    @Builder.Default
+    private List<String> carreras = new ArrayList<>();
 
     /**
      * Nombre completo derivado (no persistido) para mostrar en listados y

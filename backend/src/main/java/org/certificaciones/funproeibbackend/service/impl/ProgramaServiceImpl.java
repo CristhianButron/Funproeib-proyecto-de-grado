@@ -9,14 +9,19 @@ import org.certificaciones.funproeibbackend.model.enums.EstadoPrograma;
 import org.certificaciones.funproeibbackend.repository.ProgramaRepository;
 import org.certificaciones.funproeibbackend.service.ProgramaService;
 import lombok.RequiredArgsConstructor;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.time.LocalDate;
 import java.util.List;
 
 @Service
 @RequiredArgsConstructor
 public class ProgramaServiceImpl implements ProgramaService {
+
+    private static final Logger log = LoggerFactory.getLogger(ProgramaServiceImpl.class);
 
     private final ProgramaRepository programaRepository;
 
@@ -77,6 +82,18 @@ public class ProgramaServiceImpl implements ProgramaService {
             throw new BusinessException("Estado no válido: " + nuevoEstado);
         }
         return mapToResponse(programaRepository.save(programa));
+    }
+
+    @Override
+    @Transactional
+    public int cerrarProgramasFinalizados() {
+        List<Programa> vencidos = programaRepository.findByFechaFinBeforeAndEstadoNot(LocalDate.now(), EstadoPrograma.CERRADO);
+        vencidos.forEach(p -> p.setEstado(EstadoPrograma.CERRADO));
+        programaRepository.saveAll(vencidos);
+        if (!vencidos.isEmpty()) {
+            log.info("Cierre automático: {} programa(s) marcados como CERRADO por fecha de fin vencida", vencidos.size());
+        }
+        return vencidos.size();
     }
 
     private Programa buscarPrograma(Long id) {

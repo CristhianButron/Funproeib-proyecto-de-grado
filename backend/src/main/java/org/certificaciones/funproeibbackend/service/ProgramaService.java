@@ -11,4 +11,5 @@ public interface ProgramaService {
     List<ProgramaResponse> listarTodos();
     ProgramaResponse actualizar(Long id, ProgramaRequest request);
     ProgramaResponse cambiarEstado(Long id, String nuevoEstado);
+    int cerrarProgramasFinalizados();
 }
