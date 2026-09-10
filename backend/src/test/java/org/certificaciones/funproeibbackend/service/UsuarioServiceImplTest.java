@@ -47,6 +47,7 @@ class UsuarioServiceImplTest {
         req.setContrasena("clave1234");
         req.setCi("999888");
         req.setIdCiudad(1L);
+        req.setIdCiudadNacimiento(1L);
         req.setNivelEducativo(NivelEducativo.SECUNDARIA);
 
         Ciudad ciudad = Ciudad.builder().id(1L).nombre("La Paz").build();
@@ -102,6 +103,7 @@ class UsuarioServiceImplTest {
         req.setContrasena("clave1234");
         req.setCi("999888");
         req.setIdCiudad(1L);
+        req.setIdCiudadNacimiento(1L);
         req.setNivelEducativo(NivelEducativo.LICENCIATURA);
         req.setCarreras(List.of("Licenciatura en Educación"));
 

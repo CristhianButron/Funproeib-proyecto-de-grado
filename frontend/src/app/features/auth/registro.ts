@@ -143,11 +143,31 @@ import { UsuarioRegistroRequest } from '../../core/models/usuario.model';
 
         <div>
           <h2 class="text-sm font-bold text-primary uppercase tracking-wide border-b border-outline-variant pb-2 mb-4">Procedencia geográfica</h2>
-          <div class="grid sm:grid-cols-2 gap-4">
+
+          <h3 class="text-xs font-bold text-on-surface-variant uppercase tracking-wide mb-3">Lugar de nacimiento</h3>
+          <div class="grid sm:grid-cols-2 gap-4 mb-5">
             <div>
-              <label class="block text-sm font-semibold mb-1">Provincia de nacimiento</label>
-              <input formControlName="provinciaNacimiento" class="campo" placeholder="Si la conoces" />
+              <label class="block text-sm font-semibold mb-1">País de nacimiento *</label>
+              <select class="campo" (change)="onPaisNacimientoChange($event)">
+                <option value="">Seleccione un país...</option>
+                @for (p of paises(); track p.id) { <option [value]="p.id">{{ p.nombre }}</option> }
+              </select>
             </div>
+            <div>
+              <label class="block text-sm font-semibold mb-1">Ciudad de nacimiento *</label>
+              <select class="campo" [disabled]="!idPaisNacimientoSeleccionado()" (change)="onCiudadNacimientoChange($event)">
+                <option value="">{{ idPaisNacimientoSeleccionado() ? 'Seleccione una ciudad...' : 'Primero elige un país' }}</option>
+                @for (c of ciudadesNacimiento(); track c.id) { <option [value]="c.id">{{ c.nombre }}</option> }
+              </select>
+            </div>
+            <div class="sm:col-span-2">
+              <label class="block text-sm font-semibold mb-1">Provincia de nacimiento</label>
+              <input formControlName="provinciaNacimiento" class="campo" placeholder="Si la conoces (opcional)" />
+            </div>
+          </div>
+
+          <h3 class="text-xs font-bold text-on-surface-variant uppercase tracking-wide mb-3">Residencia actual</h3>
+          <div class="grid sm:grid-cols-2 gap-4">
             <div>
               <label class="block text-sm font-semibold mb-1">País de residencia actual *</label>
               <select class="campo" (change)="onPaisChange($event)">
@@ -170,7 +190,7 @@ import { UsuarioRegistroRequest } from '../../core/models/usuario.model';
         </div>
 
         <div class="flex items-center gap-3 pt-2">
-          <button type="submit" [disabled]="form.invalid || !idCiudadSeleccionada() || cargando()"
+          <button type="submit" [disabled]="form.invalid || !idCiudadSeleccionada() || !idCiudadNacimientoSeleccionada() || cargando()"
             class="px-6 py-3 rounded-lg font-bold bg-primary text-white hover:bg-primary-dark transition-colors disabled:opacity-50 flex items-center gap-2">
             <span class="material-symbols-outlined">how_to_reg</span>
             {{ cargando() ? 'Registrando...' : 'Crear cuenta y postular' }}
@@ -209,6 +229,10 @@ export class RegistroComponent implements OnInit {
   ciudades = signal<CiudadResponse[]>([]);
   idPaisSeleccionado = signal<number | null>(null);
   idCiudadSeleccionada = signal<number | null>(null);
+
+  ciudadesNacimiento = signal<CiudadResponse[]>([]);
+  idPaisNacimientoSeleccionado = signal<number | null>(null);
+  idCiudadNacimientoSeleccionada = signal<number | null>(null);
 
   carreras = signal<string[]>([]);
   nuevaCarrera = '';
@@ -256,6 +280,21 @@ export class RegistroComponent implements OnInit {
     this.idCiudadSeleccionada.set(idCiudad ? +idCiudad : null);
   }
 
+  onPaisNacimientoChange(event: Event): void {
+    const idPais = (event.target as HTMLSelectElement).value;
+    this.ciudadesNacimiento.set([]);
+    this.idCiudadNacimientoSeleccionada.set(null);
+    this.idPaisNacimientoSeleccionado.set(idPais ? +idPais : null);
+    if (idPais) {
+      this.ubicacionService.listarCiudades(+idPais).subscribe(d => this.ciudadesNacimiento.set(d));
+    }
+  }
+
+  onCiudadNacimientoChange(event: Event): void {
+    const idCiudad = (event.target as HTMLSelectElement).value;
+    this.idCiudadNacimientoSeleccionada.set(idCiudad ? +idCiudad : null);
+  }
+
   nivelRequiereCarrera(): boolean {
     const nivel = this.form.get('nivelEducativo')?.value;
     return !!nivel && nivel !== 'SECUNDARIA';
@@ -273,14 +312,19 @@ export class RegistroComponent implements OnInit {
   }
 
   registrar(): void {
-    if (this.form.invalid || !this.idCiudadSeleccionada()) return;
+    if (this.form.invalid || !this.idCiudadSeleccionada() || !this.idCiudadNacimientoSeleccionada()) return;
     if (this.nivelRequiereCarrera() && this.carreras().length === 0) {
       this.error.set('Agrega al menos una carrera o profesión.');
       return;
     }
     this.cargando.set(true);
     this.error.set(null);
-    const request: UsuarioRegistroRequest = { ...this.form.value, idCiudad: this.idCiudadSeleccionada(), carreras: this.carreras() };
+    const request: UsuarioRegistroRequest = {
+      ...this.form.value,
+      idCiudad: this.idCiudadSeleccionada(),
+      idCiudadNacimiento: this.idCiudadNacimientoSeleccionada(),
+      carreras: this.carreras(),
+    };
     this.auth.registrar(request).subscribe({
       next: () => {
         this.cargando.set(false);

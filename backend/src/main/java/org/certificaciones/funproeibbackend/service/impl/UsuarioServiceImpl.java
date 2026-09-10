@@ -45,6 +45,8 @@ public class UsuarioServiceImpl implements UsuarioService {
 
         Ciudad ciudad = ciudadRepository.findById(request.getIdCiudad())
                 .orElseThrow(() -> new ResourceNotFoundException("Ciudad no encontrada con id: " + request.getIdCiudad()));
+        Ciudad ciudadNacimiento = ciudadRepository.findById(request.getIdCiudadNacimiento())
+                .orElseThrow(() -> new ResourceNotFoundException("Ciudad de nacimiento no encontrada con id: " + request.getIdCiudadNacimiento()));
 
         Usuario usuario = Usuario.builder()
                 .nombre(request.getNombre())
@@ -63,6 +65,7 @@ public class UsuarioServiceImpl implements UsuarioService {
                 .ciudad(ciudad)
                 .telefono(request.getTelefono())
                 .estadoCivil(request.getEstadoCivil())
+                .ciudadNacimiento(ciudadNacimiento)
                 .provinciaNacimiento(request.getProvinciaNacimiento())
                 .direccionDomicilio(request.getDireccionDomicilio())
                 .carreras(request.getCarreras() != null ? request.getCarreras() : List.of())
@@ -132,6 +135,10 @@ public class UsuarioServiceImpl implements UsuarioService {
                 .pais(usuario.getCiudad() != null && usuario.getCiudad().getPais() != null ? usuario.getCiudad().getPais().getNombre() : null)
                 .telefono(usuario.getTelefono())
                 .estadoCivil(usuario.getEstadoCivil())
+                .idCiudadNacimiento(usuario.getCiudadNacimiento() != null ? usuario.getCiudadNacimiento().getId() : null)
+                .ciudadNacimiento(usuario.getCiudadNacimiento() != null ? usuario.getCiudadNacimiento().getNombre() : null)
+                .idPaisNacimiento(usuario.getCiudadNacimiento() != null && usuario.getCiudadNacimiento().getPais() != null ? usuario.getCiudadNacimiento().getPais().getId() : null)
+                .paisNacimiento(usuario.getCiudadNacimiento() != null && usuario.getCiudadNacimiento().getPais() != null ? usuario.getCiudadNacimiento().getPais().getNombre() : null)
                 .provinciaNacimiento(usuario.getProvinciaNacimiento())
                 .direccionDomicilio(usuario.getDireccionDomicilio())
                 .carreras(List.copyOf(usuario.getCarreras()))

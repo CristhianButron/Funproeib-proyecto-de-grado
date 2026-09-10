@@ -17,6 +17,7 @@ export interface UsuarioRegistroRequest {
   idCiudad: number;
   telefono?: string;
   estadoCivil: EstadoCivil;
+  idCiudadNacimiento: number;
   provinciaNacimiento?: string;
   direccionDomicilio?: string;
   carreras?: string[];
@@ -49,6 +50,10 @@ export interface UsuarioResponse {
   pais?: string;
   telefono?: string;
   estadoCivil?: EstadoCivil;
+  idCiudadNacimiento?: number;
+  ciudadNacimiento?: string;
+  idPaisNacimiento?: number;
+  paisNacimiento?: string;
   provinciaNacimiento?: string;
   direccionDomicilio?: string;
   carreras?: string[];

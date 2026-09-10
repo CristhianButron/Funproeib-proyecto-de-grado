@@ -35,6 +35,10 @@ public class UsuarioResponse {
     private String pais;
     private String telefono;
     private EstadoCivil estadoCivil;
+    private Long idCiudadNacimiento;
+    private String ciudadNacimiento;
+    private Long idPaisNacimiento;
+    private String paisNacimiento;
     private String provinciaNacimiento;
     private String direccionDomicilio;
     private List<String> carreras;

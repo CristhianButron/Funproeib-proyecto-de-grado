@@ -80,6 +80,10 @@ public class Usuario {
     @Column(name = "estado_civil", length = 20)
     private EstadoCivil estadoCivil;
 
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "id_ciudad_nacimiento")
+    private Ciudad ciudadNacimiento;
+
     @Column(name = "provincia_nacimiento", length = 100)
     private String provinciaNacimiento;
 

@@ -55,6 +55,9 @@ public class UsuarioRegistroRequest {
     @NotNull(message = "El estado civil es obligatorio")
     private EstadoCivil estadoCivil;
 
+    @NotNull(message = "La ciudad de nacimiento es obligatoria")
+    private Long idCiudadNacimiento;
+
     @Size(max = 100)
     private String provinciaNacimiento;
 

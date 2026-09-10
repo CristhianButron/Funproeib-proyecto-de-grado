@@ -32,6 +32,7 @@ public class DataInitializer implements CommandLineRunner {
     @Override
     public void run(String... args) {
         if (!usuarioRepository.existsByCorreo("admin@funproeib.org")) {
+            var ciudadLaPaz = ciudadRepository.findFirstByNombreIgnoreCaseAndPaisNombreIgnoreCase("La Paz", "Bolivia").orElse(null);
             Usuario admin = Usuario.builder()
                     .nombre("Administrador")
                     .apellidoPaterno("Funproeib")
@@ -44,7 +45,8 @@ public class DataInitializer implements CommandLineRunner {
                     .genero(Genero.PREFIERO_NO_INDICAR)
                     .fechaNacimiento(LocalDate.of(1990, 1, 1))
                     .nivelEducativo(NivelEducativo.MAESTRIA)
-                    .ciudad(ciudadRepository.findFirstByNombreIgnoreCaseAndPaisNombreIgnoreCase("La Paz", "Bolivia").orElse(null))
+                    .ciudad(ciudadLaPaz)
+                    .ciudadNacimiento(ciudadLaPaz)
                     .build();
             usuarioRepository.save(admin);
             System.out.println(">>> Usuario ADMIN creado: admin@funproeib.org / admin12345");
