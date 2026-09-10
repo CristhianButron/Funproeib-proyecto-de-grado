@@ -23,9 +23,10 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.math.BigDecimal;
-import java.math.RoundingMode;
 import java.time.LocalDate;
 import java.util.List;
+import java.util.Set;
+import java.util.stream.Collectors;
 
 @Service
 @RequiredArgsConstructor
@@ -50,6 +51,8 @@ public class EvaluacionServiceImpl implements EvaluacionService {
         if (evaluacionRepository.existsByPostulacionId(postulacion.getId())) {
             throw new BusinessException("Esta postulación ya tiene una evaluación registrada");
         }
+
+        validarCubreTodosLosCriterios(request.getDetalles());
 
         Usuario evaluador = usuarioRepository.findById(request.getIdEvaluador())
                 .orElseThrow(() -> new ResourceNotFoundException("Evaluador no encontrado con id: " + request.getIdEvaluador()));
@@ -100,21 +103,29 @@ public class EvaluacionServiceImpl implements EvaluacionService {
         return detalleRepository.saveAll(detalles);
     }
 
-    private BigDecimal calcularPuntajeTotal(List<DetalleEvaluacion> detalles) {
-        // puntaje ponderado: suma(puntaje * peso_criterio) / suma(pesos)
-        BigDecimal sumaPonderada = detalles.stream()
-                .map(d -> BigDecimal.valueOf(d.getPuntaje()).multiply(d.getCriterio().getPeso()))
-                .reduce(BigDecimal.ZERO, BigDecimal::add);
+    private void validarCubreTodosLosCriterios(List<DetalleEvaluacionRequest> detalles) {
+        Set<Long> idsEsperados = criterioRepository.findAllByOrderByOrdenAsc().stream()
+                .map(CriterioEvaluacion::getId)
+                .collect(Collectors.toSet());
 
-        BigDecimal sumaPesos = detalles.stream()
-                .map(d -> d.getCriterio().getPeso())
-                .reduce(BigDecimal.ZERO, BigDecimal::add);
+        Set<Long> idsRecibidos = detalles.stream()
+                .map(DetalleEvaluacionRequest::getIdCriterio)
+                .collect(Collectors.toSet());
 
-        if (sumaPesos.compareTo(BigDecimal.ZERO) == 0) {
-            return BigDecimal.ZERO;
+        if (idsRecibidos.size() != detalles.size()) {
+            throw new BusinessException("No se puede calificar el mismo criterio más de una vez");
         }
 
-        return sumaPonderada.divide(sumaPesos, 2, RoundingMode.HALF_UP);
+        if (!idsRecibidos.equals(idsEsperados)) {
+            throw new BusinessException("Debes calificar los " + idsEsperados.size() + " criterios de evaluación estandarizados, ni más ni menos");
+        }
+    }
+
+    private BigDecimal calcularPuntajeTotal(List<DetalleEvaluacion> detalles) {
+        // suma simple: cada criterio se califica de 1 a 10, sin ponderación
+        return detalles.stream()
+                .map(d -> BigDecimal.valueOf(d.getPuntaje()))
+                .reduce(BigDecimal.ZERO, BigDecimal::add);
     }
 
     private EvaluacionResponse buildResponse(Evaluacion ev, List<DetalleEvaluacion> detalles) {
@@ -135,6 +146,7 @@ public class EvaluacionServiceImpl implements EvaluacionService {
                 .nombreEvaluador(ev.getEvaluador().getNombreCompleto())
                 .fechaEvaluacion(ev.getFechaEvaluacion())
                 .puntajeTotal(ev.getPuntajeTotal())
+                .puntajeMaximo(detalles.size() * 10)
                 .observaciones(ev.getObservaciones())
                 .detalles(detalleResponses)
                 .build();

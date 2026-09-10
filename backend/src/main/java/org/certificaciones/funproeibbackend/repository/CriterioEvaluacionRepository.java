@@ -7,5 +7,5 @@ import java.util.List;
 
 public interface CriterioEvaluacionRepository extends JpaRepository<CriterioEvaluacion, Long> {
 
-    List<CriterioEvaluacion> findByProgramaId(Long idPrograma);
+    List<CriterioEvaluacion> findAllByOrderByOrdenAsc();
 }

@@ -200,22 +200,14 @@ import { PreguntaResponse } from '../../core/models/pregunta.model';
           <!-- Criterios -->
           <section>
             <h3 class="font-bold text-primary-dark flex items-center gap-2 mb-3"><span class="material-symbols-outlined">checklist</span> Criterios de evaluación</h3>
-            <div class="space-y-2 mb-4">
+            <p class="text-xs text-on-surface-variant mb-3">Criterios estandarizados de Funproeib Andes, iguales para todos los programas (1 a 10 puntos cada uno, {{ criterios().length * 10 }} en total). No se configuran por programa.</p>
+            <div class="space-y-2">
               @for (c of criterios(); track c.id) {
-                <div class="flex items-center justify-between bg-surface-low rounded-lg px-4 py-2">
-                  <div>
-                    <p class="font-semibold text-sm">{{ c.nombreCriterio }}</p>
-                    <p class="text-xs text-on-surface-variant">{{ c.descripcion }}</p>
-                  </div>
-                  <span class="text-sm font-bold text-primary">Peso: {{ c.peso }}</span>
+                <div class="bg-surface-low rounded-lg px-4 py-2">
+                  <p class="font-semibold text-sm">{{ c.orden }}. {{ c.nombreCriterio }}</p>
+                  <p class="text-xs text-on-surface-variant">{{ c.descripcion }}</p>
                 </div>
-              } @empty { <p class="text-sm text-on-surface-variant">Sin criterios aún.</p> }
-            </div>
-            <div class="grid grid-cols-2 gap-2 bg-surface rounded-lg p-3">
-              <input [(ngModel)]="nuevoCrit.nombreCriterio" class="campo col-span-2" placeholder="Nombre del criterio (ej: Experiencia en voluntariado)" />
-              <input [(ngModel)]="nuevoCrit.descripcion" class="campo" placeholder="Descripción" />
-              <input type="number" step="0.01" min="0.01" max="100" [(ngModel)]="nuevoCrit.peso" class="campo" placeholder="Peso (ej: 25)" />
-              <button (click)="agregarCrit(pc.id)" class="col-span-2 py-2 rounded-lg bg-secondary text-white font-semibold hover:opacity-90 transition-colors text-sm">+ Agregar criterio</button>
+              }
             </div>
           </section>
         </div>
@@ -250,7 +242,6 @@ export class ProgramasAdminComponent implements OnInit {
   mensajeError = signal(false);
 
   form: ProgramaRequest = this.vacio();
-  nuevoCrit = { nombreCriterio: '', descripcion: '', peso: 10 };
   nuevoReq: { nombreDocumento: string; descripcion: string; tipoPermitido: 'PDF' | 'ENLACE'; obligatorio: boolean } =
     { nombreDocumento: '', descripcion: '', tipoPermitido: 'PDF', obligatorio: true };
   nuevaPregunta = '';
@@ -262,7 +253,10 @@ export class ProgramasAdminComponent implements OnInit {
     private preguntaService: PreguntaService,
   ) {}
 
-  ngOnInit(): void { this.cargar(); }
+  ngOnInit(): void {
+    this.cargar();
+    this.criterioService.listarTodos().subscribe(c => this.criterios.set(c));
+  }
 
   cargar(): void {
     this.cargando.set(true);
@@ -308,18 +302,9 @@ export class ProgramasAdminComponent implements OnInit {
 
   configurar(p: ProgramaResponse): void {
     this.programaConfig.set(p);
-    this.criterios.set([]); this.requisitos.set([]); this.preguntas.set([]);
-    this.criterioService.listarPorPrograma(p.id).subscribe(c => this.criterios.set(c));
+    this.requisitos.set([]); this.preguntas.set([]);
     this.reqDocService.listarPorPrograma(p.id).subscribe(r => this.requisitos.set(r));
     this.preguntaService.listarPorPrograma(p.id).subscribe(q => this.preguntas.set(q));
-  }
-
-  agregarCrit(idPrograma: number): void {
-    if (!this.nuevoCrit.nombreCriterio) return;
-    this.criterioService.crear({ idPrograma, ...this.nuevoCrit }).subscribe({
-      next: (c) => { this.criterios.update(l => [...l, c]); this.nuevoCrit = { nombreCriterio: '', descripcion: '', peso: 10 }; },
-      error: (err) => this.notificar(err.error?.mensaje || 'Error al agregar criterio', true),
-    });
   }
 
   agregarReq(idPrograma: number): void {

@@ -26,6 +26,16 @@ public interface PostulacionRepository extends JpaRepository<Postulacion, Long> 
     boolean existsByUsuarioIdAndProgramaId(Long idUsuario, Long idPrograma);
 
     @Query("SELECT p FROM Postulacion p " +
+            "JOIN FETCH p.programa pr " +
+            "WHERE p.usuario.id = :idUsuario " +
+            "AND p.estado = :estado " +
+            "AND pr.tipo = :tipoPrograma")
+    List<Postulacion> findByUsuarioIdAndEstadoAndProgramaTipo(
+            @Param("idUsuario") Long idUsuario,
+            @Param("estado") EstadoPostulacion estado,
+            @Param("tipoPrograma") TipoPrograma tipoPrograma);
+
+    @Query("SELECT p FROM Postulacion p " +
             "JOIN FETCH p.usuario u " +
             "JOIN FETCH p.programa pr " +
             "LEFT JOIN u.ciudad c " +
@@ -37,8 +47,8 @@ public interface PostulacionRepository extends JpaRepository<Postulacion, Long> 
             "AND (:nivelEducativo IS NULL OR u.nivelEducativo = :nivelEducativo) " +
             "AND (:idPais IS NULL OR pa.id = :idPais) " +
             "AND (:idCiudad IS NULL OR c.id = :idCiudad) " +
-            "AND (:fechaDesde IS NULL OR p.fechaPostulacion >= :fechaDesde) " +
-            "AND (:fechaHasta IS NULL OR p.fechaPostulacion <= :fechaHasta) " +
+            "AND p.fechaPostulacion >= COALESCE(:fechaDesde, p.fechaPostulacion) " +
+            "AND p.fechaPostulacion <= COALESCE(:fechaHasta, p.fechaPostulacion) " +
             "ORDER BY p.fechaPostulacion DESC")
     List<Postulacion> buscarParaReporte(
             @Param("tipoPrograma") TipoPrograma tipoPrograma,

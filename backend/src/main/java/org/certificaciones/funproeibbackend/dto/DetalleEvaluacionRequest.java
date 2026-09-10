@@ -13,6 +13,6 @@ public class DetalleEvaluacionRequest {
 
     @NotNull
     @Min(1)
-    @Max(5)
+    @Max(10)
     private Integer puntaje;
 }

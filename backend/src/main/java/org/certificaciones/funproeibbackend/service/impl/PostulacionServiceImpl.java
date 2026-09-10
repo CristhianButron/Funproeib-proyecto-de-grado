@@ -9,6 +9,7 @@ import org.certificaciones.funproeibbackend.model.Programa;
 import org.certificaciones.funproeibbackend.model.Usuario;
 import org.certificaciones.funproeibbackend.model.enums.EstadoPostulacion;
 import org.certificaciones.funproeibbackend.model.enums.EstadoPrograma;
+import org.certificaciones.funproeibbackend.model.enums.TipoPrograma;
 import org.certificaciones.funproeibbackend.repository.ListaNegraRepository;
 import org.certificaciones.funproeibbackend.repository.PostulacionRepository;
 import org.certificaciones.funproeibbackend.repository.ProgramaRepository;
@@ -53,6 +54,10 @@ public class PostulacionServiceImpl implements PostulacionService {
 
         if (postulacionRepository.existsByUsuarioIdAndProgramaId(usuario.getId(), programa.getId())) {
             throw new BusinessException("El usuario ya tiene una postulación activa en este programa");
+        }
+
+        if (programa.getTipo() == TipoPrograma.DIPLOMADO) {
+            validarSinDiplomadoPrevio(usuario);
         }
 
         Postulacion postulacion = Postulacion.builder()
@@ -101,6 +106,32 @@ public class PostulacionServiceImpl implements PostulacionService {
         Postulacion postulacion = buscarPostulacion(id);
         postulacion.setEstado(nuevoEstado);
         return mapToResponse(postulacionRepository.save(postulacion));
+    }
+
+    private void validarSinDiplomadoPrevio(Usuario usuario) {
+        List<Postulacion> diplomadosAceptados = postulacionRepository.findByUsuarioIdAndEstadoAndProgramaTipo(
+                usuario.getId(), EstadoPostulacion.ACEPTADA, TipoPrograma.DIPLOMADO);
+
+        if (diplomadosAceptados.isEmpty()) {
+            return;
+        }
+
+        LocalDate hoy = LocalDate.now();
+        Postulacion enCurso = diplomadosAceptados.stream()
+                .filter(p -> !p.getPrograma().getFechaFin().isBefore(hoy))
+                .findFirst()
+                .orElse(diplomadosAceptados.get(0));
+
+        boolean terminado = enCurso.getPrograma().getFechaFin().isBefore(hoy);
+        String nombrePrograma = enCurso.getPrograma().getNombre();
+
+        if (terminado) {
+            throw new BusinessException("No es posible postular a otro diplomado: ya completaste \"" + nombrePrograma
+                    + "\" (finalizó el " + enCurso.getPrograma().getFechaFin() + ")");
+        } else {
+            throw new BusinessException("No es posible postular a otro diplomado: ya estás cursando \""
+                    + nombrePrograma + "\"");
+        }
     }
 
     private Postulacion buscarPostulacion(Long id) {

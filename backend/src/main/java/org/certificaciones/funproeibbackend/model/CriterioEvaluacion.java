@@ -2,8 +2,13 @@ package org.certificaciones.funproeibbackend.model;
 
 import jakarta.persistence.*;
 import lombok.*;
-import java.math.BigDecimal;
 
+/**
+ * Catálogo fijo de criterios de evaluación de postulaciones, estandarizado
+ * según el documento "Criterios de evaluación de postulaciones" de Funproeib
+ * Andes: 6 criterios, cada uno calificado de 1 a 10, puntaje total sobre 60.
+ * No depende de un programa específico: se usa igual en todos.
+ */
 @Entity
 @Table(name = "criterio_evaluacion")
 @Getter
@@ -18,16 +23,12 @@ public class CriterioEvaluacion {
     @Column(name = "id_criterio")
     private Long id;
 
-    @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "id_programa", nullable = false)
-    private Programa programa;
+    @Column(name = "orden", nullable = false)
+    private Integer orden;
 
     @Column(name = "nombre_criterio", nullable = false, length = 150)
     private String nombreCriterio;
 
-    @Column(name = "descripcion", length = 255)
+    @Column(name = "descripcion", length = 500)
     private String descripcion;
-
-    @Column(name = "peso", precision = 5, scale = 2)
-    private BigDecimal peso;
 }

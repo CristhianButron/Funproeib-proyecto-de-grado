@@ -14,7 +14,7 @@ export interface ReporteFiltro {
   fechaHasta?: string | null;
 }
 
-export interface InscritoReporte {
+export interface BeneficiarioReporte {
   idPostulacion: number;
   idUsuario: number;
   nombreCompleto: string;

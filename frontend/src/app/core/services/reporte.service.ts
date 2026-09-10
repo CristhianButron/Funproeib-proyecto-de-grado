@@ -1,13 +1,13 @@
 import { Injectable } from '@angular/core';
 import { Observable } from 'rxjs';
 import { ApiService } from './api.service';
-import { InscritoReporte, ReporteFiltro } from '../models/reporte.model';
+import { BeneficiarioReporte, ReporteFiltro } from '../models/reporte.model';
 
 @Injectable({ providedIn: 'root' })
 export class ReporteService {
   constructor(private api: ApiService) {}
 
-  listarInscritos(filtro: ReporteFiltro): Observable<InscritoReporte[]> {
+  listarBeneficiarios(filtro: ReporteFiltro): Observable<BeneficiarioReporte[]> {
     const params = new URLSearchParams();
     Object.entries(filtro).forEach(([clave, valor]) => {
       if (valor !== null && valor !== undefined && valor !== '') {
@@ -15,6 +15,6 @@ export class ReporteService {
       }
     });
     const query = params.toString();
-    return this.api.get<InscritoReporte[]>(`/reportes/inscritos${query ? '?' + query : ''}`);
+    return this.api.get<BeneficiarioReporte[]>(`/reportes/beneficiarios${query ? '?' + query : ''}`);
   }
 }

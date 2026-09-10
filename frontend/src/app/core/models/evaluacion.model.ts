@@ -1,10 +1,8 @@
 export interface CriterioEvaluacionResponse {
   id: number;
-  idPrograma: number;
-  nombrePrograma: string;
+  orden: number;
   nombreCriterio: string;
   descripcion?: string;
-  peso: number;
 }
 
 export interface DetalleEvaluacionResponse {
@@ -22,6 +20,7 @@ export interface EvaluacionResponse {
   nombreEvaluador: string;
   fechaEvaluacion: string;
   puntajeTotal: number;
+  puntajeMaximo: number;
   observaciones?: string;
   detalles: DetalleEvaluacionResponse[];
 }

@@ -3,7 +3,7 @@ import { FormsModule } from '@angular/forms';
 import { ReporteService } from '../../core/services/reporte.service';
 import { ProgramaService } from '../../core/services/programa.service';
 import { UbicacionService } from '../../core/services/ubicacion.service';
-import { InscritoReporte, ReporteFiltro } from '../../core/models/reporte.model';
+import { BeneficiarioReporte, ReporteFiltro } from '../../core/models/reporte.model';
 import { ProgramaResponse, TipoPrograma } from '../../core/models/programa.model';
 import { EstadoPostulacion } from '../../core/models/postulacion.model';
 import { Genero, NivelEducativo } from '../../core/models/usuario.model';
@@ -38,8 +38,8 @@ const LABEL_TIPO: Record<TipoPrograma, string> = {
   template: `
   <div>
     <div class="mb-6">
-      <h1 class="text-3xl font-extrabold text-primary-dark">Reportes de inscritos</h1>
-      <p class="text-on-surface-variant">Filtra y cruza datos de los inscritos en talleres y diplomados.</p>
+      <h1 class="text-3xl font-extrabold text-primary-dark">Reportes de beneficiarios</h1>
+      <p class="text-on-surface-variant">Filtra y cruza datos de las personas beneficiadas por talleres y diplomados.</p>
     </div>
 
     <!-- Filtros -->
@@ -118,7 +118,7 @@ const LABEL_TIPO: Record<TipoPrograma, string> = {
         <button (click)="limpiar()" class="text-sm font-semibold text-on-surface-variant hover:text-primary flex items-center gap-1">
           <span class="material-symbols-outlined text-[18px]">filter_alt_off</span> Limpiar filtros
         </button>
-        <button (click)="exportarCsv()" [disabled]="!inscritos().length" class="px-4 py-2 rounded-lg bg-primary text-white text-sm font-bold hover:bg-primary-dark transition-colors disabled:opacity-40 flex items-center gap-2">
+        <button (click)="exportarCsv()" [disabled]="!beneficiarios().length" class="px-4 py-2 rounded-lg bg-primary text-white text-sm font-bold hover:bg-primary-dark transition-colors disabled:opacity-40 flex items-center gap-2">
           <span class="material-symbols-outlined text-[18px]">download</span> Exportar CSV
         </button>
       </div>
@@ -127,8 +127,8 @@ const LABEL_TIPO: Record<TipoPrograma, string> = {
     <!-- Resumen -->
     <div class="grid grid-cols-2 md:grid-cols-5 gap-4 mb-6">
       <div class="bg-white p-4 rounded-xl shadow-card border border-outline-variant">
-        <p class="text-xs text-on-surface-variant uppercase">Total inscritos</p>
-        <p class="text-2xl font-extrabold text-primary-dark">{{ inscritos().length }}</p>
+        <p class="text-xs text-on-surface-variant uppercase">Total beneficiarios</p>
+        <p class="text-2xl font-extrabold text-primary-dark">{{ beneficiarios().length }}</p>
       </div>
       @for (g of generos; track g) {
         <div class="bg-white p-4 rounded-xl shadow-card border border-outline-variant">
@@ -153,7 +153,7 @@ const LABEL_TIPO: Record<TipoPrograma, string> = {
           <table class="w-full text-left">
             <thead class="bg-surface-low">
               <tr>
-                <th class="px-6 py-3 text-xs font-bold text-on-surface-variant uppercase">Inscrito</th>
+                <th class="px-6 py-3 text-xs font-bold text-on-surface-variant uppercase">Beneficiario</th>
                 <th class="px-6 py-3 text-xs font-bold text-on-surface-variant uppercase">Género</th>
                 <th class="px-6 py-3 text-xs font-bold text-on-surface-variant uppercase">Edad</th>
                 <th class="px-6 py-3 text-xs font-bold text-on-surface-variant uppercase">Nivel educativo</th>
@@ -164,25 +164,25 @@ const LABEL_TIPO: Record<TipoPrograma, string> = {
               </tr>
             </thead>
             <tbody class="divide-y divide-outline-variant">
-              @for (i of inscritos(); track i.idPostulacion) {
+              @for (b of beneficiarios(); track b.idPostulacion) {
                 <tr class="hover:bg-surface-low transition-colors">
                   <td class="px-6 py-4">
-                    <p class="font-semibold text-primary">{{ i.nombreCompleto }}</p>
-                    <p class="text-xs text-on-surface-variant">{{ i.ci }} · {{ i.correo }}</p>
+                    <p class="font-semibold text-primary">{{ b.nombreCompleto }}</p>
+                    <p class="text-xs text-on-surface-variant">{{ b.ci }} · {{ b.correo }}</p>
                   </td>
-                  <td class="px-6 py-4 text-sm">{{ LABEL_GENERO[i.genero] }}</td>
-                  <td class="px-6 py-4 text-sm">{{ i.edad ?? '—' }}</td>
-                  <td class="px-6 py-4 text-sm">{{ LABEL_NIVEL[i.nivelEducativo] }}</td>
-                  <td class="px-6 py-4 text-sm">{{ i.ciudad }}{{ i.pais ? ', ' + i.pais : '' }}</td>
+                  <td class="px-6 py-4 text-sm">{{ LABEL_GENERO[b.genero] }}</td>
+                  <td class="px-6 py-4 text-sm">{{ b.edad ?? '—' }}</td>
+                  <td class="px-6 py-4 text-sm">{{ LABEL_NIVEL[b.nivelEducativo] }}</td>
+                  <td class="px-6 py-4 text-sm">{{ b.ciudad }}{{ b.pais ? ', ' + b.pais : '' }}</td>
                   <td class="px-6 py-4 text-sm">
-                    <p class="font-medium">{{ i.nombrePrograma }}</p>
-                    <p class="text-xs text-on-surface-variant">{{ LABEL_TIPO[i.tipoPrograma] }}{{ i.edicion ? ' · ' + i.edicion : '' }}</p>
+                    <p class="font-medium">{{ b.nombrePrograma }}</p>
+                    <p class="text-xs text-on-surface-variant">{{ LABEL_TIPO[b.tipoPrograma] }}{{ b.edicion ? ' · ' + b.edicion : '' }}</p>
                   </td>
-                  <td class="px-6 py-4 text-sm">{{ i.fechaPostulacion }}</td>
-                  <td class="px-6 py-4"><span class="px-3 py-1 rounded-full text-xs font-bold" [class]="badge(i.estado)">{{ i.estado }}</span></td>
+                  <td class="px-6 py-4 text-sm">{{ b.fechaPostulacion }}</td>
+                  <td class="px-6 py-4"><span class="px-3 py-1 rounded-full text-xs font-bold" [class]="badge(b.estado)">{{ b.estado }}</span></td>
                 </tr>
               } @empty {
-                <tr><td colspan="8" class="px-6 py-10 text-center text-on-surface-variant">Ningún inscrito coincide con los filtros seleccionados.</td></tr>
+                <tr><td colspan="8" class="px-6 py-10 text-center text-on-surface-variant">Ningún beneficiario coincide con los filtros seleccionados.</td></tr>
               }
             </tbody>
           </table>
@@ -213,11 +213,11 @@ export class ReportesComponent implements OnInit {
   programas = signal<ProgramaResponse[]>([]);
   paises = signal<PaisResponse[]>([]);
   ciudades = signal<CiudadResponse[]>([]);
-  inscritos = signal<InscritoReporte[]>([]);
+  beneficiarios = signal<BeneficiarioReporte[]>([]);
   cargando = signal(false);
   error = signal<string | null>(null);
 
-  filtro = signal<ReporteFiltro>({});
+  filtro = signal<ReporteFiltro>({ estado: 'ACEPTADA' });
 
   programasFiltrados = computed(() => {
     const tipo = this.filtro().tipoPrograma;
@@ -226,7 +226,7 @@ export class ReportesComponent implements OnInit {
 
   resumenGenero = computed(() => {
     const conteo: Partial<Record<Genero, number>> = {};
-    for (const i of this.inscritos()) conteo[i.genero] = (conteo[i.genero] ?? 0) + 1;
+    for (const b of this.beneficiarios()) conteo[b.genero] = (conteo[b.genero] ?? 0) + 1;
     return conteo;
   });
 
@@ -274,10 +274,10 @@ export class ReportesComponent implements OnInit {
   generar(): void {
     this.cargando.set(true);
     this.error.set(null);
-    this.reporteService.listarInscritos(this.filtro()).subscribe({
-      next: (d) => { this.inscritos.set(d); this.cargando.set(false); },
+    this.reporteService.listarBeneficiarios(this.filtro()).subscribe({
+      next: (d) => { this.beneficiarios.set(d); this.cargando.set(false); },
       error: () => {
-        this.inscritos.set([]);
+        this.beneficiarios.set([]);
         this.cargando.set(false);
         this.error.set('No se pudo cargar el reporte. Verifica que el servidor esté disponible.');
       },
@@ -286,10 +286,10 @@ export class ReportesComponent implements OnInit {
 
   exportarCsv(): void {
     const encabezados = ['Nombre', 'CI', 'Correo', 'Teléfono', 'Género', 'Edad', 'Nivel educativo', 'Ciudad', 'País', 'Programa', 'Tipo', 'Edición', 'Fecha postulación', 'Estado'];
-    const filas = this.inscritos().map(i => [
-      i.nombreCompleto, i.ci, i.correo, i.telefono ?? '', LABEL_GENERO[i.genero], i.edad ?? '',
-      LABEL_NIVEL[i.nivelEducativo], i.ciudad ?? '', i.pais ?? '', i.nombrePrograma,
-      LABEL_TIPO[i.tipoPrograma], i.edicion ?? '', i.fechaPostulacion, i.estado,
+    const filas = this.beneficiarios().map(b => [
+      b.nombreCompleto, b.ci, b.correo, b.telefono ?? '', LABEL_GENERO[b.genero], b.edad ?? '',
+      LABEL_NIVEL[b.nivelEducativo], b.ciudad ?? '', b.pais ?? '', b.nombrePrograma,
+      LABEL_TIPO[b.tipoPrograma], b.edicion ?? '', b.fechaPostulacion, b.estado,
     ]);
     const escapar = (v: unknown) => `"${String(v).replace(/"/g, '""')}"`;
     const csv = [encabezados, ...filas].map(fila => fila.map(escapar).join(',')).join('\n');
@@ -297,7 +297,7 @@ export class ReportesComponent implements OnInit {
     const url = URL.createObjectURL(blob);
     const enlace = document.createElement('a');
     enlace.href = url;
-    enlace.download = `reporte-inscritos-${new Date().toISOString().slice(0, 10)}.csv`;
+    enlace.download = `reporte-beneficiarios-${new Date().toISOString().slice(0, 10)}.csv`;
     enlace.click();
     URL.revokeObjectURL(url);
   }

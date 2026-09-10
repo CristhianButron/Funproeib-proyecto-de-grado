@@ -8,6 +8,7 @@ import org.certificaciones.funproeibbackend.model.Programa;
 import org.certificaciones.funproeibbackend.model.Usuario;
 import org.certificaciones.funproeibbackend.model.enums.EstadoPostulacion;
 import org.certificaciones.funproeibbackend.model.enums.EstadoPrograma;
+import org.certificaciones.funproeibbackend.model.enums.TipoPrograma;
 import org.certificaciones.funproeibbackend.repository.ListaNegraRepository;
 import org.certificaciones.funproeibbackend.repository.PostulacionRepository;
 import org.certificaciones.funproeibbackend.repository.ProgramaRepository;
@@ -21,6 +22,8 @@ import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
+import java.time.LocalDate;
+import java.util.List;
 import java.util.Optional;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -119,5 +122,84 @@ class PostulacionServiceImplTest {
         assertThatThrownBy(() -> service.crear(request))
                 .isInstanceOf(BusinessException.class)
                 .hasMessageContaining("ya tiene una postulación");
+    }
+
+    @Test
+    @DisplayName("Rechaza postular a un diplomado si ya está cursando otro")
+    void crear_yaCursandoOtroDiplomado_lanzaExcepcion() {
+        programa.setTipo(TipoPrograma.DIPLOMADO);
+        Programa diplomadoEnCurso = Programa.builder().id(9L).nombre("Diplomado en Lenguas Originarias")
+                .tipo(TipoPrograma.DIPLOMADO).fechaFin(LocalDate.now().plusMonths(2)).build();
+        Postulacion postulacionPrevia = Postulacion.builder().id(50L).usuario(usuario).programa(diplomadoEnCurso)
+                .estado(EstadoPostulacion.ACEPTADA).build();
+
+        when(usuarioRepository.findById(1L)).thenReturn(Optional.of(usuario));
+        when(programaRepository.findById(2L)).thenReturn(Optional.of(programa));
+        when(listaNegraRepository.existsByCiPostulanteAndActivoTrue("123456")).thenReturn(false);
+        when(postulacionRepository.existsByUsuarioIdAndProgramaId(1L, 2L)).thenReturn(false);
+        when(postulacionRepository.findByUsuarioIdAndEstadoAndProgramaTipo(1L, EstadoPostulacion.ACEPTADA, TipoPrograma.DIPLOMADO))
+                .thenReturn(List.of(postulacionPrevia));
+
+        assertThatThrownBy(() -> service.crear(request))
+                .isInstanceOf(BusinessException.class)
+                .hasMessageContaining("ya estás cursando")
+                .hasMessageContaining("Diplomado en Lenguas Originarias");
+        verify(postulacionRepository, never()).save(any());
+    }
+
+    @Test
+    @DisplayName("Rechaza postular a un diplomado si ya completó otro")
+    void crear_yaCompletoOtroDiplomado_lanzaExcepcion() {
+        programa.setTipo(TipoPrograma.DIPLOMADO);
+        Programa diplomadoTerminado = Programa.builder().id(9L).nombre("Diplomado en Gestión Cultural")
+                .tipo(TipoPrograma.DIPLOMADO).fechaFin(LocalDate.now().minusMonths(1)).build();
+        Postulacion postulacionPrevia = Postulacion.builder().id(50L).usuario(usuario).programa(diplomadoTerminado)
+                .estado(EstadoPostulacion.ACEPTADA).build();
+
+        when(usuarioRepository.findById(1L)).thenReturn(Optional.of(usuario));
+        when(programaRepository.findById(2L)).thenReturn(Optional.of(programa));
+        when(listaNegraRepository.existsByCiPostulanteAndActivoTrue("123456")).thenReturn(false);
+        when(postulacionRepository.existsByUsuarioIdAndProgramaId(1L, 2L)).thenReturn(false);
+        when(postulacionRepository.findByUsuarioIdAndEstadoAndProgramaTipo(1L, EstadoPostulacion.ACEPTADA, TipoPrograma.DIPLOMADO))
+                .thenReturn(List.of(postulacionPrevia));
+
+        assertThatThrownBy(() -> service.crear(request))
+                .isInstanceOf(BusinessException.class)
+                .hasMessageContaining("ya completaste")
+                .hasMessageContaining("Diplomado en Gestión Cultural");
+        verify(postulacionRepository, never()).save(any());
+    }
+
+    @Test
+    @DisplayName("Permite postular a un diplomado si no tiene diplomados aceptados previos")
+    void crear_diplomadoSinPrevios_permiteCrear() {
+        programa.setTipo(TipoPrograma.DIPLOMADO);
+        when(usuarioRepository.findById(1L)).thenReturn(Optional.of(usuario));
+        when(programaRepository.findById(2L)).thenReturn(Optional.of(programa));
+        when(listaNegraRepository.existsByCiPostulanteAndActivoTrue("123456")).thenReturn(false);
+        when(postulacionRepository.existsByUsuarioIdAndProgramaId(1L, 2L)).thenReturn(false);
+        when(postulacionRepository.findByUsuarioIdAndEstadoAndProgramaTipo(1L, EstadoPostulacion.ACEPTADA, TipoPrograma.DIPLOMADO))
+                .thenReturn(List.of());
+        when(postulacionRepository.save(any(Postulacion.class))).thenAnswer(inv -> inv.getArgument(0));
+
+        PostulacionResponse res = service.crear(request);
+
+        assertThat(res.getEstado()).isEqualTo(EstadoPostulacion.INCOMPLETA);
+    }
+
+    @Test
+    @DisplayName("No aplica la restricción de diplomado previo a talleres o cursos")
+    void crear_taller_noValidaDiplomadoPrevio() {
+        programa.setTipo(TipoPrograma.TALLER);
+        when(usuarioRepository.findById(1L)).thenReturn(Optional.of(usuario));
+        when(programaRepository.findById(2L)).thenReturn(Optional.of(programa));
+        when(listaNegraRepository.existsByCiPostulanteAndActivoTrue("123456")).thenReturn(false);
+        when(postulacionRepository.existsByUsuarioIdAndProgramaId(1L, 2L)).thenReturn(false);
+        when(postulacionRepository.save(any(Postulacion.class))).thenAnswer(inv -> inv.getArgument(0));
+
+        PostulacionResponse res = service.crear(request);
+
+        assertThat(res.getEstado()).isEqualTo(EstadoPostulacion.INCOMPLETA);
+        verify(postulacionRepository, never()).findByUsuarioIdAndEstadoAndProgramaTipo(any(), any(), any());
     }
 }

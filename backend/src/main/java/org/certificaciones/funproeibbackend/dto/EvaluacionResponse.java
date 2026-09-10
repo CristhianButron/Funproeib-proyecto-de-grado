@@ -16,6 +16,7 @@ public class EvaluacionResponse {
     private String nombreEvaluador;
     private LocalDate fechaEvaluacion;
     private BigDecimal puntajeTotal;
+    private Integer puntajeMaximo;
     private String observaciones;
     private List<DetalleEvaluacionResponse> detalles;
 }

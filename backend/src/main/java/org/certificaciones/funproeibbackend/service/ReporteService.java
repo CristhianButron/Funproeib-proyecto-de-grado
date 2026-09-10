@@ -1,10 +1,10 @@
 package org.certificaciones.funproeibbackend.service;
 
-import org.certificaciones.funproeibbackend.dto.InscritoReporteResponse;
-import org.certificaciones.funproeibbackend.dto.ReporteInscritosFiltro;
+import org.certificaciones.funproeibbackend.dto.BeneficiarioReporteResponse;
+import org.certificaciones.funproeibbackend.dto.ReporteBeneficiariosFiltro;
 
 import java.util.List;
 
 public interface ReporteService {
-    List<InscritoReporteResponse> listarInscritos(ReporteInscritosFiltro filtro);
+    List<BeneficiarioReporteResponse> listarBeneficiarios(ReporteBeneficiariosFiltro filtro);
 }

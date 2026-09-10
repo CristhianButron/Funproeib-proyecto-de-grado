@@ -1,7 +1,7 @@
 package org.certificaciones.funproeibbackend.service.impl;
 
-import org.certificaciones.funproeibbackend.dto.InscritoReporteResponse;
-import org.certificaciones.funproeibbackend.dto.ReporteInscritosFiltro;
+import org.certificaciones.funproeibbackend.dto.BeneficiarioReporteResponse;
+import org.certificaciones.funproeibbackend.dto.ReporteBeneficiariosFiltro;
 import org.certificaciones.funproeibbackend.model.Postulacion;
 import org.certificaciones.funproeibbackend.model.Programa;
 import org.certificaciones.funproeibbackend.model.Usuario;
@@ -23,7 +23,7 @@ public class ReporteServiceImpl implements ReporteService {
 
     @Override
     @Transactional(readOnly = true)
-    public List<InscritoReporteResponse> listarInscritos(ReporteInscritosFiltro filtro) {
+    public List<BeneficiarioReporteResponse> listarBeneficiarios(ReporteBeneficiariosFiltro filtro) {
         return postulacionRepository.buscarParaReporte(
                         filtro.getTipoPrograma(),
                         filtro.getIdPrograma(),
@@ -39,7 +39,7 @@ public class ReporteServiceImpl implements ReporteService {
                 .toList();
     }
 
-    private InscritoReporteResponse mapToResponse(Postulacion p) {
+    private BeneficiarioReporteResponse mapToResponse(Postulacion p) {
         Usuario u = p.getUsuario();
         Programa pr = p.getPrograma();
 
@@ -48,7 +48,7 @@ public class ReporteServiceImpl implements ReporteService {
             edad = Period.between(u.getFechaNacimiento(), LocalDate.now()).getYears();
         }
 
-        return InscritoReporteResponse.builder()
+        return BeneficiarioReporteResponse.builder()
                 .idPostulacion(p.getId())
                 .idUsuario(u.getId())
                 .nombreCompleto(u.getNombreCompleto())

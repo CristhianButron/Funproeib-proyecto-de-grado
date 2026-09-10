@@ -118,10 +118,10 @@ import { EvaluacionResponse } from '../../core/models/evaluacion.model';
                     <span class="material-symbols-outlined">grading</span>
                     Resultado: {{ po.estado }}
                   </p>
-                  <p class="text-sm mt-2">Puntaje obtenido: <span class="font-bold text-xl">{{ ev.puntajeTotal }}</span> / 5</p>
+                  <p class="text-sm mt-2">Puntaje obtenido: <span class="font-bold text-xl">{{ ev.puntajeTotal }}</span> / {{ ev.puntajeMaximo }}</p>
                   <div class="mt-2 space-y-1">
                     @for (d of ev.detalles; track d.id) {
-                      <div class="flex justify-between text-sm"><span>{{ d.nombreCriterio }}</span><span class="font-bold">{{ d.puntaje }}/5</span></div>
+                      <div class="flex justify-between text-sm"><span>{{ d.nombreCriterio }}</span><span class="font-bold">{{ d.puntaje }}/10</span></div>
                     }
                   </div>
                   @if (ev.observaciones) { <p class="text-sm mt-2 italic">"{{ ev.observaciones }}"</p> }

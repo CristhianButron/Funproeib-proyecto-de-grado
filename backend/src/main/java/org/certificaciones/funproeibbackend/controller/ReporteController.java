@@ -1,7 +1,7 @@
 package org.certificaciones.funproeibbackend.controller;
 
-import org.certificaciones.funproeibbackend.dto.InscritoReporteResponse;
-import org.certificaciones.funproeibbackend.dto.ReporteInscritosFiltro;
+import org.certificaciones.funproeibbackend.dto.BeneficiarioReporteResponse;
+import org.certificaciones.funproeibbackend.dto.ReporteBeneficiariosFiltro;
 import org.certificaciones.funproeibbackend.service.ReporteService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
@@ -19,8 +19,8 @@ public class ReporteController {
 
     private final ReporteService reporteService;
 
-    @GetMapping("/inscritos")
-    public ResponseEntity<List<InscritoReporteResponse>> listarInscritos(@ModelAttribute ReporteInscritosFiltro filtro) {
-        return ResponseEntity.ok(reporteService.listarInscritos(filtro));
+    @GetMapping("/beneficiarios")
+    public ResponseEntity<List<BeneficiarioReporteResponse>> listarBeneficiarios(@ModelAttribute ReporteBeneficiariosFiltro filtro) {
+        return ResponseEntity.ok(reporteService.listarBeneficiarios(filtro));
     }
 }

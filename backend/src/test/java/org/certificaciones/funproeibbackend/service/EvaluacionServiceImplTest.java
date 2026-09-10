@@ -17,7 +17,7 @@ import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
-import java.math.BigDecimal;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 
@@ -27,7 +27,7 @@ import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.*;
 
 @ExtendWith(MockitoExtension.class)
-@DisplayName("EvaluacionService - evaluación con criterios y puntaje ponderado")
+@DisplayName("EvaluacionService - evaluación con los 6 criterios estandarizados")
 class EvaluacionServiceImplTest {
 
     @Mock private EvaluacionRepository evaluacionRepository;
@@ -42,8 +42,7 @@ class EvaluacionServiceImplTest {
     private Usuario postulante;
     private Usuario evaluador;
     private Postulacion postulacion;
-    private CriterioEvaluacion criterio1;
-    private CriterioEvaluacion criterio2;
+    private List<CriterioEvaluacion> criterios;
     private EvaluacionRequest request;
 
     @BeforeEach
@@ -54,39 +53,51 @@ class EvaluacionServiceImplTest {
         postulacion = Postulacion.builder().id(5L).programa(programa).usuario(postulante)
                 .estado(EstadoPostulacion.PENDIENTE).build();
 
-        // Pesos 60 y 40 (suman 100)
-        criterio1 = CriterioEvaluacion.builder().id(20L).programa(programa)
-                .nombreCriterio("Experiencia").peso(new BigDecimal("60")).build();
-        criterio2 = CriterioEvaluacion.builder().id(21L).programa(programa)
-                .nombreCriterio("Formación").peso(new BigDecimal("40")).build();
+        // Los 6 criterios estandarizados fijos (ver CriterioEvaluacionDataInitializer)
+        criterios = new ArrayList<>();
+        int[] puntajes = {8, 7, 9, 6, 10, 5}; // suma = 45
+        List<DetalleEvaluacionRequest> detalles = new ArrayList<>();
+        for (int i = 0; i < 6; i++) {
+            long id = 20L + i;
+            CriterioEvaluacion c = CriterioEvaluacion.builder().id(id).orden(i + 1)
+                    .nombreCriterio("Criterio " + (i + 1)).build();
+            criterios.add(c);
 
-        DetalleEvaluacionRequest d1 = new DetalleEvaluacionRequest();
-        d1.setIdCriterio(20L); d1.setPuntaje(5);
-        DetalleEvaluacionRequest d2 = new DetalleEvaluacionRequest();
-        d2.setIdCriterio(21L); d2.setPuntaje(3);
+            DetalleEvaluacionRequest d = new DetalleEvaluacionRequest();
+            d.setIdCriterio(id);
+            d.setPuntaje(puntajes[i]);
+            detalles.add(d);
+        }
 
         request = new EvaluacionRequest();
         request.setIdPostulacion(5L);
         request.setIdEvaluador(9L);
         request.setObservaciones("Buen perfil");
-        request.setDetalles(List.of(d1, d2));
+        request.setDetalles(detalles);
+    }
+
+    private void mockCriteriosCompletos() {
+        when(criterioRepository.findAllByOrderByOrdenAsc()).thenReturn(criterios);
+        for (CriterioEvaluacion c : criterios) {
+            when(criterioRepository.findById(c.getId())).thenReturn(Optional.of(c));
+        }
     }
 
     @Test
-    @DisplayName("Calcula el puntaje ponderado correctamente: (5*60 + 3*40)/100 = 4.20")
-    void evaluar_calculaPuntajePonderado() {
+    @DisplayName("Calcula el puntaje total como suma simple: 8+7+9+6+10+5 = 45/60")
+    void evaluar_calculaPuntajeTotal() {
         when(postulacionRepository.findById(5L)).thenReturn(Optional.of(postulacion));
         when(evaluacionRepository.existsByPostulacionId(5L)).thenReturn(false);
+        mockCriteriosCompletos();
         when(usuarioRepository.findById(9L)).thenReturn(Optional.of(evaluador));
         when(evaluacionRepository.save(any(Evaluacion.class))).thenAnswer(inv -> inv.getArgument(0));
-        when(criterioRepository.findById(20L)).thenReturn(Optional.of(criterio1));
-        when(criterioRepository.findById(21L)).thenReturn(Optional.of(criterio2));
         when(detalleRepository.saveAll(any())).thenAnswer(inv -> inv.getArgument(0));
 
         EvaluacionResponse res = service.evaluar(request);
 
-        assertThat(res.getPuntajeTotal()).isEqualByComparingTo("4.20");
-        assertThat(res.getDetalles()).hasSize(2);
+        assertThat(res.getPuntajeTotal()).isEqualByComparingTo("45");
+        assertThat(res.getPuntajeMaximo()).isEqualTo(60);
+        assertThat(res.getDetalles()).hasSize(6);
     }
 
     @Test
@@ -94,10 +105,9 @@ class EvaluacionServiceImplTest {
     void evaluar_cambiaEstadoAEvaluada() {
         when(postulacionRepository.findById(5L)).thenReturn(Optional.of(postulacion));
         when(evaluacionRepository.existsByPostulacionId(5L)).thenReturn(false);
+        mockCriteriosCompletos();
         when(usuarioRepository.findById(9L)).thenReturn(Optional.of(evaluador));
         when(evaluacionRepository.save(any(Evaluacion.class))).thenAnswer(inv -> inv.getArgument(0));
-        when(criterioRepository.findById(20L)).thenReturn(Optional.of(criterio1));
-        when(criterioRepository.findById(21L)).thenReturn(Optional.of(criterio2));
         when(detalleRepository.saveAll(any())).thenAnswer(inv -> inv.getArgument(0));
 
         service.evaluar(request);
@@ -128,5 +138,38 @@ class EvaluacionServiceImplTest {
         assertThatThrownBy(() -> service.evaluar(request))
                 .isInstanceOf(BusinessException.class)
                 .hasMessageContaining("ya tiene una evaluación");
+    }
+
+    @Test
+    @DisplayName("Rechaza si falta calificar alguno de los 6 criterios estandarizados")
+    void evaluar_faltaCriterio_lanzaExcepcion() {
+        request.setDetalles(request.getDetalles().subList(0, 5)); // solo 5 de 6
+        when(postulacionRepository.findById(5L)).thenReturn(Optional.of(postulacion));
+        when(evaluacionRepository.existsByPostulacionId(5L)).thenReturn(false);
+        when(criterioRepository.findAllByOrderByOrdenAsc()).thenReturn(criterios);
+
+        assertThatThrownBy(() -> service.evaluar(request))
+                .isInstanceOf(BusinessException.class)
+                .hasMessageContaining("6 criterios");
+        verify(evaluacionRepository, never()).save(any());
+    }
+
+    @Test
+    @DisplayName("Rechaza si se califica el mismo criterio dos veces")
+    void evaluar_criterioDuplicado_lanzaExcepcion() {
+        DetalleEvaluacionRequest duplicado = new DetalleEvaluacionRequest();
+        duplicado.setIdCriterio(request.getDetalles().get(0).getIdCriterio());
+        duplicado.setPuntaje(3);
+        List<DetalleEvaluacionRequest> conDuplicado = new ArrayList<>(request.getDetalles().subList(0, 5));
+        conDuplicado.add(duplicado);
+        request.setDetalles(conDuplicado);
+
+        when(postulacionRepository.findById(5L)).thenReturn(Optional.of(postulacion));
+        when(evaluacionRepository.existsByPostulacionId(5L)).thenReturn(false);
+        when(criterioRepository.findAllByOrderByOrdenAsc()).thenReturn(criterios);
+
+        assertThatThrownBy(() -> service.evaluar(request))
+                .isInstanceOf(BusinessException.class)
+                .hasMessageContaining("más de una vez");
     }
 }

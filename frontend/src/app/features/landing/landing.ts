@@ -145,7 +145,7 @@ export class LandingComponent implements OnInit {
   caracteristicas = [
     { icono: 'verified', titulo: 'Postulación en línea', texto: 'Regístrate y postula a las convocatorias abiertas sin trámites en papel.' },
     { icono: 'fact_check', titulo: 'Verificación de requisitos', texto: 'Carga tus documentos y el sistema valida automáticamente los requisitos.' },
-    { icono: 'workspace_premium', titulo: 'Evaluación transparente', texto: 'Tu postulación es evaluada con criterios definidos para cada programa.' },
+    { icono: 'workspace_premium', titulo: 'Evaluación transparente', texto: 'Tu postulación es evaluada con criterios estandarizados y públicos.' },
   ];
 
   programasAbiertos = signal<ProgramaResponse[]>([]);

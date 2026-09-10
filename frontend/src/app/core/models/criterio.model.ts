@@ -1,10 +1,3 @@
-export interface CriterioEvaluacionRequest {
-  idPrograma: number;
-  nombreCriterio: string;
-  descripcion?: string;
-  peso: number;
-}
-
 export interface DetalleEvaluacionRequest {
   idCriterio: number;
   puntaje: number;

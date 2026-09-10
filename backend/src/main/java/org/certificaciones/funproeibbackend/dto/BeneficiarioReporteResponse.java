@@ -11,7 +11,7 @@ import java.time.LocalDate;
 
 @Data
 @Builder
-public class InscritoReporteResponse {
+public class BeneficiarioReporteResponse {
     private Long idPostulacion;
     private Long idUsuario;
     private String nombreCompleto;

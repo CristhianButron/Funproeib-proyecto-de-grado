@@ -26,5 +26,5 @@ public class DetalleEvaluacion {
     private CriterioEvaluacion criterio;
 
     @Column(name = "puntaje", nullable = false)
-    private Integer puntaje; // escala 1 al 5
+    private Integer puntaje; // escala 1 al 10
 }

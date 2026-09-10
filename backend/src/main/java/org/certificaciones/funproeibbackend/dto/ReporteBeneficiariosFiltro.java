@@ -9,7 +9,7 @@ import lombok.Data;
 import java.time.LocalDate;
 
 @Data
-public class ReporteInscritosFiltro {
+public class ReporteBeneficiariosFiltro {
     private TipoPrograma tipoPrograma;
     private Long idPrograma;
     private EstadoPostulacion estado;
