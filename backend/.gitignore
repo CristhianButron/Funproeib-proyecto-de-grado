@@ -3,6 +3,10 @@ target/
 
 ### Documentos subidos por postulantes (no versionar) ###
 /uploads/
+
+### Configuración local con credenciales reales (SMTP, etc.), nunca subir ###
+application-local.properties
+src/main/resources/application-local.properties
 .mvn/wrapper/maven-wrapper.jar
 !**/src/main/**/target/
 !**/src/test/**/target/

@@ -1,0 +1,15 @@
+# Copia este archivo como "application-local.properties" (mismo directorio)
+# y completa tus credenciales reales. Ese archivo NO se sube a git
+# (está en .gitignore) y Spring Boot lo carga automáticamente porque
+# application.properties activa el perfil "local" por defecto.
+#
+# Con esto puesto, ya no hace falta exportar variables de entorno cada vez
+# que corres ".\mvnw spring-boot:run": solo lo corres y ya toma esta config.
+
+app.mail.enabled=true
+spring.mail.host=smtp.gmail.com
+spring.mail.port=587
+spring.mail.username=tu-correo@gmail.com
+spring.mail.password=tu-contrasena-de-aplicacion-de-16-caracteres
+spring.mail.properties.mail.smtp.auth=true
+spring.mail.properties.mail.smtp.starttls.enable=true

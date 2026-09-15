@@ -75,7 +75,7 @@ import { UsuarioRegistroRequest } from '../../core/models/usuario.model';
             </div>
             <div>
               <label class="block text-sm font-semibold mb-1">Extensión</label>
-              <input formControlName="ciExtension" class="campo" placeholder="Ej: LP, CB, SC..." />
+              <input formControlName="ciExtension" class="campo" placeholder="Opcional" />
             </div>
           </div>
           <p class="text-xs text-on-surface-variant mt-3 flex items-center gap-1">
