@@ -42,6 +42,8 @@ public class DataInitializer implements CommandLineRunner {
                     .rol(RolUsuario.ADMIN)
                     .fechaRegistro(LocalDate.now())
                     .activo(true)
+                    .emailVerificado(true)
+                    .debeCambiarPassword(false)
                     .genero(Genero.PREFIERO_NO_INDICAR)
                     .fechaNacimiento(LocalDate.of(1990, 1, 1))
                     .nivelEducativo(NivelEducativo.MAESTRIA)

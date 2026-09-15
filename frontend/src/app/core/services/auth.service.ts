@@ -1,7 +1,7 @@
 import { Injectable, computed, signal } from '@angular/core';
 import { Observable, tap } from 'rxjs';
 import { UsuarioService } from './usuario.service';
-import { LoginRequest, UsuarioRegistroRequest, UsuarioResponse } from '../models/usuario.model';
+import { CambiarPasswordRequest, LoginRequest, UsuarioRegistroRequest, UsuarioResponse } from '../models/usuario.model';
 
 const STORAGE_KEY = 'funproeib_usuario';
 
@@ -23,8 +23,17 @@ export class AuthService {
   }
 
   registrar(request: UsuarioRegistroRequest): Observable<UsuarioResponse> {
-    return this.usuarioService.registrar(request).pipe(
-      tap((usuario) => this.guardarSesion(usuario))
+    // No inicia sesión: la cuenta queda sin verificar hasta que la persona
+    // confirme su correo, y el login la rechazará hasta entonces.
+    return this.usuarioService.registrar(request);
+  }
+
+  cambiarPassword(request: CambiarPasswordRequest): Observable<void> {
+    return this.usuarioService.cambiarPassword(request).pipe(
+      tap(() => {
+        const actual = this.usuarioSignal();
+        if (actual) this.guardarSesion({ ...actual, debeCambiarPassword: false });
+      })
     );
   }
 

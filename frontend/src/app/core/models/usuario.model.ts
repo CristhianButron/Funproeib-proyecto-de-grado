@@ -8,8 +8,8 @@ export interface UsuarioRegistroRequest {
   apellidoPaterno: string;
   apellidoMaterno?: string;
   correo: string;
-  contrasena: string;
   ci: string;
+  ciExtension?: string;
   genero: Genero;
   fechaNacimiento: string;
   autoidentificacionEtnica?: string;
@@ -36,9 +36,12 @@ export interface UsuarioResponse {
   nombreCompleto: string;
   correo: string;
   ci: string;
+  ciExtension?: string;
   rol: RolUsuario;
   fechaRegistro: string;
   activo: boolean;
+  emailVerificado?: boolean;
+  debeCambiarPassword?: boolean;
   genero: Genero;
   fechaNacimiento: string;
   edad: number;
@@ -57,4 +60,14 @@ export interface UsuarioResponse {
   provinciaNacimiento?: string;
   direccionDomicilio?: string;
   carreras?: string[];
+}
+
+export interface ReenviarVerificacionRequest {
+  correo: string;
+}
+
+export interface CambiarPasswordRequest {
+  idUsuario: number;
+  contrasenaActual: string;
+  contrasenaNueva: string;
 }

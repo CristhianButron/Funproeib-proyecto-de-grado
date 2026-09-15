@@ -1,10 +1,16 @@
 import { Routes } from '@angular/router';
-import { adminGuard, postulanteGuard } from './core/guards/auth.guard';
+import { adminGuard, authGuard, postulanteGuard } from './core/guards/auth.guard';
 
 export const routes: Routes = [
   { path: '', loadComponent: () => import('./features/landing/landing').then(m => m.LandingComponent) },
   { path: 'login', loadComponent: () => import('./features/auth/login').then(m => m.LoginComponent) },
   { path: 'registro', loadComponent: () => import('./features/auth/registro').then(m => m.RegistroComponent) },
+  { path: 'verificar-correo', loadComponent: () => import('./features/auth/verificar-correo').then(m => m.VerificarCorreoComponent) },
+  {
+    path: 'cambiar-password',
+    canActivate: [authGuard],
+    loadComponent: () => import('./features/auth/cambiar-password-obligatorio').then(m => m.CambiarPasswordObligatorioComponent),
+  },
 
   {
     path: 'admin',

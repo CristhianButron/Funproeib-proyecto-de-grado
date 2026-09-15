@@ -1,5 +1,6 @@
 package org.certificaciones.funproeibbackend.service.impl;
 
+import org.certificaciones.funproeibbackend.dto.CambiarPasswordRequest;
 import org.certificaciones.funproeibbackend.dto.LoginRequest;
 import org.certificaciones.funproeibbackend.dto.UsuarioRegistroRequest;
 import org.certificaciones.funproeibbackend.dto.UsuarioResponse;
@@ -11,23 +12,33 @@ import org.certificaciones.funproeibbackend.model.enums.NivelEducativo;
 import org.certificaciones.funproeibbackend.model.enums.RolUsuario;
 import org.certificaciones.funproeibbackend.repository.CiudadRepository;
 import org.certificaciones.funproeibbackend.repository.UsuarioRepository;
+import org.certificaciones.funproeibbackend.service.EmailService;
 import org.certificaciones.funproeibbackend.service.UsuarioService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.security.SecureRandom;
 import java.time.LocalDate;
+import java.time.LocalDateTime;
 import java.time.Period;
 import java.util.List;
+import java.util.UUID;
 
 @Service
 @RequiredArgsConstructor
 public class UsuarioServiceImpl implements UsuarioService {
 
+    private static final String ALFABETO_PASSWORD_TEMPORAL = "ABCDEFGHJKMNPQRSTUVWXYZabcdefghjkmnpqrstuvwxyz23456789";
+    private static final int LONGITUD_PASSWORD_TEMPORAL = 10;
+    private static final int HORAS_VALIDEZ_TOKEN_VERIFICACION = 24;
+
     private final UsuarioRepository usuarioRepository;
     private final CiudadRepository ciudadRepository;
     private final PasswordEncoder passwordEncoder;
+    private final EmailService emailService;
+    private final SecureRandom secureRandom = new SecureRandom();
 
     @Override
     @Transactional
@@ -48,16 +59,23 @@ public class UsuarioServiceImpl implements UsuarioService {
         Ciudad ciudadNacimiento = ciudadRepository.findById(request.getIdCiudadNacimiento())
                 .orElseThrow(() -> new ResourceNotFoundException("Ciudad de nacimiento no encontrada con id: " + request.getIdCiudadNacimiento()));
 
+        String contrasenaTemporal = generarContrasenaTemporal();
+
         Usuario usuario = Usuario.builder()
                 .nombre(request.getNombre())
                 .apellidoPaterno(request.getApellidoPaterno())
                 .apellidoMaterno(request.getApellidoMaterno())
                 .correo(request.getCorreo())
-                .contrasenaHash(passwordEncoder.encode(request.getContrasena()))
+                .contrasenaHash(passwordEncoder.encode(contrasenaTemporal))
                 .ci(request.getCi())
+                .ciExtension(request.getCiExtension())
                 .rol(RolUsuario.POSTULANTE)
                 .fechaRegistro(LocalDate.now())
                 .activo(true)
+                .emailVerificado(false)
+                .tokenVerificacion(UUID.randomUUID().toString())
+                .tokenVerificacionExpira(LocalDateTime.now().plusHours(HORAS_VALIDEZ_TOKEN_VERIFICACION))
+                .debeCambiarPassword(true)
                 .genero(request.getGenero())
                 .fechaNacimiento(request.getFechaNacimiento())
                 .autoidentificacionEtnica(request.getAutoidentificacionEtnica())
@@ -71,7 +89,10 @@ public class UsuarioServiceImpl implements UsuarioService {
                 .carreras(request.getCarreras() != null ? request.getCarreras() : List.of())
                 .build();
 
-        return mapToResponse(usuarioRepository.save(usuario));
+        Usuario guardado = usuarioRepository.save(usuario);
+        emailService.enviarVerificacionCuenta(guardado.getCorreo(), guardado.getNombre(), guardado.getTokenVerificacion(), contrasenaTemporal);
+
+        return mapToResponse(guardado);
     }
 
     @Override
@@ -82,6 +103,10 @@ public class UsuarioServiceImpl implements UsuarioService {
 
         if (!passwordEncoder.matches(request.getContrasena(), usuario.getContrasenaHash())) {
             throw new BusinessException("Correo o contraseña incorrectos");
+        }
+
+        if (!Boolean.TRUE.equals(usuario.getEmailVerificado())) {
+            throw new BusinessException("Debes verificar tu correo electrónico antes de iniciar sesión. Revisa tu bandeja de entrada.");
         }
 
         if (Boolean.FALSE.equals(usuario.getActivo())) {
@@ -107,6 +132,67 @@ public class UsuarioServiceImpl implements UsuarioService {
                 .toList();
     }
 
+    @Override
+    @Transactional
+    public void verificarCorreo(String token) {
+        Usuario usuario = usuarioRepository.findByTokenVerificacion(token)
+                .orElseThrow(() -> new BusinessException("El enlace de verificación no es válido"));
+
+        if (Boolean.TRUE.equals(usuario.getEmailVerificado())) {
+            return;
+        }
+        if (usuario.getTokenVerificacionExpira() == null || usuario.getTokenVerificacionExpira().isBefore(LocalDateTime.now())) {
+            throw new BusinessException("El enlace de verificación expiró. Solicita uno nuevo.");
+        }
+
+        usuario.setEmailVerificado(true);
+        usuario.setTokenVerificacion(null);
+        usuario.setTokenVerificacionExpira(null);
+        usuarioRepository.save(usuario);
+    }
+
+    @Override
+    @Transactional
+    public void reenviarVerificacion(String correo) {
+        Usuario usuario = usuarioRepository.findByCorreo(correo)
+                .orElseThrow(() -> new BusinessException("No existe una cuenta registrada con ese correo"));
+
+        if (Boolean.TRUE.equals(usuario.getEmailVerificado())) {
+            throw new BusinessException("Esta cuenta ya fue verificada, puedes iniciar sesión");
+        }
+
+        String contrasenaTemporal = generarContrasenaTemporal();
+        usuario.setContrasenaHash(passwordEncoder.encode(contrasenaTemporal));
+        usuario.setTokenVerificacion(UUID.randomUUID().toString());
+        usuario.setTokenVerificacionExpira(LocalDateTime.now().plusHours(HORAS_VALIDEZ_TOKEN_VERIFICACION));
+        usuarioRepository.save(usuario);
+
+        emailService.enviarVerificacionCuenta(usuario.getCorreo(), usuario.getNombre(), usuario.getTokenVerificacion(), contrasenaTemporal);
+    }
+
+    @Override
+    @Transactional
+    public void cambiarPassword(CambiarPasswordRequest request) {
+        Usuario usuario = usuarioRepository.findById(request.getIdUsuario())
+                .orElseThrow(() -> new ResourceNotFoundException("Usuario no encontrado con id: " + request.getIdUsuario()));
+
+        if (!passwordEncoder.matches(request.getContrasenaActual(), usuario.getContrasenaHash())) {
+            throw new BusinessException("La contraseña actual no es correcta");
+        }
+
+        usuario.setContrasenaHash(passwordEncoder.encode(request.getContrasenaNueva()));
+        usuario.setDebeCambiarPassword(false);
+        usuarioRepository.save(usuario);
+    }
+
+    private String generarContrasenaTemporal() {
+        StringBuilder sb = new StringBuilder(LONGITUD_PASSWORD_TEMPORAL);
+        for (int i = 0; i < LONGITUD_PASSWORD_TEMPORAL; i++) {
+            sb.append(ALFABETO_PASSWORD_TEMPORAL.charAt(secureRandom.nextInt(ALFABETO_PASSWORD_TEMPORAL.length())));
+        }
+        return sb.toString();
+    }
+
     private UsuarioResponse mapToResponse(Usuario usuario) {
         Integer edad = null;
         if (usuario.getFechaNacimiento() != null) {
@@ -121,9 +207,12 @@ public class UsuarioServiceImpl implements UsuarioService {
                 .nombreCompleto(usuario.getNombreCompleto())
                 .correo(usuario.getCorreo())
                 .ci(usuario.getCi())
+                .ciExtension(usuario.getCiExtension())
                 .rol(usuario.getRol())
                 .fechaRegistro(usuario.getFechaRegistro())
                 .activo(usuario.getActivo())
+                .emailVerificado(usuario.getEmailVerificado())
+                .debeCambiarPassword(usuario.getDebeCambiarPassword())
                 .genero(usuario.getGenero())
                 .fechaNacimiento(usuario.getFechaNacimiento())
                 .edad(edad)

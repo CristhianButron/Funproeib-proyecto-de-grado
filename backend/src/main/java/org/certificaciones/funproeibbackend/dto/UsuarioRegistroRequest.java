@@ -26,13 +26,12 @@ public class UsuarioRegistroRequest {
     @Email(message = "El correo no tiene un formato válido")
     private String correo;
 
-    @NotBlank(message = "La contraseña es obligatoria")
-    @Size(min = 8, message = "La contraseña debe tener al menos 8 caracteres")
-    private String contrasena;
-
     @NotBlank(message = "El CI es obligatorio")
     @Size(max = 20)
     private String ci;
+
+    @Size(max = 10)
+    private String ciExtension;
 
     // Perfil del postulante
     @NotNull(message = "El género es obligatorio")

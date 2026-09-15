@@ -13,15 +13,27 @@ export const authGuard: CanActivateFn = () => {
 export const adminGuard: CanActivateFn = () => {
   const auth = inject(AuthService);
   const router = inject(Router);
-  if (auth.esAdmin()) return true;
-  router.navigate(['/login']);
-  return false;
+  if (!auth.esAdmin()) {
+    router.navigate(['/login']);
+    return false;
+  }
+  if (auth.usuario()?.debeCambiarPassword) {
+    router.navigate(['/cambiar-password']);
+    return false;
+  }
+  return true;
 };
 
 export const postulanteGuard: CanActivateFn = () => {
   const auth = inject(AuthService);
   const router = inject(Router);
-  if (auth.esPostulante()) return true;
-  router.navigate(['/login']);
-  return false;
+  if (!auth.esPostulante()) {
+    router.navigate(['/login']);
+    return false;
+  }
+  if (auth.usuario()?.debeCambiarPassword) {
+    router.navigate(['/cambiar-password']);
+    return false;
+  }
+  return true;
 };

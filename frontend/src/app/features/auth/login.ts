@@ -2,6 +2,7 @@ import { Component, signal } from '@angular/core';
 import { FormBuilder, FormGroup, Validators, ReactiveFormsModule } from '@angular/forms';
 import { Router, RouterLink } from '@angular/router';
 import { AuthService } from '../../core/services/auth.service';
+import { UsuarioService } from '../../core/services/usuario.service';
 
 @Component({
   selector: 'app-login',
@@ -28,9 +29,20 @@ import { AuthService } from '../../core/services/auth.service';
         <p class="text-on-surface-variant mt-2 mb-8">Ingresa tus credenciales para continuar.</p>
 
         @if (error()) {
-          <div class="mb-5 p-3 rounded-lg bg-error-container text-on-error-container text-sm flex items-center gap-2">
-            <span class="material-symbols-outlined text-[20px]">error</span>
-            {{ error() }}
+          <div class="mb-5 p-3 rounded-lg bg-error-container text-on-error-container text-sm">
+            <div class="flex items-center gap-2">
+              <span class="material-symbols-outlined text-[20px]">error</span>
+              {{ error() }}
+            </div>
+            @if (mostrarReenviar()) {
+              <button type="button" (click)="reenviarVerificacion()" [disabled]="reenviando()"
+                class="mt-2 text-primary-dark font-semibold underline disabled:opacity-50">
+                {{ reenviando() ? 'Enviando...' : 'Reenviar correo de verificación' }}
+              </button>
+              @if (reenviado()) {
+                <p class="mt-1 text-secondary font-semibold">Te enviamos un nuevo correo de verificación.</p>
+              }
+            }
           </div>
         }
 
@@ -71,8 +83,16 @@ export class LoginComponent {
   form: FormGroup;
   cargando = signal(false);
   error = signal<string | null>(null);
+  mostrarReenviar = signal(false);
+  reenviando = signal(false);
+  reenviado = signal(false);
 
-  constructor(private fb: FormBuilder, private auth: AuthService, private router: Router) {
+  constructor(
+    private fb: FormBuilder,
+    private auth: AuthService,
+    private usuarioService: UsuarioService,
+    private router: Router,
+  ) {
     this.form = this.fb.group({
       correo: ['', [Validators.required, Validators.email]],
       contrasena: ['', Validators.required],
@@ -83,14 +103,38 @@ export class LoginComponent {
     if (this.form.invalid) return;
     this.cargando.set(true);
     this.error.set(null);
+    this.mostrarReenviar.set(false);
+    this.reenviado.set(false);
     this.auth.login(this.form.value).subscribe({
       next: (usuario) => {
         this.cargando.set(false);
+        if (usuario.debeCambiarPassword) {
+          this.router.navigate(['/cambiar-password']);
+          return;
+        }
         this.router.navigate([usuario.rol === 'ADMIN' ? '/admin' : '/portal']);
       },
       error: (err) => {
-        this.error.set(err.error?.mensaje || 'No se pudo iniciar sesión.');
+        const mensaje = err.error?.mensaje || 'No se pudo iniciar sesión.';
+        this.error.set(mensaje);
+        this.mostrarReenviar.set(mensaje.includes('verificar'));
         this.cargando.set(false);
+      },
+    });
+  }
+
+  reenviarVerificacion(): void {
+    const correo = this.form.get('correo')?.value;
+    if (!correo) return;
+    this.reenviando.set(true);
+    this.usuarioService.reenviarVerificacion({ correo }).subscribe({
+      next: () => {
+        this.reenviando.set(false);
+        this.reenviado.set(true);
+      },
+      error: (err) => {
+        this.error.set(err.error?.mensaje || 'No se pudo reenviar el correo.');
+        this.reenviando.set(false);
       },
     });
   }

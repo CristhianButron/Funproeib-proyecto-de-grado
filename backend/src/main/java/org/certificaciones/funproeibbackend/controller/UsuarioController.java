@@ -1,6 +1,8 @@
 package org.certificaciones.funproeibbackend.controller;
 
+import org.certificaciones.funproeibbackend.dto.CambiarPasswordRequest;
 import org.certificaciones.funproeibbackend.dto.LoginRequest;
+import org.certificaciones.funproeibbackend.dto.ReenviarVerificacionRequest;
 import org.certificaciones.funproeibbackend.dto.UsuarioRegistroRequest;
 import org.certificaciones.funproeibbackend.dto.UsuarioResponse;
 import org.certificaciones.funproeibbackend.service.UsuarioService;
@@ -37,5 +39,23 @@ public class UsuarioController {
     @GetMapping
     public ResponseEntity<List<UsuarioResponse>> listarTodos() {
         return ResponseEntity.ok(usuarioService.listarTodos());
+    }
+
+    @GetMapping("/verificar-correo")
+    public ResponseEntity<Void> verificarCorreo(@RequestParam String token) {
+        usuarioService.verificarCorreo(token);
+        return ResponseEntity.noContent().build();
+    }
+
+    @PostMapping("/reenviar-verificacion")
+    public ResponseEntity<Void> reenviarVerificacion(@Valid @RequestBody ReenviarVerificacionRequest request) {
+        usuarioService.reenviarVerificacion(request.getCorreo());
+        return ResponseEntity.noContent().build();
+    }
+
+    @PostMapping("/cambiar-password")
+    public ResponseEntity<Void> cambiarPassword(@Valid @RequestBody CambiarPasswordRequest request) {
+        usuarioService.cambiarPassword(request);
+        return ResponseEntity.noContent().build();
     }
 }

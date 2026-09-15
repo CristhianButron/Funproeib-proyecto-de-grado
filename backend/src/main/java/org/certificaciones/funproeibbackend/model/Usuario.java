@@ -7,6 +7,7 @@ import org.certificaciones.funproeibbackend.model.enums.RolUsuario;
 import jakarta.persistence.*;
 import lombok.*;
 import java.time.LocalDate;
+import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -42,6 +43,9 @@ public class Usuario {
     @Column(name = "ci", nullable = false, unique = true, length = 20)
     private String ci;
 
+    @Column(name = "ci_extension", length = 10)
+    private String ciExtension;
+
     @Enumerated(EnumType.STRING)
     @Column(name = "rol", nullable = false, length = 20)
     private RolUsuario rol;
@@ -52,6 +56,22 @@ public class Usuario {
     @Column(name = "activo")
     @Builder.Default
     private Boolean activo = true;
+
+    // --- Verificación de correo y contraseña temporal ---
+
+    @Column(name = "email_verificado")
+    @Builder.Default
+    private Boolean emailVerificado = false;
+
+    @Column(name = "token_verificacion", length = 100)
+    private String tokenVerificacion;
+
+    @Column(name = "token_verificacion_expira")
+    private LocalDateTime tokenVerificacionExpira;
+
+    @Column(name = "debe_cambiar_password")
+    @Builder.Default
+    private Boolean debeCambiarPassword = false;
 
     // --- Campos de perfil del postulante ---
 

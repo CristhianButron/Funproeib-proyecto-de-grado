@@ -19,9 +19,12 @@ public class UsuarioResponse {
     private String nombreCompleto;
     private String correo;
     private String ci;
+    private String ciExtension;
     private RolUsuario rol;
     private LocalDate fechaRegistro;
     private Boolean activo;
+    private Boolean emailVerificado;
+    private Boolean debeCambiarPassword;
 
     // Perfil del postulante
     private Genero genero;

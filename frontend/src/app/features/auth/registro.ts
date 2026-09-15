@@ -1,6 +1,6 @@
 import { Component, OnInit, signal } from '@angular/core';
-import { FormBuilder, FormGroup, Validators, ReactiveFormsModule, FormsModule } from '@angular/forms';
-import { Router, RouterLink } from '@angular/router';
+import { FormBuilder, FormControl, FormGroup, Validators, ReactiveFormsModule, FormsModule } from '@angular/forms';
+import { RouterLink } from '@angular/router';
 import { AuthService } from '../../core/services/auth.service';
 import { UbicacionService } from '../../core/services/ubicacion.service';
 import { CiudadResponse, PaisResponse } from '../../core/models/ubicacion.model';
@@ -27,6 +27,21 @@ import { UsuarioRegistroRequest } from '../../core/models/usuario.model';
         </div>
       }
 
+      @if (registroExitoso()) {
+        <div class="bg-white rounded-2xl border border-outline-variant shadow-card p-10 text-center">
+          <span class="material-symbols-outlined text-5xl text-secondary">mark_email_read</span>
+          <h2 class="text-xl font-extrabold text-primary-dark mt-4">¡Registro recibido!</h2>
+          <p class="text-on-surface-variant mt-2 max-w-md mx-auto">
+            Te enviamos un correo a <b>{{ correoRegistrado() }}</b> con un enlace de verificación y una
+            contraseña temporal. Verifica tu cuenta y luego inicia sesión; el sistema te pedirá
+            cambiar esa contraseña en tu primer ingreso.
+          </p>
+          <a routerLink="/login" class="inline-block mt-6 px-6 py-3 rounded-lg font-bold bg-primary text-white hover:bg-primary-dark transition-colors">
+            Ir a iniciar sesión
+          </a>
+        </div>
+      } @else {
+
       <form [formGroup]="form" (ngSubmit)="registrar()" class="bg-white rounded-2xl border border-outline-variant shadow-card p-8 space-y-6">
 
         <div>
@@ -51,18 +66,22 @@ import { UsuarioRegistroRequest } from '../../core/models/usuario.model';
               <input type="email" formControlName="correo" class="campo" placeholder="correo@ejemplo.com" />
             </div>
             <div>
-              <label class="block text-sm font-semibold mb-1">Contraseña *</label>
-              <input type="password" formControlName="contrasena" class="campo" placeholder="Mínimo 8 caracteres" />
+              <label class="block text-sm font-semibold mb-1">Teléfono</label>
+              <input formControlName="telefono" class="campo" placeholder="Ej: 700xxxxx" />
             </div>
             <div>
               <label class="block text-sm font-semibold mb-1">Cédula de Identidad *</label>
               <input formControlName="ci" class="campo" placeholder="Ej: 1234567" />
             </div>
             <div>
-              <label class="block text-sm font-semibold mb-1">Teléfono</label>
-              <input formControlName="telefono" class="campo" placeholder="Ej: 700xxxxx" />
+              <label class="block text-sm font-semibold mb-1">Extensión</label>
+              <input formControlName="ciExtension" class="campo" placeholder="Ej: LP, CB, SC..." />
             </div>
           </div>
+          <p class="text-xs text-on-surface-variant mt-3 flex items-center gap-1">
+            <span class="material-symbols-outlined text-[16px]">info</span>
+            Te enviaremos una contraseña temporal por correo para tu primer ingreso; no la elijes aquí.
+          </p>
         </div>
 
         <div>
@@ -95,9 +114,14 @@ import { UsuarioRegistroRequest } from '../../core/models/usuario.model';
                 <option value="DOCTORADO">Doctorado</option>
               </select>
             </div>
-            <div>
+            <div [class.sm:col-span-2]="etniaSeleccion.value === 'OTRA'">
               <label class="block text-sm font-semibold mb-1">Autoidentificación étnica</label>
-              <input formControlName="autoidentificacionEtnica" class="campo" placeholder="Ej: Quechua, Aymara..." />
+              <select [formControl]="etniaSeleccion" class="campo">
+                @for (op of opcionesEtnia; track op) { <option [value]="op">{{ op === 'OTRA' ? 'Otra' : op === 'NINGUNA' ? 'Ninguna / Prefiero no indicar' : op }}</option> }
+              </select>
+              @if (etniaSeleccion.value === 'OTRA') {
+                <input [formControl]="etniaOtroTexto" class="campo mt-2" placeholder="Especifica tu autoidentificación étnica" />
+              }
             </div>
             <div>
               <label class="block text-sm font-semibold mb-1">Estado civil *</label>
@@ -200,6 +224,7 @@ import { UsuarioRegistroRequest } from '../../core/models/usuario.model';
           </a>
         </div>
       </form>
+      }
 
       <p class="text-center mt-4">
         <a routerLink="/" class="text-on-surface-variant text-sm hover:text-primary">← Volver al inicio</a>
@@ -224,6 +249,16 @@ export class RegistroComponent implements OnInit {
   form: FormGroup;
   cargando = signal(false);
   error = signal<string | null>(null);
+  registroExitoso = signal(false);
+  correoRegistrado = signal('');
+
+  opcionesEtnia = [
+    'NINGUNA', 'Quechua', 'Aymara', 'Guaraní', 'Chiquitano', 'Mojeño', 'Guarayo',
+    'Yuracaré', 'Chácobo', 'Ayoreo', 'Tacana', 'Movima', 'Itonama', 'Baure',
+    'Weenhayek', 'Afroboliviano', 'OTRA',
+  ];
+  etniaSeleccion = new FormControl('NINGUNA', { nonNullable: true });
+  etniaOtroTexto = new FormControl('', { nonNullable: true });
 
   paises = signal<PaisResponse[]>([]);
   ciudades = signal<CiudadResponse[]>([]);
@@ -240,7 +275,6 @@ export class RegistroComponent implements OnInit {
   constructor(
     private fb: FormBuilder,
     private auth: AuthService,
-    private router: Router,
     private ubicacionService: UbicacionService,
   ) {
     this.form = this.fb.group({
@@ -248,13 +282,12 @@ export class RegistroComponent implements OnInit {
       apellidoPaterno: ['', [Validators.required, Validators.maxLength(80)]],
       apellidoMaterno: ['', Validators.maxLength(80)],
       correo: ['', [Validators.required, Validators.email]],
-      contrasena: ['', [Validators.required, Validators.minLength(8)]],
       ci: ['', Validators.required],
+      ciExtension: [''],
       telefono: [''],
       genero: ['', Validators.required],
       fechaNacimiento: ['', Validators.required],
       nivelEducativo: ['', Validators.required],
-      autoidentificacionEtnica: [''],
       estadoCivil: ['', Validators.required],
       provinciaNacimiento: [''],
       direccionDomicilio: [''],
@@ -319,16 +352,26 @@ export class RegistroComponent implements OnInit {
     }
     this.cargando.set(true);
     this.error.set(null);
+
+    let autoidentificacionEtnica: string | undefined;
+    if (this.etniaSeleccion.value === 'OTRA') {
+      autoidentificacionEtnica = this.etniaOtroTexto.value.trim() || undefined;
+    } else if (this.etniaSeleccion.value !== 'NINGUNA') {
+      autoidentificacionEtnica = this.etniaSeleccion.value;
+    }
+
     const request: UsuarioRegistroRequest = {
       ...this.form.value,
       idCiudad: this.idCiudadSeleccionada(),
       idCiudadNacimiento: this.idCiudadNacimientoSeleccionada(),
       carreras: this.carreras(),
+      autoidentificacionEtnica,
     };
     this.auth.registrar(request).subscribe({
-      next: () => {
+      next: (usuario) => {
         this.cargando.set(false);
-        this.router.navigate(['/portal']);
+        this.correoRegistrado.set(usuario.correo);
+        this.registroExitoso.set(true);
       },
       error: (err) => {
         this.error.set(err.error?.mensaje || 'No se pudo completar el registro.');
