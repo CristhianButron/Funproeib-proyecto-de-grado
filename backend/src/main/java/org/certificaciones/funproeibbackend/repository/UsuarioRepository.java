@@ -23,6 +23,8 @@ public interface UsuarioRepository extends JpaRepository<Usuario, Long> {
 
     List<Usuario> findByRol(RolUsuario rol);
 
+    long countByRolAndActivoTrue(RolUsuario rol);
+
     List<Usuario> findByGenero(Genero genero);
 
     List<Usuario> findByNivelEducativo(NivelEducativo nivelEducativo);

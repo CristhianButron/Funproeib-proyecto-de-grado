@@ -252,4 +252,89 @@ class UsuarioServiceImplTest {
                 .isInstanceOf(BusinessException.class)
                 .hasMessageContaining("actual");
     }
+
+    @Test
+    @DisplayName("Cambiar rol de un postulante a evaluador funciona sin restricciones")
+    void cambiarRol_postulanteAEvaluador_permiteCambio() {
+        Usuario usuario = Usuario.builder().id(2L).rol(RolUsuario.POSTULANTE).activo(true).build();
+        when(usuarioRepository.findById(2L)).thenReturn(Optional.of(usuario));
+
+        UsuarioResponse res = service.cambiarRol(2L, RolUsuario.EVALUADOR);
+
+        assertThat(res.getRol()).isEqualTo(RolUsuario.EVALUADOR);
+        verify(usuarioRepository).save(usuario);
+    }
+
+    @Test
+    @DisplayName("Cambiar rol al mismo valor no hace nada (no guarda)")
+    void cambiarRol_mismoRol_noGuarda() {
+        Usuario usuario = Usuario.builder().id(2L).rol(RolUsuario.POSTULANTE).activo(true).build();
+        when(usuarioRepository.findById(2L)).thenReturn(Optional.of(usuario));
+
+        service.cambiarRol(2L, RolUsuario.POSTULANTE);
+
+        verify(usuarioRepository, never()).save(any());
+    }
+
+    @Test
+    @DisplayName("Rechaza degradar al último administrador activo")
+    void cambiarRol_ultimoAdminActivo_lanzaExcepcion() {
+        Usuario admin = Usuario.builder().id(1L).rol(RolUsuario.ADMIN).activo(true).build();
+        when(usuarioRepository.findById(1L)).thenReturn(Optional.of(admin));
+        when(usuarioRepository.countByRolAndActivoTrue(RolUsuario.ADMIN)).thenReturn(1L);
+
+        assertThatThrownBy(() -> service.cambiarRol(1L, RolUsuario.POSTULANTE))
+                .isInstanceOf(BusinessException.class)
+                .hasMessageContaining("administrador");
+        verify(usuarioRepository, never()).save(any());
+    }
+
+    @Test
+    @DisplayName("Permite degradar a un admin si hay otro administrador activo")
+    void cambiarRol_hayOtroAdminActivo_permiteCambio() {
+        Usuario admin = Usuario.builder().id(1L).rol(RolUsuario.ADMIN).activo(true).build();
+        when(usuarioRepository.findById(1L)).thenReturn(Optional.of(admin));
+        when(usuarioRepository.countByRolAndActivoTrue(RolUsuario.ADMIN)).thenReturn(2L);
+
+        UsuarioResponse res = service.cambiarRol(1L, RolUsuario.EVALUADOR);
+
+        assertThat(res.getRol()).isEqualTo(RolUsuario.EVALUADOR);
+    }
+
+    @Test
+    @DisplayName("Rechaza desactivar al último administrador activo")
+    void cambiarActivo_ultimoAdminActivo_lanzaExcepcion() {
+        Usuario admin = Usuario.builder().id(1L).rol(RolUsuario.ADMIN).activo(true).build();
+        when(usuarioRepository.findById(1L)).thenReturn(Optional.of(admin));
+        when(usuarioRepository.countByRolAndActivoTrue(RolUsuario.ADMIN)).thenReturn(1L);
+
+        assertThatThrownBy(() -> service.cambiarActivo(1L, false))
+                .isInstanceOf(BusinessException.class)
+                .hasMessageContaining("administrador");
+        verify(usuarioRepository, never()).save(any());
+    }
+
+    @Test
+    @DisplayName("Permite desactivar a un postulante sin restricciones")
+    void cambiarActivo_postulante_permiteDesactivar() {
+        Usuario postulante = Usuario.builder().id(3L).rol(RolUsuario.POSTULANTE).activo(true).build();
+        when(usuarioRepository.findById(3L)).thenReturn(Optional.of(postulante));
+
+        UsuarioResponse res = service.cambiarActivo(3L, false);
+
+        assertThat(res.getActivo()).isFalse();
+        verify(usuarioRepository).save(postulante);
+    }
+
+    @Test
+    @DisplayName("Reactivar un usuario no dispara la validación del último admin")
+    void cambiarActivo_reactivar_noValida() {
+        Usuario postulante = Usuario.builder().id(3L).rol(RolUsuario.POSTULANTE).activo(false).build();
+        when(usuarioRepository.findById(3L)).thenReturn(Optional.of(postulante));
+
+        UsuarioResponse res = service.cambiarActivo(3L, true);
+
+        assertThat(res.getActivo()).isTrue();
+        verify(usuarioRepository, never()).countByRolAndActivoTrue(any());
+    }
 }

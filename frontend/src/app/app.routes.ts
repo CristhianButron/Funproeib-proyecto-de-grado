@@ -23,6 +23,7 @@ export const routes: Routes = [
       { path: 'evaluaciones', loadComponent: () => import('./features/admin/evaluaciones').then(m => m.EvaluacionesComponent) },
       { path: 'reportes', loadComponent: () => import('./features/admin/reportes').then(m => m.ReportesComponent) },
       { path: 'lista-negra', loadComponent: () => import('./features/admin/lista-negra').then(m => m.ListaNegraComponent) },
+      { path: 'usuarios', loadComponent: () => import('./features/admin/usuarios-admin').then(m => m.UsuariosAdminComponent) },
     ],
   },
 

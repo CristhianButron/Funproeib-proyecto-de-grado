@@ -5,6 +5,7 @@ import org.certificaciones.funproeibbackend.dto.LoginRequest;
 import org.certificaciones.funproeibbackend.dto.ReenviarVerificacionRequest;
 import org.certificaciones.funproeibbackend.dto.UsuarioRegistroRequest;
 import org.certificaciones.funproeibbackend.dto.UsuarioResponse;
+import org.certificaciones.funproeibbackend.model.enums.RolUsuario;
 import org.certificaciones.funproeibbackend.service.UsuarioService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
@@ -57,5 +58,15 @@ public class UsuarioController {
     public ResponseEntity<Void> cambiarPassword(@Valid @RequestBody CambiarPasswordRequest request) {
         usuarioService.cambiarPassword(request);
         return ResponseEntity.noContent().build();
+    }
+
+    @PatchMapping("/{id}/rol")
+    public ResponseEntity<UsuarioResponse> cambiarRol(@PathVariable Long id, @RequestParam RolUsuario rol) {
+        return ResponseEntity.ok(usuarioService.cambiarRol(id, rol));
+    }
+
+    @PatchMapping("/{id}/activo")
+    public ResponseEntity<UsuarioResponse> cambiarActivo(@PathVariable Long id, @RequestParam boolean activo) {
+        return ResponseEntity.ok(usuarioService.cambiarActivo(id, activo));
     }
 }

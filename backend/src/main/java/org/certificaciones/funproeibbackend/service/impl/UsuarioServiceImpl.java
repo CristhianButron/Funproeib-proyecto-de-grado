@@ -119,9 +119,7 @@ public class UsuarioServiceImpl implements UsuarioService {
     @Override
     @Transactional(readOnly = true)
     public UsuarioResponse obtenerPorId(Long id) {
-        Usuario usuario = usuarioRepository.findById(id)
-                .orElseThrow(() -> new ResourceNotFoundException("Usuario no encontrado con id: " + id));
-        return mapToResponse(usuario);
+        return mapToResponse(buscarUsuario(id));
     }
 
     @Override
@@ -183,6 +181,47 @@ public class UsuarioServiceImpl implements UsuarioService {
         usuario.setContrasenaHash(passwordEncoder.encode(request.getContrasenaNueva()));
         usuario.setDebeCambiarPassword(false);
         usuarioRepository.save(usuario);
+    }
+
+    @Override
+    @Transactional
+    public UsuarioResponse cambiarRol(Long id, RolUsuario nuevoRol) {
+        Usuario usuario = buscarUsuario(id);
+        if (usuario.getRol() != nuevoRol) {
+            validarNoDejaSistemaSinAdmin(usuario);
+            usuario.setRol(nuevoRol);
+            usuarioRepository.save(usuario);
+        }
+        return mapToResponse(usuario);
+    }
+
+    @Override
+    @Transactional
+    public UsuarioResponse cambiarActivo(Long id, boolean activo) {
+        Usuario usuario = buscarUsuario(id);
+        if (!activo && Boolean.TRUE.equals(usuario.getActivo())) {
+            validarNoDejaSistemaSinAdmin(usuario);
+        }
+        usuario.setActivo(activo);
+        usuarioRepository.save(usuario);
+        return mapToResponse(usuario);
+    }
+
+    /**
+     * Evita que se degrade o desactive al último administrador activo del
+     * sistema, lo que dejaría el panel de administración inaccesible para
+     * todos.
+     */
+    private void validarNoDejaSistemaSinAdmin(Usuario usuario) {
+        if (usuario.getRol() == RolUsuario.ADMIN && Boolean.TRUE.equals(usuario.getActivo())
+                && usuarioRepository.countByRolAndActivoTrue(RolUsuario.ADMIN) <= 1) {
+            throw new BusinessException("No se puede dejar al sistema sin ningún administrador activo");
+        }
+    }
+
+    private Usuario buscarUsuario(Long id) {
+        return usuarioRepository.findById(id)
+                .orElseThrow(() -> new ResourceNotFoundException("Usuario no encontrado con id: " + id));
     }
 
     private String generarContrasenaTemporal() {
