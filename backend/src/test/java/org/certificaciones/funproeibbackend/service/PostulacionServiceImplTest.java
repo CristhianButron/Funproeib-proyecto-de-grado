@@ -21,6 +21,7 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
+import org.springframework.test.util.ReflectionTestUtils;
 
 import java.time.LocalDate;
 import java.util.List;
@@ -50,10 +51,13 @@ class PostulacionServiceImplTest {
     void setUp() {
         usuario = Usuario.builder().id(1L).ci("123456").nombre("Juan").apellidoPaterno("Mamani").build();
         programa = Programa.builder().id(2L).nombre("Diplomado EIB")
-                .estado(EstadoPrograma.ABIERTO).cuposDisponibles(10).build();
+                .estado(EstadoPrograma.ABIERTO).cuposDisponibles(10)
+                .fechaInicio(LocalDate.now().minusMonths(1)).fechaFin(LocalDate.now().plusMonths(2))
+                .build();
         request = new PostulacionRequest();
         request.setIdUsuario(1L);
         request.setIdPrograma(2L);
+        ReflectionTestUtils.setField(service, "telefonoContacto", "+591 4 000-0000");
     }
 
     @Test
@@ -86,20 +90,37 @@ class PostulacionServiceImplTest {
     }
 
     @Test
-    @DisplayName("Rechaza si el programa no está ABIERTO")
+    @DisplayName("Rechaza si el programa no está ABIERTO y todavía no inició (BORRADOR a futuro)")
     void crear_programaNoAbierto_lanzaExcepcion() {
         programa.setEstado(EstadoPrograma.BORRADOR);
+        programa.setFechaInicio(LocalDate.now().plusMonths(1));
         when(usuarioRepository.findById(1L)).thenReturn(Optional.of(usuario));
         when(programaRepository.findById(2L)).thenReturn(Optional.of(programa));
         when(listaNegraRepository.existsByCiPostulanteAndActivoTrue("123456")).thenReturn(false);
 
         assertThatThrownBy(() -> service.crear(request))
                 .isInstanceOf(BusinessException.class)
-                .hasMessageContaining("no está abierto");
+                .hasMessageContaining("no está abierto")
+                .hasMessageContaining("+591 4 000-0000");
     }
 
     @Test
-    @DisplayName("Rechaza si no hay cupos disponibles")
+    @DisplayName("Rechaza con mensaje \"ya inició\" si el programa no está ABIERTO y su fecha de inicio ya pasó")
+    void crear_programaYaIniciado_mensajeYaInicio() {
+        programa.setEstado(EstadoPrograma.ACTIVO);
+        programa.setFechaInicio(LocalDate.now().minusDays(3));
+        when(usuarioRepository.findById(1L)).thenReturn(Optional.of(usuario));
+        when(programaRepository.findById(2L)).thenReturn(Optional.of(programa));
+        when(listaNegraRepository.existsByCiPostulanteAndActivoTrue("123456")).thenReturn(false);
+
+        assertThatThrownBy(() -> service.crear(request))
+                .isInstanceOf(BusinessException.class)
+                .hasMessageContaining("ya inició")
+                .hasMessageContaining("+591 4 000-0000");
+    }
+
+    @Test
+    @DisplayName("Rechaza si no hay cupos disponibles (cuposDisponibles en 0)")
     void crear_sinCupos_lanzaExcepcion() {
         programa.setCuposDisponibles(0);
         when(usuarioRepository.findById(1L)).thenReturn(Optional.of(usuario));
@@ -108,7 +129,44 @@ class PostulacionServiceImplTest {
 
         assertThatThrownBy(() -> service.crear(request))
                 .isInstanceOf(BusinessException.class)
-                .hasMessageContaining("cupos");
+                .hasMessageContaining("cupos")
+                .hasMessageContaining("+591 4 000-0000");
+    }
+
+    @Test
+    @DisplayName("Rechaza si ya hay tantas postulaciones activas como cupos, aunque cuposDisponibles sea mayor a 0")
+    void crear_cuposLlenosPorPostulacionesActivas_lanzaExcepcion() {
+        programa.setCuposDisponibles(5);
+        when(usuarioRepository.findById(1L)).thenReturn(Optional.of(usuario));
+        when(programaRepository.findById(2L)).thenReturn(Optional.of(programa));
+        when(listaNegraRepository.existsByCiPostulanteAndActivoTrue("123456")).thenReturn(false);
+        when(postulacionRepository.countByProgramaIdAndEstadoNotIn(2L,
+                List.of(EstadoPostulacion.RECHAZADA, EstadoPostulacion.BLOQUEADA))).thenReturn(5L);
+
+        assertThatThrownBy(() -> service.crear(request))
+                .isInstanceOf(BusinessException.class)
+                .hasMessageContaining("cupos")
+                .hasMessageContaining("+591 4 000-0000");
+        verify(postulacionRepository, never()).save(any());
+    }
+
+    @Test
+    @DisplayName("Las postulaciones rechazadas/bloqueadas no cuentan para el cupo (la consulta ya las excluye)")
+    void crear_consultaCuposExcluyeRechazadasYBloqueadas() {
+        programa.setCuposDisponibles(5);
+        when(usuarioRepository.findById(1L)).thenReturn(Optional.of(usuario));
+        when(programaRepository.findById(2L)).thenReturn(Optional.of(programa));
+        when(listaNegraRepository.existsByCiPostulanteAndActivoTrue("123456")).thenReturn(false);
+        when(postulacionRepository.countByProgramaIdAndEstadoNotIn(2L,
+                List.of(EstadoPostulacion.RECHAZADA, EstadoPostulacion.BLOQUEADA))).thenReturn(4L);
+        when(postulacionRepository.existsByUsuarioIdAndProgramaId(1L, 2L)).thenReturn(false);
+        when(postulacionRepository.save(any(Postulacion.class))).thenAnswer(inv -> inv.getArgument(0));
+
+        PostulacionResponse res = service.crear(request);
+
+        assertThat(res.getEstado()).isEqualTo(EstadoPostulacion.INCOMPLETA);
+        verify(postulacionRepository).countByProgramaIdAndEstadoNotIn(2L,
+                List.of(EstadoPostulacion.RECHAZADA, EstadoPostulacion.BLOQUEADA));
     }
 
     @Test

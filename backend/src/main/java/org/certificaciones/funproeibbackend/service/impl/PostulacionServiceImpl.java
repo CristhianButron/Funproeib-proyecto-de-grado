@@ -16,6 +16,7 @@ import org.certificaciones.funproeibbackend.repository.ProgramaRepository;
 import org.certificaciones.funproeibbackend.repository.UsuarioRepository;
 import org.certificaciones.funproeibbackend.service.PostulacionService;
 import lombok.RequiredArgsConstructor;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -31,6 +32,9 @@ public class PostulacionServiceImpl implements PostulacionService {
     private final ProgramaRepository programaRepository;
     private final ListaNegraRepository listaNegraRepository;
 
+    @Value("${app.contacto.telefono}")
+    private String telefonoContacto;
+
     @Override
     @Transactional
     public PostulacionResponse crear(PostulacionRequest request) {
@@ -45,11 +49,16 @@ public class PostulacionServiceImpl implements PostulacionService {
         }
 
         if (!programa.getEstado().equals(EstadoPrograma.ABIERTO)) {
-            throw new BusinessException("El programa no está abierto para postulaciones");
+            String motivo = !programa.getFechaInicio().isAfter(LocalDate.now())
+                    ? "ya inició"
+                    : "no está abierto para postulaciones";
+            throw new BusinessException("Este programa " + motivo + ". " + mensajeContacto());
         }
 
-        if (programa.getCuposDisponibles() <= 0) {
-            throw new BusinessException("El programa no tiene cupos disponibles");
+        long cuposOcupados = postulacionRepository.countByProgramaIdAndEstadoNotIn(
+                programa.getId(), List.of(EstadoPostulacion.RECHAZADA, EstadoPostulacion.BLOQUEADA));
+        if (cuposOcupados >= programa.getCuposDisponibles()) {
+            throw new BusinessException("Este programa ya no tiene cupos disponibles. " + mensajeContacto());
         }
 
         if (postulacionRepository.existsByUsuarioIdAndProgramaId(usuario.getId(), programa.getId())) {
@@ -137,6 +146,10 @@ public class PostulacionServiceImpl implements PostulacionService {
     private Postulacion buscarPostulacion(Long id) {
         return postulacionRepository.findById(id)
                 .orElseThrow(() -> new ResourceNotFoundException("Postulación no encontrada con id: " + id));
+    }
+
+    private String mensajeContacto() {
+        return "Puedes contactarte con el equipo de Funproeib Andes al " + telefonoContacto + " para más información.";
     }
 
     private PostulacionResponse mapToResponse(Postulacion p) {

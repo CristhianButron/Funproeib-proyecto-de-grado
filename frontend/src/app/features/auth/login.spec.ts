@@ -52,6 +52,13 @@ describe('LoginComponent', () => {
     expect(navigate).toHaveBeenCalledWith(['/admin']);
   });
 
+  it('login exitoso de un EVALUADOR navega a /evaluador', () => {
+    authFake = { login: vi.fn(() => of(usuarioFake({ rol: 'EVALUADOR' }))) };
+    crearComponente();
+    component.ingresar();
+    expect(navigate).toHaveBeenCalledWith(['/evaluador']);
+  });
+
   it('login con debeCambiarPassword navega a /cambiar-password en vez del destino normal', () => {
     authFake = { login: vi.fn(() => of(usuarioFake({ rol: 'ADMIN', debeCambiarPassword: true }))) };
     crearComponente();

@@ -3,6 +3,7 @@ import { FormBuilder, FormGroup, Validators, ReactiveFormsModule } from '@angula
 import { Router, RouterLink } from '@angular/router';
 import { AuthService } from '../../core/services/auth.service';
 import { UsuarioService } from '../../core/services/usuario.service';
+import { rutaInicialPorRol } from '../../core/utils/rol-ruta';
 
 @Component({
   selector: 'app-login',
@@ -112,7 +113,7 @@ export class LoginComponent {
           this.router.navigate(['/cambiar-password']);
           return;
         }
-        this.router.navigate([usuario.rol === 'ADMIN' ? '/admin' : '/portal']);
+        this.router.navigate([rutaInicialPorRol(usuario.rol)]);
       },
       error: (err) => {
         const mensaje = err.error?.mensaje || 'No se pudo iniciar sesión.';

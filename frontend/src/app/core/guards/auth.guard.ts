@@ -37,3 +37,17 @@ export const postulanteGuard: CanActivateFn = () => {
   }
   return true;
 };
+
+export const evaluadorGuard: CanActivateFn = () => {
+  const auth = inject(AuthService);
+  const router = inject(Router);
+  if (!auth.esEvaluador()) {
+    router.navigate(['/login']);
+    return false;
+  }
+  if (auth.usuario()?.debeCambiarPassword) {
+    router.navigate(['/cambiar-password']);
+    return false;
+  }
+  return true;
+};

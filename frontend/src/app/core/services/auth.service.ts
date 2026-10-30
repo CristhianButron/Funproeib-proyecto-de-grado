@@ -12,6 +12,7 @@ export class AuthService {
   readonly usuario = this.usuarioSignal.asReadonly();
   readonly estaAutenticado = computed(() => this.usuarioSignal() !== null);
   readonly esAdmin = computed(() => this.usuarioSignal()?.rol === 'ADMIN');
+  readonly esEvaluador = computed(() => this.usuarioSignal()?.rol === 'EVALUADOR');
   readonly esPostulante = computed(() => this.usuarioSignal()?.rol === 'POSTULANTE');
 
   constructor(private usuarioService: UsuarioService) {}

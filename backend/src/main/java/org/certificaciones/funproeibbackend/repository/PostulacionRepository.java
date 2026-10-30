@@ -25,6 +25,8 @@ public interface PostulacionRepository extends JpaRepository<Postulacion, Long> 
 
     boolean existsByUsuarioIdAndProgramaId(Long idUsuario, Long idPrograma);
 
+    long countByProgramaIdAndEstadoNotIn(Long idPrograma, List<EstadoPostulacion> estados);
+
     @Query("SELECT p FROM Postulacion p " +
             "JOIN FETCH p.programa pr " +
             "WHERE p.usuario.id = :idUsuario " +

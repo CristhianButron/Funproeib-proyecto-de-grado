@@ -1,10 +1,10 @@
 import { TestBed } from '@angular/core/testing';
 import { Router } from '@angular/router';
-import { adminGuard, authGuard, postulanteGuard } from './auth.guard';
+import { adminGuard, authGuard, evaluadorGuard, postulanteGuard } from './auth.guard';
 import { AuthService } from '../services/auth.service';
 import { UsuarioResponse } from '../models/usuario.model';
 
-function usuarioFake(rol: 'ADMIN' | 'POSTULANTE', debeCambiarPassword = false): UsuarioResponse {
+function usuarioFake(rol: 'ADMIN' | 'POSTULANTE' | 'EVALUADOR', debeCambiarPassword = false): UsuarioResponse {
   return {
     id: 1, nombre: 'Test', apellidoPaterno: 'Usuario', nombreCompleto: 'Test Usuario',
     correo: 'x@y.com', ci: '123', rol, fechaRegistro: '2026-01-01', activo: true,
@@ -21,6 +21,7 @@ describe('Guards de autenticación', () => {
     const authFake = {
       estaAutenticado: () => usuario !== null,
       esAdmin: () => usuario?.rol === 'ADMIN',
+      esEvaluador: () => usuario?.rol === 'EVALUADOR',
       esPostulante: () => usuario?.rol === 'POSTULANTE',
       usuario: () => usuario,
     };
@@ -83,6 +84,27 @@ describe('Guards de autenticación', () => {
   it('postulanteGuard redirige a /cambiar-password si tiene contraseña temporal', () => {
     configurar(usuarioFake('POSTULANTE', true));
     const resultado = TestBed.runInInjectionContext(() => postulanteGuard({} as any, {} as any));
+    expect(resultado).toBe(false);
+    expect(navigate).toHaveBeenCalledWith(['/cambiar-password']);
+  });
+
+  it('evaluadorGuard deja pasar a un EVALUADOR que no necesita cambiar contraseña', () => {
+    configurar(usuarioFake('EVALUADOR'));
+    const resultado = TestBed.runInInjectionContext(() => evaluadorGuard({} as any, {} as any));
+    expect(resultado).toBe(true);
+    expect(navigate).not.toHaveBeenCalled();
+  });
+
+  it('evaluadorGuard redirige a /login si no es EVALUADOR', () => {
+    configurar(usuarioFake('POSTULANTE'));
+    const resultado = TestBed.runInInjectionContext(() => evaluadorGuard({} as any, {} as any));
+    expect(resultado).toBe(false);
+    expect(navigate).toHaveBeenCalledWith(['/login']);
+  });
+
+  it('evaluadorGuard redirige a /cambiar-password si tiene contraseña temporal', () => {
+    configurar(usuarioFake('EVALUADOR', true));
+    const resultado = TestBed.runInInjectionContext(() => evaluadorGuard({} as any, {} as any));
     expect(resultado).toBe(false);
     expect(navigate).toHaveBeenCalledWith(['/cambiar-password']);
   });

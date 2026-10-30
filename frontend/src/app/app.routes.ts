@@ -1,5 +1,5 @@
 import { Routes } from '@angular/router';
-import { adminGuard, authGuard, postulanteGuard } from './core/guards/auth.guard';
+import { adminGuard, authGuard, evaluadorGuard, postulanteGuard } from './core/guards/auth.guard';
 
 export const routes: Routes = [
   { path: '', loadComponent: () => import('./features/landing/landing').then(m => m.LandingComponent) },
@@ -34,6 +34,17 @@ export const routes: Routes = [
     children: [
       { path: '', loadComponent: () => import('./features/portal/portal-programas').then(m => m.PortalProgramasComponent) },
       { path: 'mis-postulaciones', loadComponent: () => import('./features/portal/portal-mis-postulaciones').then(m => m.PortalMisPostulacionesComponent) },
+    ],
+  },
+
+  {
+    path: 'evaluador',
+    canActivate: [evaluadorGuard],
+    loadComponent: () => import('./features/evaluador/evaluador-layout').then(m => m.EvaluadorLayoutComponent),
+    children: [
+      { path: '', loadComponent: () => import('./features/admin/evaluaciones').then(m => m.EvaluacionesComponent) },
+      { path: 'postulantes', loadComponent: () => import('./features/admin/postulantes').then(m => m.PostulantesComponent) },
+      { path: 'reportes', loadComponent: () => import('./features/admin/reportes').then(m => m.ReportesComponent) },
     ],
   },
 

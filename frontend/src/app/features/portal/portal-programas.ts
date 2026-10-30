@@ -17,7 +17,10 @@ import { ProgramaResponse } from '../../core/models/programa.model';
     @if (mensaje()) {
       <div class="fixed top-5 left-1/2 -translate-x-1/2 z-[100] max-w-md w-[90vw] p-3 rounded-lg text-sm font-semibold shadow-xl flex items-center gap-2" [class]="mensajeError() ? 'bg-error-container text-on-error-container' : 'bg-secondary-light text-on-secondary-container'">
         <span class="material-symbols-outlined text-[20px]">{{ mensajeError() ? 'error' : 'check_circle' }}</span>
-        {{ mensaje() }}
+        <span class="flex-1">{{ mensaje() }}</span>
+        <button (click)="mensaje.set(null)" class="shrink-0 opacity-70 hover:opacity-100">
+          <span class="material-symbols-outlined text-[18px]">close</span>
+        </button>
       </div>
     }
 
@@ -89,6 +92,6 @@ export class PortalProgramasComponent implements OnInit {
 
   private notificar(msg: string, error: boolean): void {
     this.mensaje.set(msg); this.mensajeError.set(error);
-    setTimeout(() => this.mensaje.set(null), 5000);
+    setTimeout(() => this.mensaje.set(null), error ? 10000 : 5000);
   }
 }

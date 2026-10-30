@@ -2,6 +2,7 @@ import { Component, signal } from '@angular/core';
 import { FormBuilder, FormGroup, Validators, ReactiveFormsModule } from '@angular/forms';
 import { Router } from '@angular/router';
 import { AuthService } from '../../core/services/auth.service';
+import { rutaInicialPorRol } from '../../core/utils/rol-ruta';
 
 @Component({
   selector: 'app-cambiar-password-obligatorio',
@@ -79,7 +80,7 @@ export class CambiarPasswordObligatorioComponent {
       next: () => {
         this.guardando.set(false);
         const rol = this.auth.usuario()?.rol;
-        this.router.navigate([rol === 'ADMIN' ? '/admin' : '/portal']);
+        this.router.navigate([rol ? rutaInicialPorRol(rol) : '/login']);
       },
       error: (err) => {
         this.error.set(err.error?.mensaje || 'No se pudo cambiar la contraseña.');
