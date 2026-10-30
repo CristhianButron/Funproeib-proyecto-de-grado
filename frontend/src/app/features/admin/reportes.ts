@@ -1,5 +1,6 @@
 import { Component, OnInit, computed, signal } from '@angular/core';
 import { FormsModule } from '@angular/forms';
+import { Workbook, Fill, Borders } from 'exceljs';
 import { ReporteService } from '../../core/services/reporte.service';
 import { ProgramaService } from '../../core/services/programa.service';
 import { UbicacionService } from '../../core/services/ubicacion.service';
@@ -7,6 +8,27 @@ import { BeneficiarioReporte, ReporteFiltro } from '../../core/models/reporte.mo
 import { ProgramaResponse, TipoPrograma } from '../../core/models/programa.model';
 import { Genero, NivelEducativo } from '../../core/models/usuario.model';
 import { CiudadResponse, PaisResponse } from '../../core/models/ubicacion.model';
+
+const AZUL_OSCURO = 'FF1E3A8A';
+const BLANCO = 'FFFFFFFF';
+const GRIS_FILA = 'FFF3F4F6';
+const GRIS_BORDE = 'FFD1D5DB';
+
+const COLOR_GENERO: Record<Genero, string> = {
+  MASCULINO: 'FFDCEAFB',
+  FEMENINO: 'FFFCE1EC',
+  OTRO: 'FFEDE3FB',
+  PREFIERO_NO_INDICAR: 'FFF1F1F1',
+};
+
+function fillSolido(argb: string): Fill {
+  return { type: 'pattern', pattern: 'solid', fgColor: { argb } };
+}
+
+function bordeCompleto(argb: string): Partial<Borders> {
+  const estilo = { style: 'thin' as const, color: { argb } };
+  return { top: estilo, left: estilo, bottom: estilo, right: estilo };
+}
 
 const LABEL_GENERO: Record<Genero, string> = {
   MASCULINO: 'Masculino',
@@ -107,8 +129,8 @@ const LABEL_TIPO: Record<TipoPrograma, string> = {
         <button (click)="limpiar()" class="text-sm font-semibold text-on-surface-variant hover:text-primary flex items-center gap-1">
           <span class="material-symbols-outlined text-[18px]">filter_alt_off</span> Limpiar filtros
         </button>
-        <button (click)="exportarCsv()" [disabled]="!beneficiarios().length" class="px-4 py-2 rounded-lg bg-primary text-white text-sm font-bold hover:bg-primary-dark transition-colors disabled:opacity-40 flex items-center gap-2">
-          <span class="material-symbols-outlined text-[18px]">download</span> Exportar CSV
+        <button (click)="exportarExcel()" [disabled]="!beneficiarios().length || exportando()" class="px-4 py-2 rounded-lg bg-primary text-white text-sm font-bold hover:bg-primary-dark transition-colors disabled:opacity-40 flex items-center gap-2">
+          <span class="material-symbols-outlined text-[18px]">download</span> {{ exportando() ? 'Generando...' : 'Exportar Excel' }}
         </button>
       </div>
     </div>
@@ -198,6 +220,7 @@ export class ReportesComponent implements OnInit {
   ciudades = signal<CiudadResponse[]>([]);
   beneficiarios = signal<BeneficiarioReporte[]>([]);
   cargando = signal(false);
+  exportando = signal(false);
   error = signal<string | null>(null);
 
   filtro = signal<ReporteFiltro>({});
@@ -267,21 +290,147 @@ export class ReportesComponent implements OnInit {
     });
   }
 
-  exportarCsv(): void {
-    const encabezados = ['Nombre', 'CI', 'Correo', 'Teléfono', 'Género', 'Edad', 'Nivel educativo', 'Ciudad', 'País', 'Programa', 'Tipo', 'Edición', 'Programa finalizó'];
-    const filas = this.beneficiarios().map(b => [
-      b.nombreCompleto, b.ci, b.correo, b.telefono ?? '', LABEL_GENERO[b.genero], b.edad ?? '',
-      LABEL_NIVEL[b.nivelEducativo], b.ciudad ?? '', b.pais ?? '', b.nombrePrograma,
-      LABEL_TIPO[b.tipoPrograma], b.edicion ?? '', b.fechaFinPrograma,
-    ]);
-    const escapar = (v: unknown) => `"${String(v).replace(/"/g, '""')}"`;
-    const csv = [encabezados, ...filas].map(fila => fila.map(escapar).join(',')).join('\n');
-    const blob = new Blob(['﻿' + csv], { type: 'text/csv;charset=utf-8;' });
-    const url = URL.createObjectURL(blob);
-    const enlace = document.createElement('a');
-    enlace.href = url;
-    enlace.download = `reporte-beneficiarios-${new Date().toISOString().slice(0, 10)}.csv`;
-    enlace.click();
-    URL.revokeObjectURL(url);
+  async exportarExcel(): Promise<void> {
+    const datos = this.beneficiarios();
+    if (!datos.length) return;
+    this.exportando.set(true);
+
+    try {
+      const wb = new Workbook();
+      wb.creator = 'Funproeib Andes';
+      wb.created = new Date();
+
+      this.construirHojaBeneficiarios(wb, datos);
+      this.construirHojaResumen(wb, datos);
+
+      const buffer = await wb.xlsx.writeBuffer();
+      const blob = new Blob([buffer], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' });
+      const url = URL.createObjectURL(blob);
+      const enlace = document.createElement('a');
+      enlace.href = url;
+      enlace.download = `reporte-beneficiarios-${new Date().toISOString().slice(0, 10)}.xlsx`;
+      enlace.click();
+      URL.revokeObjectURL(url);
+    } finally {
+      this.exportando.set(false);
+    }
+  }
+
+  private construirHojaBeneficiarios(wb: Workbook, datos: BeneficiarioReporte[]): void {
+    const columnas = [
+      { header: 'Nombre completo', width: 30 },
+      { header: 'CI', width: 14 },
+      { header: 'Correo', width: 28 },
+      { header: 'Teléfono', width: 16 },
+      { header: 'Género', width: 18 },
+      { header: 'Edad', width: 8 },
+      { header: 'Nivel educativo', width: 18 },
+      { header: 'Ciudad', width: 18 },
+      { header: 'País', width: 16 },
+      { header: 'Programa', width: 32 },
+      { header: 'Tipo', width: 12 },
+      { header: 'Edición', width: 14 },
+      { header: 'Finalizó', width: 14 },
+    ];
+    const totalCols = columnas.length;
+
+    const hoja = wb.addWorksheet('Beneficiarios', {
+      views: [{ state: 'frozen', ySplit: 4 }],
+      pageSetup: { orientation: 'landscape', fitToPage: true },
+    });
+    columnas.forEach((col, i) => { hoja.getColumn(i + 1).width = col.width; });
+
+    hoja.mergeCells(1, 1, 1, totalCols);
+    const titulo = hoja.getCell(1, 1);
+    titulo.value = 'REPORTE DE BENEFICIARIOS — FUNPROEIB ANDES';
+    titulo.font = { bold: true, size: 14, color: { argb: BLANCO } };
+    titulo.alignment = { horizontal: 'center', vertical: 'middle' };
+    titulo.fill = fillSolido(AZUL_OSCURO);
+    hoja.getRow(1).height = 26;
+
+    hoja.mergeCells(2, 1, 2, totalCols);
+    const subtitulo = hoja.getCell(2, 1);
+    const hoy = new Date().toLocaleDateString('es-BO', { year: 'numeric', month: 'long', day: 'numeric' });
+    subtitulo.value = `Generado el ${hoy}  ·  Total de beneficiarios: ${datos.length}`;
+    subtitulo.font = { italic: true, size: 10, color: { argb: 'FF374151' } };
+    subtitulo.alignment = { horizontal: 'center' };
+    hoja.getRow(2).height = 18;
+    hoja.getRow(3).height = 6;
+
+    const filaEncabezado = hoja.getRow(4);
+    columnas.forEach((col, i) => {
+      const celda = filaEncabezado.getCell(i + 1);
+      celda.value = col.header;
+      celda.font = { bold: true, color: { argb: BLANCO }, size: 11 };
+      celda.alignment = { horizontal: 'center', vertical: 'middle', wrapText: true };
+      celda.fill = fillSolido(AZUL_OSCURO);
+      celda.border = bordeCompleto('FF9CA3AF');
+    });
+    filaEncabezado.height = 24;
+    hoja.autoFilter = { from: { row: 4, column: 1 }, to: { row: 4, column: totalCols } };
+
+    datos.forEach((b, idx) => {
+      const fila = hoja.addRow([
+        b.nombreCompleto, b.ci, b.correo, b.telefono ?? '', LABEL_GENERO[b.genero], b.edad ?? null,
+        LABEL_NIVEL[b.nivelEducativo], b.ciudad ?? '', b.pais ?? '', b.nombrePrograma,
+        LABEL_TIPO[b.tipoPrograma], b.edicion ?? '', b.fechaFinPrograma,
+      ]);
+      const fondoFila = idx % 2 === 0 ? BLANCO : GRIS_FILA;
+      fila.eachCell((celda, colNumero) => {
+        celda.border = bordeCompleto(GRIS_BORDE);
+        celda.alignment = { vertical: 'middle', horizontal: colNumero === 6 ? 'center' : 'left' };
+        celda.fill = fillSolido(colNumero === 5 ? COLOR_GENERO[b.genero] : fondoFila);
+      });
+      fila.getCell(1).font = { bold: true, color: { argb: AZUL_OSCURO } };
+    });
+  }
+
+  private construirHojaResumen(wb: Workbook, datos: BeneficiarioReporte[]): void {
+    const hoja = wb.addWorksheet('Resumen');
+    hoja.getColumn(1).width = 30;
+    hoja.getColumn(2).width = 14;
+
+    hoja.mergeCells(1, 1, 1, 2);
+    const titulo = hoja.getCell(1, 1);
+    titulo.value = 'RESUMEN DEL REPORTE';
+    titulo.font = { bold: true, size: 13, color: { argb: BLANCO } };
+    titulo.alignment = { horizontal: 'center', vertical: 'middle' };
+    titulo.fill = fillSolido(AZUL_OSCURO);
+    hoja.getRow(1).height = 24;
+
+    let fila = 3;
+    const filaTotal = hoja.getRow(fila++);
+    filaTotal.getCell(1).value = 'Total de beneficiarios';
+    filaTotal.getCell(2).value = datos.length;
+    filaTotal.eachCell(c => { c.font = { bold: true }; c.border = bordeCompleto(GRIS_BORDE); });
+
+    fila++;
+    const encabezadoGenero = hoja.getRow(fila++);
+    encabezadoGenero.getCell(1).value = 'Por género';
+    encabezadoGenero.getCell(1).font = { bold: true, color: { argb: BLANCO } };
+    encabezadoGenero.getCell(2).font = { bold: true, color: { argb: BLANCO } };
+    [1, 2].forEach(c => { encabezadoGenero.getCell(c).fill = fillSolido(AZUL_OSCURO); });
+
+    for (const g of this.generos) {
+      const r = hoja.getRow(fila++);
+      r.getCell(1).value = LABEL_GENERO[g];
+      r.getCell(2).value = this.resumenGenero()[g] ?? 0;
+      r.eachCell(c => { c.border = bordeCompleto(GRIS_BORDE); c.fill = fillSolido(COLOR_GENERO[g]); });
+    }
+
+    fila++;
+    const encabezadoTipo = hoja.getRow(fila++);
+    encabezadoTipo.getCell(1).value = 'Por tipo de programa';
+    encabezadoTipo.getCell(1).font = { bold: true, color: { argb: BLANCO } };
+    encabezadoTipo.getCell(2).font = { bold: true, color: { argb: BLANCO } };
+    [1, 2].forEach(c => { encabezadoTipo.getCell(c).fill = fillSolido(AZUL_OSCURO); });
+
+    for (const t of this.tipos) {
+      const cantidad = datos.filter(b => b.tipoPrograma === t).length;
+      const r = hoja.getRow(fila++);
+      r.getCell(1).value = LABEL_TIPO[t];
+      r.getCell(2).value = cantidad;
+      r.eachCell(c => c.border = bordeCompleto(GRIS_BORDE));
+    }
   }
 }
