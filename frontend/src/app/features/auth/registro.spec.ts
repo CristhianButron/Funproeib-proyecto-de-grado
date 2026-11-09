@@ -50,29 +50,51 @@ describe('RegistroComponent (lógica de formulario)', () => {
     expect(component.nivelRequiereCarrera()).toBe(true);
   });
 
-  it('agregarCarrera recorta espacios, agrega y limpia el input', () => {
-    component.nuevaCarrera = '  Licenciatura en Educación  ';
+  it('agregarCarrera toma la carrera seleccionada del catálogo y limpia la selección', () => {
+    component.carreraSeleccion = 'Ciencias de la Educación';
     component.agregarCarrera();
-    expect(component.carreras()).toEqual(['Licenciatura en Educación']);
-    expect(component.nuevaCarrera).toBe('');
+    expect(component.carreras()).toEqual(['Ciencias de la Educación']);
+    expect(component.carreraSeleccion).toBe('');
+  });
+
+  it('agregarCarrera con "Otra" usa el texto libre recortado', () => {
+    component.carreraSeleccion = 'Otra';
+    component.carreraOtroTexto = '  Técnico en Radiocomunicación  ';
+    component.agregarCarrera();
+    expect(component.carreras()).toEqual(['Técnico en Radiocomunicación']);
+    expect(component.carreraOtroTexto).toBe('');
   });
 
   it('agregarCarrera no agrega valores vacíos ni duplicados', () => {
-    component.nuevaCarrera = '   ';
+    component.carreraSeleccion = '';
     component.agregarCarrera();
     expect(component.carreras()).toEqual([]);
 
-    component.nuevaCarrera = 'Ingeniería';
+    component.carreraSeleccion = 'Ingeniería Civil';
     component.agregarCarrera();
-    component.nuevaCarrera = 'Ingeniería';
+    component.carreraSeleccion = 'Ingeniería Civil';
     component.agregarCarrera();
-    expect(component.carreras()).toEqual(['Ingeniería']);
+    expect(component.carreras()).toEqual(['Ingeniería Civil']);
   });
 
   it('quitarCarrera elimina por índice', () => {
     component.carreras.set(['A', 'B', 'C']);
     component.quitarCarrera(1);
     expect(component.carreras()).toEqual(['A', 'C']);
+  });
+
+  it('el control ci rechaza valores con letras', () => {
+    component.form.patchValue({ ci: '12AB34' });
+    expect(component.form.get('ci')?.valid).toBe(false);
+    component.form.patchValue({ ci: '1234567' });
+    expect(component.form.get('ci')?.valid).toBe(true);
+  });
+
+  it('soloNumeros limpia los caracteres no numéricos del control ci', () => {
+    component.form.patchValue({ ci: '1a2b3c' });
+    const input = { value: '1a2b3c' } as HTMLInputElement;
+    component.soloNumeros({ target: input } as unknown as Event);
+    expect(component.form.get('ci')?.value).toBe('123');
   });
 
   it('registrar no hace nada si el formulario es inválido', () => {

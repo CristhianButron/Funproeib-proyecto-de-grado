@@ -14,6 +14,7 @@ import org.certificaciones.funproeibbackend.repository.CiudadRepository;
 import org.certificaciones.funproeibbackend.repository.UsuarioRepository;
 import org.certificaciones.funproeibbackend.service.EmailService;
 import org.certificaciones.funproeibbackend.service.UsuarioService;
+import org.certificaciones.funproeibbackend.util.CorreoDesechableValidator;
 import lombok.RequiredArgsConstructor;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
@@ -45,6 +46,10 @@ public class UsuarioServiceImpl implements UsuarioService {
     public UsuarioResponse registrar(UsuarioRegistroRequest request) {
         if (usuarioRepository.existsByCorreo(request.getCorreo())) {
             throw new BusinessException("Ya existe un usuario registrado con ese correo");
+        }
+        if (CorreoDesechableValidator.esDesechable(request.getCorreo())) {
+            throw new BusinessException("No se aceptan correos de proveedores de buzón temporal. "
+                    + "Usa un correo personal o institucional válido.");
         }
         if (usuarioRepository.existsByCi(request.getCi())) {
             throw new BusinessException("Ya existe un usuario registrado con ese CI");

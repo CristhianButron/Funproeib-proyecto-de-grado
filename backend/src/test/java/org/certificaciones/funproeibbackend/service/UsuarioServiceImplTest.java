@@ -84,6 +84,20 @@ class UsuarioServiceImplTest {
     }
 
     @Test
+    @DisplayName("Rechaza el registro si el correo es de un proveedor de buzón temporal")
+    void registrar_correoDesechable_lanzaExcepcion() {
+        UsuarioRegistroRequest req = new UsuarioRegistroRequest();
+        req.setCorreo("ana@mailinator.com");
+        when(usuarioRepository.existsByCorreo("ana@mailinator.com")).thenReturn(false);
+
+        assertThatThrownBy(() -> service.registrar(req))
+                .isInstanceOf(BusinessException.class)
+                .hasMessageContaining("buzón temporal");
+
+        verify(usuarioRepository, never()).existsByCi(anyString());
+    }
+
+    @Test
     @DisplayName("Rechaza el registro si el nivel educativo es superior a secundaria y no indica carrera")
     void registrar_nivelSuperiorSinCarreras_lanzaExcepcion() {
         UsuarioRegistroRequest req = new UsuarioRegistroRequest();

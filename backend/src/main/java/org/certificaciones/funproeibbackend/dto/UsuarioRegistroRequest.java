@@ -28,6 +28,7 @@ public class UsuarioRegistroRequest {
 
     @NotBlank(message = "El CI es obligatorio")
     @Size(max = 20)
+    @Pattern(regexp = "^[0-9]+$", message = "El CI debe contener solo números")
     private String ci;
 
     @Size(max = 10)

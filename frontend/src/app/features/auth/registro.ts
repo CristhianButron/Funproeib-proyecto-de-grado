@@ -5,6 +5,7 @@ import { AuthService } from '../../core/services/auth.service';
 import { UbicacionService } from '../../core/services/ubicacion.service';
 import { CiudadResponse, PaisResponse } from '../../core/models/ubicacion.model';
 import { UsuarioRegistroRequest } from '../../core/models/usuario.model';
+import { CARRERAS } from '../../core/constants/carreras';
 
 @Component({
   selector: 'app-registro',
@@ -71,7 +72,11 @@ import { UsuarioRegistroRequest } from '../../core/models/usuario.model';
             </div>
             <div>
               <label class="block text-sm font-semibold mb-1">Cédula de Identidad *</label>
-              <input formControlName="ci" class="campo" placeholder="Ej: 1234567" />
+              <input formControlName="ci" class="campo" placeholder="Ej: 1234567" inputmode="numeric"
+                maxlength="20" (input)="soloNumeros($event)" />
+              @if (form.get('ci')?.value && form.get('ci')?.invalid) {
+                <p class="text-xs text-error mt-1">El CI debe contener solo números.</p>
+              }
             </div>
             <div>
               <label class="block text-sm font-semibold mb-1">Extensión</label>
@@ -140,13 +145,19 @@ import { UsuarioRegistroRequest } from '../../core/models/usuario.model';
             <div class="mt-4">
               <label class="block text-sm font-semibold mb-1">Carrera o profesión *</label>
               <div class="flex gap-2">
-                <input [(ngModel)]="nuevaCarrera" [ngModelOptions]="{standalone: true}" (keydown.enter)="$event.preventDefault(); agregarCarrera()"
-                  class="campo" placeholder="Ej: Licenciatura en Educación Intercultural" />
+                <select [(ngModel)]="carreraSeleccion" [ngModelOptions]="{standalone: true}" class="campo">
+                  <option value="">Seleccione una carrera...</option>
+                  @for (c of catalogoCarreras; track c) { <option [value]="c">{{ c }}</option> }
+                </select>
                 <button type="button" (click)="agregarCarrera()"
                   class="px-4 rounded-lg bg-primary-fixed text-primary font-semibold hover:opacity-80 transition-colors shrink-0">
                   Agregar
                 </button>
               </div>
+              @if (carreraSeleccion === 'Otra') {
+                <input [(ngModel)]="carreraOtroTexto" [ngModelOptions]="{standalone: true}" (keydown.enter)="$event.preventDefault(); agregarCarrera()"
+                  class="campo mt-2" placeholder="Especifica la carrera o profesión" />
+              }
               @if (carreras().length > 0) {
                 <ul class="mt-2 space-y-1">
                   @for (c of carreras(); track c; let i = $index) {
@@ -269,8 +280,10 @@ export class RegistroComponent implements OnInit {
   idPaisNacimientoSeleccionado = signal<number | null>(null);
   idCiudadNacimientoSeleccionada = signal<number | null>(null);
 
+  catalogoCarreras = CARRERAS;
   carreras = signal<string[]>([]);
-  nuevaCarrera = '';
+  carreraSeleccion = '';
+  carreraOtroTexto = '';
 
   constructor(
     private fb: FormBuilder,
@@ -282,7 +295,7 @@ export class RegistroComponent implements OnInit {
       apellidoPaterno: ['', [Validators.required, Validators.maxLength(80)]],
       apellidoMaterno: ['', Validators.maxLength(80)],
       correo: ['', [Validators.required, Validators.email]],
-      ci: ['', Validators.required],
+      ci: ['', [Validators.required, Validators.pattern(/^[0-9]+$/)]],
       ciExtension: [''],
       telefono: [''],
       genero: ['', Validators.required],
@@ -334,14 +347,23 @@ export class RegistroComponent implements OnInit {
   }
 
   agregarCarrera(): void {
-    const valor = this.nuevaCarrera.trim();
+    const valor = (this.carreraSeleccion === 'Otra' ? this.carreraOtroTexto : this.carreraSeleccion).trim();
     if (!valor || this.carreras().includes(valor)) return;
     this.carreras.update(l => [...l, valor]);
-    this.nuevaCarrera = '';
+    this.carreraSeleccion = '';
+    this.carreraOtroTexto = '';
   }
 
   quitarCarrera(index: number): void {
     this.carreras.update(l => l.filter((_, i) => i !== index));
+  }
+
+  soloNumeros(event: Event): void {
+    const input = event.target as HTMLInputElement;
+    const limpio = input.value.replace(/\D/g, '');
+    if (limpio !== input.value) {
+      this.form.get('ci')?.setValue(limpio);
+    }
   }
 
   registrar(): void {
