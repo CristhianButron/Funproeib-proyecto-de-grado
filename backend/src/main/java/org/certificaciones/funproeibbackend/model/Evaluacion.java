@@ -31,7 +31,8 @@ public class Evaluacion {
     @Column(name = "fecha_evaluacion", nullable = false)
     private LocalDate fechaEvaluacion;
 
-    @Column(name = "puntaje_total", precision = 4, scale = 2)
+    // precisión 5 para admitir hasta 100.00 (puntaje siempre normalizado sobre 100)
+    @Column(name = "puntaje_total", precision = 5, scale = 2)
     private BigDecimal puntajeTotal;
 
     @Column(name = "observaciones", columnDefinition = "TEXT")

@@ -10,4 +10,5 @@ public class CriterioEvaluacionResponse {
     private Integer orden;
     private String nombreCriterio;
     private String descripcion;
+    private Boolean activo;
 }

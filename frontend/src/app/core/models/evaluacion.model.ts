@@ -3,6 +3,12 @@ export interface CriterioEvaluacionResponse {
   orden: number;
   nombreCriterio: string;
   descripcion?: string;
+  activo: boolean;
+}
+
+export interface CriterioEvaluacionRequest {
+  nombreCriterio: string;
+  descripcion?: string;
 }
 
 export interface DetalleEvaluacionResponse {

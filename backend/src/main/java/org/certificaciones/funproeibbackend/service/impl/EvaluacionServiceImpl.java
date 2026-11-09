@@ -23,6 +23,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.math.BigDecimal;
+import java.math.RoundingMode;
 import java.time.LocalDate;
 import java.util.List;
 import java.util.Set;
@@ -31,6 +32,12 @@ import java.util.stream.Collectors;
 @Service
 @RequiredArgsConstructor
 public class EvaluacionServiceImpl implements EvaluacionService {
+
+    // Cada criterio se califica de 1 a 10, pero el puntaje total de la
+    // evaluación siempre se normaliza sobre 100, sin importar cuántos
+    // criterios estén activos (5 criterios -> 20 c/u, 6 -> 16.67 c/u, etc.).
+    private static final int PUNTAJE_MAXIMO_NORMALIZADO = 100;
+    private static final int PUNTAJE_MAXIMO_POR_CRITERIO = 10;
 
     private final EvaluacionRepository evaluacionRepository;
     private final DetalleEvaluacionRepository detalleRepository;
@@ -104,7 +111,7 @@ public class EvaluacionServiceImpl implements EvaluacionService {
     }
 
     private void validarCubreTodosLosCriterios(List<DetalleEvaluacionRequest> detalles) {
-        Set<Long> idsEsperados = criterioRepository.findAllByOrderByOrdenAsc().stream()
+        Set<Long> idsEsperados = criterioRepository.findByActivoTrueOrderByOrdenAsc().stream()
                 .map(CriterioEvaluacion::getId)
                 .collect(Collectors.toSet());
 
@@ -117,15 +124,27 @@ public class EvaluacionServiceImpl implements EvaluacionService {
         }
 
         if (!idsRecibidos.equals(idsEsperados)) {
-            throw new BusinessException("Debes calificar los " + idsEsperados.size() + " criterios de evaluación estandarizados, ni más ni menos");
+            throw new BusinessException("Debes calificar los " + idsEsperados.size() + " criterios de evaluación activos, ni más ni menos");
         }
     }
 
+    /**
+     * Cada criterio se califica de 1 a 10, pero el resultado se normaliza
+     * siempre sobre 100: (suma de puntajes / (cantidad de criterios * 10)) *
+     * 100. Así, si hay 5 criterios cada uno vale hasta 20 puntos, y si hay 6
+     * cada uno vale hasta 16.67, sin tener que tocar esta fórmula ni guardar
+     * un peso por separado para cada criterio.
+     */
     private BigDecimal calcularPuntajeTotal(List<DetalleEvaluacion> detalles) {
-        // suma simple: cada criterio se califica de 1 a 10, sin ponderación
-        return detalles.stream()
+        BigDecimal sumaPuntajes = detalles.stream()
                 .map(d -> BigDecimal.valueOf(d.getPuntaje()))
                 .reduce(BigDecimal.ZERO, BigDecimal::add);
+
+        BigDecimal puntajeMaximoCrudo = BigDecimal.valueOf((long) detalles.size() * PUNTAJE_MAXIMO_POR_CRITERIO);
+
+        return sumaPuntajes
+                .multiply(BigDecimal.valueOf(PUNTAJE_MAXIMO_NORMALIZADO))
+                .divide(puntajeMaximoCrudo, 2, RoundingMode.HALF_UP);
     }
 
     private EvaluacionResponse buildResponse(Evaluacion ev, List<DetalleEvaluacion> detalles) {
@@ -146,7 +165,7 @@ public class EvaluacionServiceImpl implements EvaluacionService {
                 .nombreEvaluador(ev.getEvaluador().getNombreCompleto())
                 .fechaEvaluacion(ev.getFechaEvaluacion())
                 .puntajeTotal(ev.getPuntajeTotal())
-                .puntajeMaximo(detalles.size() * 10)
+                .puntajeMaximo(PUNTAJE_MAXIMO_NORMALIZADO)
                 .observaciones(ev.getObservaciones())
                 .detalles(detalleResponses)
                 .build();

@@ -4,10 +4,15 @@ import jakarta.persistence.*;
 import lombok.*;
 
 /**
- * Catálogo fijo de criterios de evaluación de postulaciones, estandarizado
- * según el documento "Criterios de evaluación de postulaciones" de Funproeib
- * Andes: 6 criterios, cada uno calificado de 1 a 10, puntaje total sobre 60.
- * No depende de un programa específico: se usa igual en todos.
+ * Catálogo de criterios de evaluación de postulaciones, basado en el
+ * documento "Criterios de evaluación de postulaciones" de Funproeib Andes.
+ * No depende de un programa específico: se usa igual en todos. Cada criterio
+ * activo se califica de 1 a 10, y el puntaje total de la evaluación se
+ * normaliza siempre sobre 100 según cuántos criterios estén activos al
+ * momento de evaluar (ver EvaluacionServiceImpl.calcularPuntajeTotal), por lo
+ * que agregar o desactivar un criterio no exige cambiar esta escala.
+ * Un criterio no se elimina físicamente: se desactiva (activo=false) para no
+ * romper el historial de evaluaciones que ya lo calificaron.
  */
 @Entity
 @Table(name = "criterio_evaluacion")
@@ -31,4 +36,8 @@ public class CriterioEvaluacion {
 
     @Column(name = "descripcion", length = 500)
     private String descripcion;
+
+    @Builder.Default
+    @Column(name = "activo", nullable = false)
+    private Boolean activo = true;
 }

@@ -18,7 +18,7 @@ import { RespuestaResponse } from '../../core/models/pregunta.model';
   <div>
     <div class="mb-6">
       <h1 class="text-3xl font-extrabold text-primary-dark">Evaluación de postulantes</h1>
-      <p class="text-on-surface-variant">Lee las respuestas del postulante y califica cada uno de los {{ criterios().length }} criterios estandarizados del 1 al 10.</p>
+      <p class="text-on-surface-variant">Lee las respuestas del postulante y califica cada uno de los {{ criterios().length }} criterios activos del 1 al 10. El puntaje se ajusta automáticamente para sumar 100 en total.</p>
     </div>
 
     <div class="bg-white rounded-xl shadow-card border border-outline-variant p-4 mb-6 flex items-center gap-3">
@@ -120,7 +120,7 @@ import { RespuestaResponse } from '../../core/models/pregunta.model';
                   <div>
                     <div class="flex items-center justify-between mb-1">
                       <label class="text-sm font-semibold">{{ c.orden }}. {{ c.nombreCriterio }}</label>
-                      <span class="text-sm font-bold text-primary">{{ puntajes[c.id] || 0 }}/10</span>
+                      <span class="text-sm font-bold text-primary">{{ puntajes[c.id] || 0 }}/10 <span class="text-on-surface-variant font-normal">(vale hasta {{ valorPorCriterio() }} pts)</span></span>
                     </div>
                     @if (c.descripcion) { <p class="text-xs text-on-surface-variant mb-1">{{ c.descripcion }}</p> }
                     <input type="range" min="1" max="10" [(ngModel)]="puntajes[c.id]" class="w-full accent-primary" />
@@ -128,7 +128,7 @@ import { RespuestaResponse } from '../../core/models/pregunta.model';
                 }
                 <div class="flex justify-between items-center pt-2 border-t border-outline-variant text-sm font-bold text-primary-dark">
                   <span>Puntaje total</span>
-                  <span>{{ puntajeTotalActual() }} / {{ criterios().length * 10 }}</span>
+                  <span>{{ puntajeTotalActual() }} / 100</span>
                 </div>
                 <div>
                   <label class="text-sm font-semibold block mb-1">Observaciones</label>
@@ -183,7 +183,12 @@ export class EvaluacionesComponent implements OnInit {
 
   ngOnInit(): void {
     this.programaService.listarTodos().subscribe(d => this.programas.set(d));
-    this.criterioService.listarTodos().subscribe(c => this.criterios.set(c));
+    this.criterioService.listarActivos().subscribe(c => this.criterios.set(c));
+  }
+
+  valorPorCriterio(): string {
+    const n = this.criterios().length;
+    return n > 0 ? (100 / n).toFixed(2) : '0.00';
   }
 
   seleccionarPrograma(idPrograma: number | null): void {
@@ -209,8 +214,11 @@ export class EvaluacionesComponent implements OnInit {
     }
   }
 
-  puntajeTotalActual(): number {
-    return this.criterios().reduce((suma, c) => suma + (this.puntajes[c.id] || 0), 0);
+  puntajeTotalActual(): string {
+    const n = this.criterios().length;
+    if (n === 0) return '0.00';
+    const suma = this.criterios().reduce((s, c) => s + (this.puntajes[c.id] || 0), 0);
+    return ((suma * 100) / (n * 10)).toFixed(2);
   }
 
   evaluar(po: PostulacionResponse): void {

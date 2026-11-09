@@ -77,14 +77,14 @@ class EvaluacionServiceImplTest {
     }
 
     private void mockCriteriosCompletos() {
-        when(criterioRepository.findAllByOrderByOrdenAsc()).thenReturn(criterios);
+        when(criterioRepository.findByActivoTrueOrderByOrdenAsc()).thenReturn(criterios);
         for (CriterioEvaluacion c : criterios) {
             when(criterioRepository.findById(c.getId())).thenReturn(Optional.of(c));
         }
     }
 
     @Test
-    @DisplayName("Calcula el puntaje total como suma simple: 8+7+9+6+10+5 = 45/60")
+    @DisplayName("Normaliza el puntaje sobre 100 con 6 criterios: (8+7+9+6+10+5)*100/60 = 75.00/100")
     void evaluar_calculaPuntajeTotal() {
         when(postulacionRepository.findById(5L)).thenReturn(Optional.of(postulacion));
         when(evaluacionRepository.existsByPostulacionId(5L)).thenReturn(false);
@@ -95,9 +95,60 @@ class EvaluacionServiceImplTest {
 
         EvaluacionResponse res = service.evaluar(request);
 
-        assertThat(res.getPuntajeTotal()).isEqualByComparingTo("45");
-        assertThat(res.getPuntajeMaximo()).isEqualTo(60);
+        assertThat(res.getPuntajeTotal()).isEqualByComparingTo("75.00");
+        assertThat(res.getPuntajeMaximo()).isEqualTo(100);
         assertThat(res.getDetalles()).hasSize(6);
+    }
+
+    @Test
+    @DisplayName("Con 5 criterios activos (uno desactivado), un puntaje perfecto da exactamente 100.00")
+    void evaluar_cincoCriteriosActivos_puntajePerfectoDaCien() {
+        List<CriterioEvaluacion> cincoCriterios = criterios.subList(0, 5);
+        List<DetalleEvaluacionRequest> detallesPerfectos = cincoCriterios.stream().map(c -> {
+            DetalleEvaluacionRequest d = new DetalleEvaluacionRequest();
+            d.setIdCriterio(c.getId());
+            d.setPuntaje(10);
+            return d;
+        }).toList();
+        request.setDetalles(detallesPerfectos);
+
+        when(postulacionRepository.findById(5L)).thenReturn(Optional.of(postulacion));
+        when(evaluacionRepository.existsByPostulacionId(5L)).thenReturn(false);
+        when(criterioRepository.findByActivoTrueOrderByOrdenAsc()).thenReturn(cincoCriterios);
+        for (CriterioEvaluacion c : cincoCriterios) {
+            when(criterioRepository.findById(c.getId())).thenReturn(Optional.of(c));
+        }
+        when(usuarioRepository.findById(9L)).thenReturn(Optional.of(evaluador));
+        when(evaluacionRepository.save(any(Evaluacion.class))).thenAnswer(inv -> inv.getArgument(0));
+        when(detalleRepository.saveAll(any())).thenAnswer(inv -> inv.getArgument(0));
+
+        EvaluacionResponse res = service.evaluar(request);
+
+        assertThat(res.getPuntajeTotal()).isEqualByComparingTo("100.00");
+        assertThat(res.getPuntajeMaximo()).isEqualTo(100);
+    }
+
+    @Test
+    @DisplayName("Con los 6 criterios activos, un puntaje perfecto también da exactamente 100.00")
+    void evaluar_seisCriteriosActivos_puntajePerfectoDaCien() {
+        List<DetalleEvaluacionRequest> detallesPerfectos = criterios.stream().map(c -> {
+            DetalleEvaluacionRequest d = new DetalleEvaluacionRequest();
+            d.setIdCriterio(c.getId());
+            d.setPuntaje(10);
+            return d;
+        }).toList();
+        request.setDetalles(detallesPerfectos);
+
+        when(postulacionRepository.findById(5L)).thenReturn(Optional.of(postulacion));
+        when(evaluacionRepository.existsByPostulacionId(5L)).thenReturn(false);
+        mockCriteriosCompletos();
+        when(usuarioRepository.findById(9L)).thenReturn(Optional.of(evaluador));
+        when(evaluacionRepository.save(any(Evaluacion.class))).thenAnswer(inv -> inv.getArgument(0));
+        when(detalleRepository.saveAll(any())).thenAnswer(inv -> inv.getArgument(0));
+
+        EvaluacionResponse res = service.evaluar(request);
+
+        assertThat(res.getPuntajeTotal()).isEqualByComparingTo("100.00");
     }
 
     @Test
@@ -146,7 +197,7 @@ class EvaluacionServiceImplTest {
         request.setDetalles(request.getDetalles().subList(0, 5)); // solo 5 de 6
         when(postulacionRepository.findById(5L)).thenReturn(Optional.of(postulacion));
         when(evaluacionRepository.existsByPostulacionId(5L)).thenReturn(false);
-        when(criterioRepository.findAllByOrderByOrdenAsc()).thenReturn(criterios);
+        when(criterioRepository.findByActivoTrueOrderByOrdenAsc()).thenReturn(criterios);
 
         assertThatThrownBy(() -> service.evaluar(request))
                 .isInstanceOf(BusinessException.class)
@@ -166,7 +217,7 @@ class EvaluacionServiceImplTest {
 
         when(postulacionRepository.findById(5L)).thenReturn(Optional.of(postulacion));
         when(evaluacionRepository.existsByPostulacionId(5L)).thenReturn(false);
-        when(criterioRepository.findAllByOrderByOrdenAsc()).thenReturn(criterios);
+        when(criterioRepository.findByActivoTrueOrderByOrdenAsc()).thenReturn(criterios);
 
         assertThatThrownBy(() -> service.evaluar(request))
                 .isInstanceOf(BusinessException.class)
