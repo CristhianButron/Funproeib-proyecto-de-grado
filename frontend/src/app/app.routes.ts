@@ -21,7 +21,6 @@ export const routes: Routes = [
       { path: 'programas', loadComponent: () => import('./features/admin/programas-admin').then(m => m.ProgramasAdminComponent) },
       { path: 'postulantes', loadComponent: () => import('./features/admin/postulantes').then(m => m.PostulantesComponent) },
       { path: 'evaluaciones', loadComponent: () => import('./features/admin/evaluaciones').then(m => m.EvaluacionesComponent) },
-      { path: 'criterios', loadComponent: () => import('./features/admin/criterios-admin').then(m => m.CriteriosAdminComponent) },
       { path: 'reportes', loadComponent: () => import('./features/admin/reportes').then(m => m.ReportesComponent) },
       { path: 'lista-negra', loadComponent: () => import('./features/admin/lista-negra').then(m => m.ListaNegraComponent) },
       { path: 'usuarios', loadComponent: () => import('./features/admin/usuarios-admin').then(m => m.UsuariosAdminComponent) },

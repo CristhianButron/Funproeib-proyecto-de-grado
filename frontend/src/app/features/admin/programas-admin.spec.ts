@@ -1,14 +1,17 @@
 import { of, throwError } from 'rxjs';
-import { CriteriosAdminComponent } from './criterios-admin';
+import { ProgramasAdminComponent } from './programas-admin';
 import { CriterioEvaluacionResponse } from '../../core/models/evaluacion.model';
 
 function criterio(id: number, orden: number, nombreCriterio: string, activo = true): CriterioEvaluacionResponse {
   return { id, orden, nombreCriterio, descripcion: '', activo };
 }
 
-describe('CriteriosAdminComponent (lógica)', () => {
-  let component: CriteriosAdminComponent;
+describe('ProgramasAdminComponent - CRUD de criterios de evaluación', () => {
+  let component: ProgramasAdminComponent;
   let criterioServiceFake: any;
+  const programaServiceFake = { listarTodos: vi.fn(() => of([])) };
+  const reqDocServiceFake = {};
+  const preguntaServiceFake = {};
 
   function seisCriterios(): CriterioEvaluacionResponse[] {
     return [1, 2, 3, 4, 5, 6].map(i => criterio(i, i, `Criterio ${i}`));
@@ -21,7 +24,9 @@ describe('CriteriosAdminComponent (lógica)', () => {
       actualizar: vi.fn(),
       cambiarActivo: vi.fn(),
     };
-    component = new CriteriosAdminComponent(criterioServiceFake);
+    component = new ProgramasAdminComponent(
+      programaServiceFake as any, criterioServiceFake, reqDocServiceFake as any, preguntaServiceFake as any,
+    );
     component.ngOnInit();
   });
 
@@ -37,65 +42,77 @@ describe('CriteriosAdminComponent (lógica)', () => {
     expect(component.valorPorCriterio()).toBe('20.00');
   });
 
-  it('agregar rechaza un nombre vacío sin llamar al servicio', () => {
-    component.nuevo = { nombreCriterio: '   ', descripcion: '' };
-    component.agregar();
+  it('agregarCriterio rechaza un nombre vacío sin llamar al servicio', () => {
+    component.nuevoCriterio = { nombreCriterio: '   ', descripcion: '' };
+    component.agregarCriterio();
     expect(criterioServiceFake.crear).not.toHaveBeenCalled();
     expect(component.mensaje()).toContain('nombre');
   });
 
-  it('agregar exitoso agrega el criterio a la lista y recorta espacios', () => {
+  it('agregarCriterio exitoso agrega el criterio a la lista y recorta espacios', () => {
     const nuevo = criterio(7, 7, 'Puntualidad');
     criterioServiceFake.crear.mockReturnValue(of(nuevo));
-    component.nuevo = { nombreCriterio: '  Puntualidad  ', descripcion: '' };
-    component.agregar();
+    component.nuevoCriterio = { nombreCriterio: '  Puntualidad  ', descripcion: '' };
+    component.agregarCriterio();
     expect(criterioServiceFake.crear).toHaveBeenCalledWith({ nombreCriterio: 'Puntualidad', descripcion: undefined });
     expect(component.criterios()).toHaveLength(7);
-    expect(component.nuevo.nombreCriterio).toBe('');
+    expect(component.nuevoCriterio.nombreCriterio).toBe('');
   });
 
-  it('agregar con error del backend lo muestra', () => {
+  it('agregarCriterio con error del backend lo muestra', () => {
     criterioServiceFake.crear.mockReturnValue(throwError(() => ({ error: { mensaje: 'Ya existe un criterio con ese nombre' } })));
-    component.nuevo = { nombreCriterio: 'Repetido', descripcion: '' };
-    component.agregar();
+    component.nuevoCriterio = { nombreCriterio: 'Repetido', descripcion: '' };
+    component.agregarCriterio();
     expect(component.mensaje()).toBe('Ya existe un criterio con ese nombre');
     expect(component.mensajeError()).toBe(true);
   });
 
-  it('iniciarEdicion precarga el formulario y cancelarEdicion lo cierra', () => {
+  it('iniciarEdicionCriterio precarga el formulario y cancelarEdicionCriterio lo cierra', () => {
     const c = component.criterios()[0];
-    component.iniciarEdicion(c);
-    expect(component.editandoId()).toBe(c.id);
-    expect(component.edicion.nombreCriterio).toBe(c.nombreCriterio);
-    component.cancelarEdicion();
-    expect(component.editandoId()).toBeNull();
+    component.iniciarEdicionCriterio(c);
+    expect(component.editandoCriterioId()).toBe(c.id);
+    expect(component.edicionCriterio.nombreCriterio).toBe(c.nombreCriterio);
+    component.cancelarEdicionCriterio();
+    expect(component.editandoCriterioId()).toBeNull();
   });
 
-  it('guardarEdicion actualiza el criterio en la lista', () => {
+  it('guardarEdicionCriterio actualiza el criterio en la lista', () => {
     const c = component.criterios()[0];
     const actualizado = { ...c, nombreCriterio: 'Nuevo nombre' };
     criterioServiceFake.actualizar.mockReturnValue(of(actualizado));
-    component.iniciarEdicion(c);
-    component.edicion.nombreCriterio = 'Nuevo nombre';
-    component.guardarEdicion(c);
+    component.iniciarEdicionCriterio(c);
+    component.edicionCriterio.nombreCriterio = 'Nuevo nombre';
+    component.guardarEdicionCriterio(c);
     expect(component.criterios().find(x => x.id === c.id)?.nombreCriterio).toBe('Nuevo nombre');
-    expect(component.editandoId()).toBeNull();
+    expect(component.editandoCriterioId()).toBeNull();
   });
 
-  it('desactivar actualiza el estado activo del criterio en la lista', () => {
+  it('desactivarCriterio actualiza el estado activo del criterio en la lista', () => {
     const c = component.criterios()[0];
     const desactivado = { ...c, activo: false };
     criterioServiceFake.cambiarActivo.mockReturnValue(of(desactivado));
-    component.desactivar(c);
+    component.desactivarCriterio(c);
     expect(criterioServiceFake.cambiarActivo).toHaveBeenCalledWith(c.id, false);
     expect(component.criterios().find(x => x.id === c.id)?.activo).toBe(false);
   });
 
-  it('desactivar el último activo muestra el error del backend sin modificar la lista', () => {
+  it('desactivarCriterio el último activo muestra el error del backend sin modificar la lista', () => {
     const c = component.criterios()[0];
     criterioServiceFake.cambiarActivo.mockReturnValue(throwError(() => ({ error: { mensaje: 'Debe haber al menos un criterio de evaluación activo' } })));
-    component.desactivar(c);
+    component.desactivarCriterio(c);
     expect(component.mensaje()).toBe('Debe haber al menos un criterio de evaluación activo');
     expect(component.criterios().find(x => x.id === c.id)?.activo).toBe(true);
+  });
+
+  it('activarCriterio reactiva un criterio inactivo', () => {
+    const datos = seisCriterios();
+    datos[5].activo = false;
+    criterioServiceFake.listarTodos.mockReturnValue(of(datos));
+    component.ngOnInit();
+    const reactivado = { ...datos[5], activo: true };
+    criterioServiceFake.cambiarActivo.mockReturnValue(of(reactivado));
+    component.activarCriterio(datos[5]);
+    expect(criterioServiceFake.cambiarActivo).toHaveBeenCalledWith(datos[5].id, true);
+    expect(component.criterios().find(x => x.id === datos[5].id)?.activo).toBe(true);
   });
 });

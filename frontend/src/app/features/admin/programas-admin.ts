@@ -206,14 +206,45 @@ import { PreguntaResponse } from '../../core/models/pregunta.model';
           <!-- Criterios -->
           <section>
             <h3 class="font-bold text-primary-dark flex items-center gap-2 mb-3"><span class="material-symbols-outlined">checklist</span> Criterios de evaluación</h3>
-            <p class="text-xs text-on-surface-variant mb-3">Criterios estandarizados de Funproeib Andes, iguales para todos los programas (1 a 10 puntos cada uno, {{ criterios().length * 10 }} en total). No se configuran por programa.</p>
-            <div class="space-y-2">
+            <p class="text-xs text-on-surface-variant mb-3">
+              Son los mismos para todos los programas (no se configuran por programa). Cada uno se califica de 1 a 10, y el puntaje total de la evaluación se ajusta solo para sumar 100: ahora mismo hay
+              <b>{{ criteriosActivos().length }}</b> activo(s), cada uno vale hasta <b>{{ valorPorCriterio() }}</b> pts.
+            </p>
+            <div class="space-y-2 mb-4">
               @for (c of criterios(); track c.id) {
-                <div class="bg-surface-low rounded-lg px-4 py-2">
-                  <p class="font-semibold text-sm">{{ c.orden }}. {{ c.nombreCriterio }}</p>
-                  <p class="text-xs text-on-surface-variant">{{ c.descripcion }}</p>
+                <div class="bg-surface-low rounded-lg px-4 py-2" [class.opacity-50]="!c.activo">
+                  @if (editandoCriterioId() === c.id) {
+                    <input [(ngModel)]="edicionCriterio.nombreCriterio" class="campo mb-1" placeholder="Nombre" />
+                    <input [(ngModel)]="edicionCriterio.descripcion" class="campo mb-2" placeholder="Descripción (opcional)" />
+                    <div class="flex gap-2">
+                      <button (click)="guardarEdicionCriterio(c)" [disabled]="guardandoCriterio()" class="px-3 py-1 rounded-lg bg-primary text-white text-xs font-bold hover:bg-primary-dark transition-colors">Guardar</button>
+                      <button (click)="cancelarEdicionCriterio()" class="px-3 py-1 rounded-lg text-on-surface-variant hover:bg-surface-high text-xs font-semibold">Cancelar</button>
+                    </div>
+                  } @else {
+                    <div class="flex items-center justify-between gap-2">
+                      <div class="min-w-0">
+                        <p class="font-semibold text-sm">{{ c.orden }}. {{ c.nombreCriterio }}
+                          @if (!c.activo) { <span class="ml-1 px-2 py-0.5 rounded-full text-xs font-bold bg-surface-high text-on-surface-variant">Inactivo</span> }
+                        </p>
+                        @if (c.descripcion) { <p class="text-xs text-on-surface-variant">{{ c.descripcion }}</p> }
+                      </div>
+                      <div class="flex items-center gap-1 shrink-0">
+                        <button (click)="iniciarEdicionCriterio(c)" class="px-2 py-1 rounded-lg text-primary hover:bg-primary-fixed text-xs font-semibold">Editar</button>
+                        @if (c.activo) {
+                          <button (click)="desactivarCriterio(c)" class="px-2 py-1 rounded-lg text-error hover:bg-error-container text-xs font-semibold">Desactivar</button>
+                        } @else {
+                          <button (click)="activarCriterio(c)" class="px-2 py-1 rounded-lg text-secondary hover:bg-secondary-light text-xs font-semibold">Reactivar</button>
+                        }
+                      </div>
+                    </div>
+                  }
                 </div>
-              }
+              } @empty { <p class="text-sm text-on-surface-variant">Sin criterios aún.</p> }
+            </div>
+            <div class="grid grid-cols-2 gap-2 bg-surface rounded-lg p-3">
+              <input [(ngModel)]="nuevoCriterio.nombreCriterio" class="campo col-span-2" placeholder="Nombre del criterio (ej: Trabajo en equipo)" />
+              <input [(ngModel)]="nuevoCriterio.descripcion" class="campo col-span-2" placeholder="Descripción (opcional)" />
+              <button (click)="agregarCriterio()" [disabled]="guardandoCriterio()" class="col-span-2 py-2 rounded-lg bg-primary text-white font-semibold hover:bg-primary-dark transition-colors text-sm">+ Agregar criterio</button>
             </div>
           </section>
         </div>
@@ -244,6 +275,11 @@ export class ProgramasAdminComponent implements OnInit {
   editandoId = signal<number | null>(null);
   programaConfig = signal<ProgramaResponse | null>(null);
   criterios = signal<CriterioEvaluacionResponse[]>([]);
+  criteriosActivos = computed(() => this.criterios().filter(c => c.activo));
+  valorPorCriterio = computed(() => {
+    const n = this.criteriosActivos().length;
+    return n > 0 ? (100 / n).toFixed(2) : '0.00';
+  });
   requisitos = signal<ReqDocumentoResponse[]>([]);
   preguntas = signal<PreguntaResponse[]>([]);
   mensaje = signal<string | null>(null);
@@ -253,6 +289,11 @@ export class ProgramasAdminComponent implements OnInit {
   nuevoReq: { nombreDocumento: string; descripcion: string; tipoPermitido: 'PDF' | 'ENLACE'; obligatorio: boolean } =
     { nombreDocumento: '', descripcion: '', tipoPermitido: 'PDF', obligatorio: true };
   nuevaPregunta = '';
+
+  nuevoCriterio = { nombreCriterio: '', descripcion: '' };
+  editandoCriterioId = signal<number | null>(null);
+  edicionCriterio = { nombreCriterio: '', descripcion: '' };
+  guardandoCriterio = signal(false);
 
   constructor(
     private programaService: ProgramaService,
@@ -336,6 +377,69 @@ export class ProgramasAdminComponent implements OnInit {
     this.preguntaService.eliminar(q.id).subscribe({
       next: () => this.preguntas.update(l => l.filter(x => x.id !== q.id)),
       error: (err) => this.notificar(err.error?.mensaje || 'Error al eliminar', true),
+    });
+  }
+
+  agregarCriterio(): void {
+    if (!this.nuevoCriterio.nombreCriterio.trim()) { this.notificar('Ingresa el nombre del criterio', true); return; }
+    this.guardandoCriterio.set(true);
+    this.criterioService.crear({
+      nombreCriterio: this.nuevoCriterio.nombreCriterio.trim(),
+      descripcion: this.nuevoCriterio.descripcion.trim() || undefined,
+    }).subscribe({
+      next: (c) => {
+        this.guardandoCriterio.set(false);
+        this.criterios.update(l => [...l, c]);
+        this.nuevoCriterio = { nombreCriterio: '', descripcion: '' };
+        this.notificar(`Criterio agregado. Ahora cada criterio activo vale ${this.valorPorCriterio()} puntos.`, false);
+      },
+      error: (err) => { this.guardandoCriterio.set(false); this.notificar(err.error?.mensaje || 'Error al agregar el criterio', true); },
+    });
+  }
+
+  iniciarEdicionCriterio(c: CriterioEvaluacionResponse): void {
+    this.editandoCriterioId.set(c.id);
+    this.edicionCriterio = { nombreCriterio: c.nombreCriterio, descripcion: c.descripcion ?? '' };
+  }
+
+  cancelarEdicionCriterio(): void {
+    this.editandoCriterioId.set(null);
+  }
+
+  guardarEdicionCriterio(c: CriterioEvaluacionResponse): void {
+    if (!this.edicionCriterio.nombreCriterio.trim()) { this.notificar('El nombre no puede quedar vacío', true); return; }
+    this.guardandoCriterio.set(true);
+    this.criterioService.actualizar(c.id, {
+      nombreCriterio: this.edicionCriterio.nombreCriterio.trim(),
+      descripcion: this.edicionCriterio.descripcion.trim() || undefined,
+    }).subscribe({
+      next: (actualizado) => {
+        this.guardandoCriterio.set(false);
+        this.criterios.update(l => l.map(x => x.id === actualizado.id ? actualizado : x));
+        this.editandoCriterioId.set(null);
+        this.notificar('Criterio actualizado', false);
+      },
+      error: (err) => { this.guardandoCriterio.set(false); this.notificar(err.error?.mensaje || 'Error al actualizar el criterio', true); },
+    });
+  }
+
+  desactivarCriterio(c: CriterioEvaluacionResponse): void {
+    this.criterioService.cambiarActivo(c.id, false).subscribe({
+      next: (actualizado) => {
+        this.criterios.update(l => l.map(x => x.id === actualizado.id ? actualizado : x));
+        this.notificar(`Criterio desactivado. Ahora cada criterio activo vale ${this.valorPorCriterio()} puntos.`, false);
+      },
+      error: (err) => this.notificar(err.error?.mensaje || 'Error al desactivar el criterio', true),
+    });
+  }
+
+  activarCriterio(c: CriterioEvaluacionResponse): void {
+    this.criterioService.cambiarActivo(c.id, true).subscribe({
+      next: (actualizado) => {
+        this.criterios.update(l => l.map(x => x.id === actualizado.id ? actualizado : x));
+        this.notificar(`Criterio reactivado. Ahora cada criterio activo vale ${this.valorPorCriterio()} puntos.`, false);
+      },
+      error: (err) => this.notificar(err.error?.mensaje || 'Error al reactivar el criterio', true),
     });
   }
 
