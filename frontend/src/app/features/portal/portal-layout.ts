@@ -24,6 +24,11 @@ import { AuthService } from '../../core/services/auth.service';
             <span class="material-symbols-outlined text-[20px]">assignment</span>
             <span class="hidden sm:inline">Mis postulaciones</span>
           </a>
+          <a routerLink="/portal/perfil" routerLinkActive="bg-primary-fixed text-primary"
+            class="px-4 py-2 rounded-lg font-semibold text-on-surface-variant hover:bg-surface-low transition-colors flex items-center gap-2">
+            <span class="material-symbols-outlined text-[20px]">person</span>
+            <span class="hidden sm:inline">Mi perfil</span>
+          </a>
           <div class="ml-3 flex items-center gap-2 pl-3 border-l border-outline-variant">
             <div class="w-9 h-9 rounded-full bg-primary text-white flex items-center justify-center font-bold text-sm">{{ inicial() }}</div>
             <button (click)="salir()" class="p-2 rounded-lg text-on-surface-variant hover:bg-surface-low transition-colors" title="Cerrar sesión">

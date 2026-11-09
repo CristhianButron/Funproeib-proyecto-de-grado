@@ -2,6 +2,7 @@ package org.certificaciones.funproeibbackend.service;
 
 import org.certificaciones.funproeibbackend.dto.CambiarPasswordRequest;
 import org.certificaciones.funproeibbackend.dto.LoginRequest;
+import org.certificaciones.funproeibbackend.dto.UsuarioActualizarRequest;
 import org.certificaciones.funproeibbackend.dto.UsuarioRegistroRequest;
 import org.certificaciones.funproeibbackend.dto.UsuarioResponse;
 import org.certificaciones.funproeibbackend.exception.BusinessException;
@@ -138,6 +139,83 @@ class UsuarioServiceImplTest {
         UsuarioResponse res = service.registrar(req);
 
         assertThat(res.getCarreras()).containsExactly("Licenciatura en Educación");
+    }
+
+    @Test
+    @DisplayName("actualizarPerfil guarda los nuevos datos y los refleja en la respuesta")
+    void actualizarPerfil_datosValidos_actualizaYMapea() {
+        Usuario usuario = Usuario.builder().id(5L).nombre("Ana").apellidoPaterno("Quispe")
+                .ci("1111111").nivelEducativo(NivelEducativo.SECUNDARIA).build();
+        UsuarioActualizarRequest req = new UsuarioActualizarRequest();
+        req.setNombre("Ana María");
+        req.setApellidoPaterno("Quispe");
+        req.setCi("2222222");
+        req.setIdCiudad(1L);
+        req.setIdCiudadNacimiento(1L);
+        req.setNivelEducativo(NivelEducativo.SECUNDARIA);
+        req.setTelefono("70011111");
+
+        Ciudad ciudad = Ciudad.builder().id(1L).nombre("La Paz").build();
+        when(usuarioRepository.findById(5L)).thenReturn(Optional.of(usuario));
+        when(usuarioRepository.existsByCi("2222222")).thenReturn(false);
+        when(ciudadRepository.findById(1L)).thenReturn(Optional.of(ciudad));
+
+        UsuarioResponse res = service.actualizarPerfil(5L, req);
+
+        assertThat(res.getNombre()).isEqualTo("Ana María");
+        assertThat(res.getCi()).isEqualTo("2222222");
+        assertThat(res.getTelefono()).isEqualTo("70011111");
+        verify(usuarioRepository).save(usuario);
+    }
+
+    @Test
+    @DisplayName("actualizarPerfil permite conservar el mismo CI sin disparar el chequeo de duplicado")
+    void actualizarPerfil_mismoCiPropio_noValidaDuplicado() {
+        Usuario usuario = Usuario.builder().id(5L).ci("1111111").nivelEducativo(NivelEducativo.SECUNDARIA).build();
+        UsuarioActualizarRequest req = new UsuarioActualizarRequest();
+        req.setCi("1111111");
+        req.setIdCiudad(1L);
+        req.setIdCiudadNacimiento(1L);
+        req.setNivelEducativo(NivelEducativo.SECUNDARIA);
+
+        when(usuarioRepository.findById(5L)).thenReturn(Optional.of(usuario));
+        when(ciudadRepository.findById(1L)).thenReturn(Optional.of(Ciudad.builder().id(1L).build()));
+
+        service.actualizarPerfil(5L, req);
+
+        verify(usuarioRepository, never()).existsByCi(anyString());
+    }
+
+    @Test
+    @DisplayName("actualizarPerfil rechaza el CI si ya lo tiene otro usuario")
+    void actualizarPerfil_ciDeOtroUsuario_lanzaExcepcion() {
+        Usuario usuario = Usuario.builder().id(5L).ci("1111111").build();
+        UsuarioActualizarRequest req = new UsuarioActualizarRequest();
+        req.setCi("9999999");
+
+        when(usuarioRepository.findById(5L)).thenReturn(Optional.of(usuario));
+        when(usuarioRepository.existsByCi("9999999")).thenReturn(true);
+
+        assertThatThrownBy(() -> service.actualizarPerfil(5L, req))
+                .isInstanceOf(BusinessException.class)
+                .hasMessageContaining("CI");
+        verify(usuarioRepository, never()).save(any());
+    }
+
+    @Test
+    @DisplayName("actualizarPerfil exige al menos una carrera si el nivel educativo es superior a secundaria")
+    void actualizarPerfil_nivelSuperiorSinCarreras_lanzaExcepcion() {
+        Usuario usuario = Usuario.builder().id(5L).ci("1111111").build();
+        UsuarioActualizarRequest req = new UsuarioActualizarRequest();
+        req.setCi("1111111");
+        req.setNivelEducativo(NivelEducativo.LICENCIATURA);
+        req.setCarreras(List.of());
+
+        when(usuarioRepository.findById(5L)).thenReturn(Optional.of(usuario));
+
+        assertThatThrownBy(() -> service.actualizarPerfil(5L, req))
+                .isInstanceOf(BusinessException.class)
+                .hasMessageContaining("carrera");
     }
 
     @Test

@@ -23,6 +23,25 @@ export interface UsuarioRegistroRequest {
   carreras?: string[];
 }
 
+export interface UsuarioActualizarRequest {
+  nombre: string;
+  apellidoPaterno: string;
+  apellidoMaterno?: string;
+  ci: string;
+  ciExtension?: string;
+  genero: Genero;
+  fechaNacimiento: string;
+  autoidentificacionEtnica?: string;
+  nivelEducativo: NivelEducativo;
+  idCiudad: number;
+  telefono?: string;
+  estadoCivil: EstadoCivil;
+  idCiudadNacimiento: number;
+  provinciaNacimiento?: string;
+  direccionDomicilio?: string;
+  carreras?: string[];
+}
+
 export interface LoginRequest {
   correo: string;
   contrasena: string;

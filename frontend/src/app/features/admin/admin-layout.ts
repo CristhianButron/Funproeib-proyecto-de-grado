@@ -62,6 +62,7 @@ export class AdminLayoutComponent {
     { ruta: '/admin/reportes', label: 'Reportes', icono: 'summarize', exact: false },
     { ruta: '/admin/lista-negra', label: 'Lista negra', icono: 'block', exact: false },
     { ruta: '/admin/usuarios', label: 'Usuarios', icono: 'manage_accounts', exact: false },
+    { ruta: '/admin/perfil', label: 'Mi perfil', icono: 'person', exact: false },
   ];
 
   constructor(public auth: AuthService, private router: Router) {}

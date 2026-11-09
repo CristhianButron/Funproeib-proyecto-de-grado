@@ -1,7 +1,7 @@
 import { Injectable } from '@angular/core';
 import { Observable } from 'rxjs';
 import { ApiService } from './api.service';
-import { CambiarPasswordRequest, LoginRequest, ReenviarVerificacionRequest, RolUsuario, UsuarioRegistroRequest, UsuarioResponse } from '../models/usuario.model';
+import { CambiarPasswordRequest, LoginRequest, ReenviarVerificacionRequest, RolUsuario, UsuarioActualizarRequest, UsuarioRegistroRequest, UsuarioResponse } from '../models/usuario.model';
 
 @Injectable({ providedIn: 'root' })
 export class UsuarioService {
@@ -17,6 +17,10 @@ export class UsuarioService {
 
   obtenerPorId(id: number): Observable<UsuarioResponse> {
     return this.api.get<UsuarioResponse>(`/usuarios/${id}`);
+  }
+
+  actualizarPerfil(id: number, request: UsuarioActualizarRequest): Observable<UsuarioResponse> {
+    return this.api.put<UsuarioResponse>(`/usuarios/${id}`, request);
   }
 
   listarTodos(): Observable<UsuarioResponse[]> {

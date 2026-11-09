@@ -3,6 +3,7 @@ package org.certificaciones.funproeibbackend.controller;
 import org.certificaciones.funproeibbackend.dto.CambiarPasswordRequest;
 import org.certificaciones.funproeibbackend.dto.LoginRequest;
 import org.certificaciones.funproeibbackend.dto.ReenviarVerificacionRequest;
+import org.certificaciones.funproeibbackend.dto.UsuarioActualizarRequest;
 import org.certificaciones.funproeibbackend.dto.UsuarioRegistroRequest;
 import org.certificaciones.funproeibbackend.dto.UsuarioResponse;
 import org.certificaciones.funproeibbackend.model.enums.RolUsuario;
@@ -35,6 +36,11 @@ public class UsuarioController {
     @GetMapping("/{id}")
     public ResponseEntity<UsuarioResponse> obtenerPorId(@PathVariable Long id) {
         return ResponseEntity.ok(usuarioService.obtenerPorId(id));
+    }
+
+    @PutMapping("/{id}")
+    public ResponseEntity<UsuarioResponse> actualizarPerfil(@PathVariable Long id, @Valid @RequestBody UsuarioActualizarRequest request) {
+        return ResponseEntity.ok(usuarioService.actualizarPerfil(id, request));
     }
 
     @GetMapping

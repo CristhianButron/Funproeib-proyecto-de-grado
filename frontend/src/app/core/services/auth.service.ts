@@ -38,6 +38,10 @@ export class AuthService {
     );
   }
 
+  actualizarUsuarioEnSesion(usuario: UsuarioResponse): void {
+    this.guardarSesion(usuario);
+  }
+
   logout(): void {
     localStorage.removeItem(STORAGE_KEY);
     this.usuarioSignal.set(null);

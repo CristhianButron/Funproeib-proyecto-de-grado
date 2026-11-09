@@ -2,6 +2,7 @@ package org.certificaciones.funproeibbackend.service.impl;
 
 import org.certificaciones.funproeibbackend.dto.CambiarPasswordRequest;
 import org.certificaciones.funproeibbackend.dto.LoginRequest;
+import org.certificaciones.funproeibbackend.dto.UsuarioActualizarRequest;
 import org.certificaciones.funproeibbackend.dto.UsuarioRegistroRequest;
 import org.certificaciones.funproeibbackend.dto.UsuarioResponse;
 import org.certificaciones.funproeibbackend.exception.BusinessException;
@@ -125,6 +126,45 @@ public class UsuarioServiceImpl implements UsuarioService {
     @Transactional(readOnly = true)
     public UsuarioResponse obtenerPorId(Long id) {
         return mapToResponse(buscarUsuario(id));
+    }
+
+    @Override
+    @Transactional
+    public UsuarioResponse actualizarPerfil(Long id, UsuarioActualizarRequest request) {
+        Usuario usuario = buscarUsuario(id);
+
+        if (!usuario.getCi().equals(request.getCi()) && usuarioRepository.existsByCi(request.getCi())) {
+            throw new BusinessException("Ya existe un usuario registrado con ese CI");
+        }
+        if (request.getNivelEducativo() != NivelEducativo.SECUNDARIA
+                && (request.getCarreras() == null || request.getCarreras().isEmpty())) {
+            throw new BusinessException("Debe indicar al menos una carrera o profesión");
+        }
+
+        Ciudad ciudad = ciudadRepository.findById(request.getIdCiudad())
+                .orElseThrow(() -> new ResourceNotFoundException("Ciudad no encontrada con id: " + request.getIdCiudad()));
+        Ciudad ciudadNacimiento = ciudadRepository.findById(request.getIdCiudadNacimiento())
+                .orElseThrow(() -> new ResourceNotFoundException("Ciudad de nacimiento no encontrada con id: " + request.getIdCiudadNacimiento()));
+
+        usuario.setNombre(request.getNombre());
+        usuario.setApellidoPaterno(request.getApellidoPaterno());
+        usuario.setApellidoMaterno(request.getApellidoMaterno());
+        usuario.setCi(request.getCi());
+        usuario.setCiExtension(request.getCiExtension());
+        usuario.setGenero(request.getGenero());
+        usuario.setFechaNacimiento(request.getFechaNacimiento());
+        usuario.setAutoidentificacionEtnica(request.getAutoidentificacionEtnica());
+        usuario.setNivelEducativo(request.getNivelEducativo());
+        usuario.setCiudad(ciudad);
+        usuario.setTelefono(request.getTelefono());
+        usuario.setEstadoCivil(request.getEstadoCivil());
+        usuario.setCiudadNacimiento(ciudadNacimiento);
+        usuario.setProvinciaNacimiento(request.getProvinciaNacimiento());
+        usuario.setDireccionDomicilio(request.getDireccionDomicilio());
+        usuario.setCarreras(request.getCarreras() != null ? request.getCarreras() : List.of());
+
+        usuarioRepository.save(usuario);
+        return mapToResponse(usuario);
     }
 
     @Override

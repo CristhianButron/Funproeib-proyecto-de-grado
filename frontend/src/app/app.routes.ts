@@ -24,6 +24,7 @@ export const routes: Routes = [
       { path: 'reportes', loadComponent: () => import('./features/admin/reportes').then(m => m.ReportesComponent) },
       { path: 'lista-negra', loadComponent: () => import('./features/admin/lista-negra').then(m => m.ListaNegraComponent) },
       { path: 'usuarios', loadComponent: () => import('./features/admin/usuarios-admin').then(m => m.UsuariosAdminComponent) },
+      { path: 'perfil', loadComponent: () => import('./features/perfil/mi-perfil').then(m => m.MiPerfilComponent) },
     ],
   },
 
@@ -34,6 +35,7 @@ export const routes: Routes = [
     children: [
       { path: '', loadComponent: () => import('./features/portal/portal-programas').then(m => m.PortalProgramasComponent) },
       { path: 'mis-postulaciones', loadComponent: () => import('./features/portal/portal-mis-postulaciones').then(m => m.PortalMisPostulacionesComponent) },
+      { path: 'perfil', loadComponent: () => import('./features/perfil/mi-perfil').then(m => m.MiPerfilComponent) },
     ],
   },
 
@@ -45,6 +47,7 @@ export const routes: Routes = [
       { path: '', loadComponent: () => import('./features/admin/evaluaciones').then(m => m.EvaluacionesComponent) },
       { path: 'postulantes', loadComponent: () => import('./features/admin/postulantes').then(m => m.PostulantesComponent) },
       { path: 'reportes', loadComponent: () => import('./features/admin/reportes').then(m => m.ReportesComponent) },
+      { path: 'perfil', loadComponent: () => import('./features/perfil/mi-perfil').then(m => m.MiPerfilComponent) },
     ],
   },
 

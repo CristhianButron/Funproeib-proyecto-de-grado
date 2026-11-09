@@ -58,6 +58,7 @@ export class EvaluadorLayoutComponent {
     { ruta: '/evaluador', label: 'Evaluaciones', icono: 'assessment', exact: true },
     { ruta: '/evaluador/postulantes', label: 'Postulantes', icono: 'group', exact: false },
     { ruta: '/evaluador/reportes', label: 'Reportes', icono: 'summarize', exact: false },
+    { ruta: '/evaluador/perfil', label: 'Mi perfil', icono: 'person', exact: false },
   ];
 
   constructor(public auth: AuthService, private router: Router) {}
