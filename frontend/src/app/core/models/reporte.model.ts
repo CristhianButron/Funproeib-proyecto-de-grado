@@ -1,5 +1,6 @@
 import { TipoPrograma } from './programa.model';
 import { Genero, NivelEducativo } from './usuario.model';
+import { EstadoAprovechamiento } from './postulacion.model';
 
 /**
  * Filtros del reporte de beneficiarios. No incluye "estado": el reporte
@@ -38,4 +39,5 @@ export interface BeneficiarioReporte {
   edicion?: string;
   fechaPostulacion: string;
   fechaFinPrograma: string;
+  estadoAprovechamiento: EstadoAprovechamiento;
 }

@@ -4,9 +4,11 @@ import { Workbook, Fill, Borders } from 'exceljs';
 import { ReporteService } from '../../core/services/reporte.service';
 import { ProgramaService } from '../../core/services/programa.service';
 import { UbicacionService } from '../../core/services/ubicacion.service';
+import { PostulacionService } from '../../core/services/postulacion.service';
 import { BeneficiarioReporte, ReporteFiltro } from '../../core/models/reporte.model';
 import { ProgramaResponse, TipoPrograma } from '../../core/models/programa.model';
 import { Genero, NivelEducativo } from '../../core/models/usuario.model';
+import { EstadoAprovechamiento } from '../../core/models/postulacion.model';
 import { CiudadResponse, PaisResponse } from '../../core/models/ubicacion.model';
 
 const AZUL_OSCURO = 'FF1E3A8A';
@@ -51,6 +53,18 @@ const LABEL_TIPO: Record<TipoPrograma, string> = {
   DIPLOMADO: 'Diplomado',
   CURSO: 'Curso',
   TALLER: 'Taller',
+};
+
+const LABEL_APROVECHAMIENTO: Record<EstadoAprovechamiento, string> = {
+  PENDIENTE: 'Pendiente',
+  APROBADO: 'Aprobado',
+  REPROBADO: 'Reprobado',
+};
+
+const COLOR_APROVECHAMIENTO: Record<EstadoAprovechamiento, string> = {
+  PENDIENTE: 'FFF3F4F6',
+  APROBADO: 'FFDCFCE7',
+  REPROBADO: 'FFFEE2E2',
 };
 
 @Component({
@@ -171,6 +185,7 @@ const LABEL_TIPO: Record<TipoPrograma, string> = {
                 <th class="px-6 py-3 text-xs font-bold text-on-surface-variant uppercase">Procedencia</th>
                 <th class="px-6 py-3 text-xs font-bold text-on-surface-variant uppercase">Programa</th>
                 <th class="px-6 py-3 text-xs font-bold text-on-surface-variant uppercase">Finalizó</th>
+                <th class="px-6 py-3 text-xs font-bold text-on-surface-variant uppercase">Estado final</th>
               </tr>
             </thead>
             <tbody class="divide-y divide-outline-variant">
@@ -189,9 +204,15 @@ const LABEL_TIPO: Record<TipoPrograma, string> = {
                     <p class="text-xs text-on-surface-variant">{{ LABEL_TIPO[b.tipoPrograma] }}{{ b.edicion ? ' · ' + b.edicion : '' }}</p>
                   </td>
                   <td class="px-6 py-4 text-sm">{{ b.fechaFinPrograma }}</td>
+                  <td class="px-6 py-4 text-sm">
+                    <select class="campo-aprovechamiento" [ngModel]="b.estadoAprovechamiento"
+                      (ngModelChange)="actualizarAprovechamiento(b, $event)" [disabled]="guardandoAprovechamiento() === b.idPostulacion">
+                      @for (e of estadosAprovechamiento; track e) { <option [value]="e">{{ LABEL_APROVECHAMIENTO[e] }}</option> }
+                    </select>
+                  </td>
                 </tr>
               } @empty {
-                <tr><td colspan="7" class="px-6 py-10 text-center text-on-surface-variant">Ningún beneficiario coincide con los filtros seleccionados.</td></tr>
+                <tr><td colspan="8" class="px-6 py-10 text-center text-on-surface-variant">Ningún beneficiario coincide con los filtros seleccionados.</td></tr>
               }
             </tbody>
           </table>
@@ -204,16 +225,20 @@ const LABEL_TIPO: Record<TipoPrograma, string> = {
     .campo { width:100%; padding:.5rem .7rem; border:1px solid #c5c5d3; border-radius:.5rem; outline:none; font-size:.875rem; }
     .campo:focus { border-color:#1e3a8a; box-shadow:0 0 0 2px rgba(30,58,138,.2); }
     .etiqueta { display:block; font-size:.7rem; font-weight:700; text-transform:uppercase; color:#6b7280; margin-bottom:.3rem; }
+    .campo-aprovechamiento { padding:.35rem .5rem; border:1px solid #c5c5d3; border-radius:.5rem; outline:none; font-size:.8rem; font-weight:600; }
+    .campo-aprovechamiento:disabled { opacity:.5; }
   `],
 })
 export class ReportesComponent implements OnInit {
   LABEL_GENERO = LABEL_GENERO;
   LABEL_NIVEL = LABEL_NIVEL;
   LABEL_TIPO = LABEL_TIPO;
+  LABEL_APROVECHAMIENTO = LABEL_APROVECHAMIENTO;
 
   generos: Genero[] = ['MASCULINO', 'FEMENINO', 'OTRO', 'PREFIERO_NO_INDICAR'];
   niveles: NivelEducativo[] = ['SECUNDARIA', 'TECNICO_MEDIO', 'TECNICO_SUPERIOR', 'LICENCIATURA', 'ESPECIALIZACION', 'MAESTRIA', 'DOCTORADO'];
   tipos: TipoPrograma[] = ['DIPLOMADO', 'CURSO', 'TALLER'];
+  estadosAprovechamiento: EstadoAprovechamiento[] = ['PENDIENTE', 'APROBADO', 'REPROBADO'];
 
   programas = signal<ProgramaResponse[]>([]);
   paises = signal<PaisResponse[]>([]);
@@ -221,6 +246,7 @@ export class ReportesComponent implements OnInit {
   beneficiarios = signal<BeneficiarioReporte[]>([]);
   cargando = signal(false);
   exportando = signal(false);
+  guardandoAprovechamiento = signal<number | null>(null);
   error = signal<string | null>(null);
 
   filtro = signal<ReporteFiltro>({});
@@ -244,6 +270,7 @@ export class ReportesComponent implements OnInit {
     private reporteService: ReporteService,
     private programaService: ProgramaService,
     private ubicacionService: UbicacionService,
+    private postulacionService: PostulacionService,
   ) {}
 
   ngOnInit(): void {
@@ -290,6 +317,24 @@ export class ReportesComponent implements OnInit {
     });
   }
 
+  actualizarAprovechamiento(b: BeneficiarioReporte, nuevoEstado: EstadoAprovechamiento): void {
+    const anterior = b.estadoAprovechamiento;
+    this.guardandoAprovechamiento.set(b.idPostulacion);
+    this.postulacionService.registrarAprovechamiento(b.idPostulacion, nuevoEstado).subscribe({
+      next: () => {
+        this.beneficiarios.update(lista => lista.map(x =>
+          x.idPostulacion === b.idPostulacion ? { ...x, estadoAprovechamiento: nuevoEstado } : x));
+        this.guardandoAprovechamiento.set(null);
+      },
+      error: () => {
+        this.beneficiarios.update(lista => lista.map(x =>
+          x.idPostulacion === b.idPostulacion ? { ...x, estadoAprovechamiento: anterior } : x));
+        this.guardandoAprovechamiento.set(null);
+        this.error.set('No se pudo actualizar el estado de aprovechamiento.');
+      },
+    });
+  }
+
   async exportarExcel(): Promise<void> {
     const datos = this.beneficiarios();
     if (!datos.length) return;
@@ -331,6 +376,7 @@ export class ReportesComponent implements OnInit {
       { header: 'Tipo', width: 12 },
       { header: 'Edición', width: 14 },
       { header: 'Finalizó', width: 14 },
+      { header: 'Estado final', width: 16 },
     ];
     const totalCols = columnas.length;
 
@@ -373,13 +419,13 @@ export class ReportesComponent implements OnInit {
       const fila = hoja.addRow([
         b.nombreCompleto, b.ci, b.correo, b.telefono ?? '', LABEL_GENERO[b.genero], b.edad ?? null,
         LABEL_NIVEL[b.nivelEducativo], b.ciudad ?? '', b.pais ?? '', b.nombrePrograma,
-        LABEL_TIPO[b.tipoPrograma], b.edicion ?? '', b.fechaFinPrograma,
+        LABEL_TIPO[b.tipoPrograma], b.edicion ?? '', b.fechaFinPrograma, LABEL_APROVECHAMIENTO[b.estadoAprovechamiento],
       ]);
       const fondoFila = idx % 2 === 0 ? BLANCO : GRIS_FILA;
       fila.eachCell((celda, colNumero) => {
         celda.border = bordeCompleto(GRIS_BORDE);
         celda.alignment = { vertical: 'middle', horizontal: colNumero === 6 ? 'center' : 'left' };
-        celda.fill = fillSolido(colNumero === 5 ? COLOR_GENERO[b.genero] : fondoFila);
+        celda.fill = fillSolido(colNumero === 5 ? COLOR_GENERO[b.genero] : colNumero === 14 ? COLOR_APROVECHAMIENTO[b.estadoAprovechamiento] : fondoFila);
       });
       fila.getCell(1).font = { bold: true, color: { argb: AZUL_OSCURO } };
     });
@@ -431,6 +477,21 @@ export class ReportesComponent implements OnInit {
       r.getCell(1).value = LABEL_TIPO[t];
       r.getCell(2).value = cantidad;
       r.eachCell(c => c.border = bordeCompleto(GRIS_BORDE));
+    }
+
+    fila++;
+    const encabezadoAprovechamiento = hoja.getRow(fila++);
+    encabezadoAprovechamiento.getCell(1).value = 'Por estado final de aprovechamiento';
+    encabezadoAprovechamiento.getCell(1).font = { bold: true, color: { argb: BLANCO } };
+    encabezadoAprovechamiento.getCell(2).font = { bold: true, color: { argb: BLANCO } };
+    [1, 2].forEach(c => { encabezadoAprovechamiento.getCell(c).fill = fillSolido(AZUL_OSCURO); });
+
+    for (const e of this.estadosAprovechamiento) {
+      const cantidad = datos.filter(b => b.estadoAprovechamiento === e).length;
+      const r = hoja.getRow(fila++);
+      r.getCell(1).value = LABEL_APROVECHAMIENTO[e];
+      r.getCell(2).value = cantidad;
+      r.eachCell(c => { c.border = bordeCompleto(GRIS_BORDE); c.fill = fillSolido(COLOR_APROVECHAMIENTO[e]); });
     }
   }
 }

@@ -6,6 +6,7 @@ import org.certificaciones.funproeibbackend.exception.BusinessException;
 import org.certificaciones.funproeibbackend.model.Postulacion;
 import org.certificaciones.funproeibbackend.model.Programa;
 import org.certificaciones.funproeibbackend.model.Usuario;
+import org.certificaciones.funproeibbackend.model.enums.EstadoAprovechamiento;
 import org.certificaciones.funproeibbackend.model.enums.EstadoPostulacion;
 import org.certificaciones.funproeibbackend.model.enums.EstadoPrograma;
 import org.certificaciones.funproeibbackend.model.enums.TipoPrograma;
@@ -243,6 +244,47 @@ class PostulacionServiceImplTest {
         PostulacionResponse res = service.crear(request);
 
         assertThat(res.getEstado()).isEqualTo(EstadoPostulacion.INCOMPLETA);
+    }
+
+    @Test
+    @DisplayName("Registra el aprovechamiento de una postulación aceptada en un programa ya finalizado")
+    void registrarAprovechamiento_programaFinalizado_actualizaEstado() {
+        programa.setFechaFin(LocalDate.now().minusDays(1));
+        Postulacion aceptada = Postulacion.builder().id(5L).usuario(usuario).programa(programa)
+                .estado(EstadoPostulacion.ACEPTADA).build();
+        when(postulacionRepository.findById(5L)).thenReturn(Optional.of(aceptada));
+        when(postulacionRepository.save(any(Postulacion.class))).thenAnswer(inv -> inv.getArgument(0));
+
+        PostulacionResponse res = service.registrarAprovechamiento(5L, EstadoAprovechamiento.APROBADO);
+
+        assertThat(res.getEstadoAprovechamiento()).isEqualTo(EstadoAprovechamiento.APROBADO);
+    }
+
+    @Test
+    @DisplayName("Rechaza registrar aprovechamiento si la postulación no está ACEPTADA")
+    void registrarAprovechamiento_noAceptada_lanzaExcepcion() {
+        Postulacion pendiente = Postulacion.builder().id(5L).usuario(usuario).programa(programa)
+                .estado(EstadoPostulacion.PENDIENTE).build();
+        when(postulacionRepository.findById(5L)).thenReturn(Optional.of(pendiente));
+
+        assertThatThrownBy(() -> service.registrarAprovechamiento(5L, EstadoAprovechamiento.APROBADO))
+                .isInstanceOf(BusinessException.class)
+                .hasMessageContaining("ACEPTADAS");
+        verify(postulacionRepository, never()).save(any());
+    }
+
+    @Test
+    @DisplayName("Rechaza registrar aprovechamiento si el programa todavía no finalizó")
+    void registrarAprovechamiento_programaEnCurso_lanzaExcepcion() {
+        programa.setFechaFin(LocalDate.now().plusMonths(1));
+        Postulacion aceptada = Postulacion.builder().id(5L).usuario(usuario).programa(programa)
+                .estado(EstadoPostulacion.ACEPTADA).build();
+        when(postulacionRepository.findById(5L)).thenReturn(Optional.of(aceptada));
+
+        assertThatThrownBy(() -> service.registrarAprovechamiento(5L, EstadoAprovechamiento.APROBADO))
+                .isInstanceOf(BusinessException.class)
+                .hasMessageContaining("antes de que finalice");
+        verify(postulacionRepository, never()).save(any());
     }
 
     @Test

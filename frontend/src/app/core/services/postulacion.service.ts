@@ -1,7 +1,7 @@
 import { Injectable } from '@angular/core';
 import { Observable } from 'rxjs';
 import { ApiService } from './api.service';
-import { PostulacionRequest, PostulacionResponse, EstadoPostulacion } from '../models/postulacion.model';
+import { PostulacionRequest, PostulacionResponse, EstadoPostulacion, EstadoAprovechamiento } from '../models/postulacion.model';
 
 @Injectable({ providedIn: 'root' })
 export class PostulacionService {
@@ -25,5 +25,9 @@ export class PostulacionService {
 
   cambiarEstado(id: number, estado: EstadoPostulacion): Observable<PostulacionResponse> {
     return this.api.patch<PostulacionResponse>(`/postulaciones/${id}/estado`, { estado });
+  }
+
+  registrarAprovechamiento(id: number, estado: EstadoAprovechamiento): Observable<PostulacionResponse> {
+    return this.api.patch<PostulacionResponse>(`/postulaciones/${id}/aprovechamiento`, { estado });
   }
 }

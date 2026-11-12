@@ -1,5 +1,6 @@
 package org.certificaciones.funproeibbackend.dto;
 
+import org.certificaciones.funproeibbackend.model.enums.EstadoAprovechamiento;
 import org.certificaciones.funproeibbackend.model.enums.EstadoPostulacion;
 import lombok.Builder;
 import lombok.Data;
@@ -15,4 +16,5 @@ public class PostulacionResponse {
     private String nombrePrograma;
     private LocalDate fechaPostulacion;
     private EstadoPostulacion estado;
+    private EstadoAprovechamiento estadoAprovechamiento;
 }

@@ -67,6 +67,7 @@ public class ReporteServiceImpl implements ReporteService {
                 .edicion(pr.getEdicion())
                 .fechaPostulacion(p.getFechaPostulacion())
                 .fechaFinPrograma(pr.getFechaFin())
+                .estadoAprovechamiento(p.getEstadoAprovechamiento())
                 .build();
     }
 }

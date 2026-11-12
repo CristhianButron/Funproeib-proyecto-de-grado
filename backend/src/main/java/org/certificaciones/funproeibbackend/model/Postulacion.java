@@ -1,5 +1,6 @@
 package org.certificaciones.funproeibbackend.model;
 
+import org.certificaciones.funproeibbackend.model.enums.EstadoAprovechamiento;
 import org.certificaciones.funproeibbackend.model.enums.EstadoPostulacion;
 import jakarta.persistence.*;
 import lombok.*;
@@ -33,4 +34,13 @@ public class Postulacion {
     @Enumerated(EnumType.STRING)
     @Column(name = "estado", nullable = false, length = 20)
     private EstadoPostulacion estado;
+
+    // columnDefinition con DEFAULT: evita que Hibernate falle al agregar esta
+    // columna contra postulaciones ya existentes (ver el mismo problema en
+    // CriterioEvaluacion.activo).
+    @Builder.Default
+    @Enumerated(EnumType.STRING)
+    @Column(name = "estado_aprovechamiento", nullable = false, length = 20,
+            columnDefinition = "varchar(20) not null default 'PENDIENTE'")
+    private EstadoAprovechamiento estadoAprovechamiento = EstadoAprovechamiento.PENDIENTE;
 }

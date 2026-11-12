@@ -7,6 +7,7 @@ import org.certificaciones.funproeibbackend.exception.ResourceNotFoundException;
 import org.certificaciones.funproeibbackend.model.Postulacion;
 import org.certificaciones.funproeibbackend.model.Programa;
 import org.certificaciones.funproeibbackend.model.Usuario;
+import org.certificaciones.funproeibbackend.model.enums.EstadoAprovechamiento;
 import org.certificaciones.funproeibbackend.model.enums.EstadoPostulacion;
 import org.certificaciones.funproeibbackend.model.enums.EstadoPrograma;
 import org.certificaciones.funproeibbackend.model.enums.TipoPrograma;
@@ -117,6 +118,23 @@ public class PostulacionServiceImpl implements PostulacionService {
         return mapToResponse(postulacionRepository.save(postulacion));
     }
 
+    @Override
+    @Transactional
+    public PostulacionResponse registrarAprovechamiento(Long id, EstadoAprovechamiento estadoAprovechamiento) {
+        Postulacion postulacion = buscarPostulacion(id);
+
+        if (postulacion.getEstado() != EstadoPostulacion.ACEPTADA) {
+            throw new BusinessException("Solo se puede registrar el aprovechamiento de postulaciones ACEPTADAS");
+        }
+
+        if (!postulacion.getPrograma().getFechaFin().isBefore(LocalDate.now())) {
+            throw new BusinessException("No se puede registrar el aprovechamiento antes de que finalice el programa");
+        }
+
+        postulacion.setEstadoAprovechamiento(estadoAprovechamiento);
+        return mapToResponse(postulacionRepository.save(postulacion));
+    }
+
     private void validarSinDiplomadoPrevio(Usuario usuario) {
         List<Postulacion> diplomadosAceptados = postulacionRepository.findByUsuarioIdAndEstadoAndProgramaTipo(
                 usuario.getId(), EstadoPostulacion.ACEPTADA, TipoPrograma.DIPLOMADO);
@@ -161,6 +179,7 @@ public class PostulacionServiceImpl implements PostulacionService {
                 .nombrePrograma(p.getPrograma().getNombre())
                 .fechaPostulacion(p.getFechaPostulacion())
                 .estado(p.getEstado())
+                .estadoAprovechamiento(p.getEstadoAprovechamiento())
                 .build();
     }
 }

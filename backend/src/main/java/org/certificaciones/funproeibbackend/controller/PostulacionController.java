@@ -2,6 +2,7 @@ package org.certificaciones.funproeibbackend.controller;
 
 import org.certificaciones.funproeibbackend.dto.PostulacionRequest;
 import org.certificaciones.funproeibbackend.dto.PostulacionResponse;
+import org.certificaciones.funproeibbackend.model.enums.EstadoAprovechamiento;
 import org.certificaciones.funproeibbackend.model.enums.EstadoPostulacion;
 import org.certificaciones.funproeibbackend.service.PostulacionService;
 import jakarta.validation.Valid;
@@ -49,5 +50,12 @@ public class PostulacionController {
             @PathVariable Long id,
             @RequestParam EstadoPostulacion estado) {
         return ResponseEntity.ok(postulacionService.cambiarEstado(id, estado));
+    }
+
+    @PatchMapping("/{id}/aprovechamiento")
+    public ResponseEntity<PostulacionResponse> registrarAprovechamiento(
+            @PathVariable Long id,
+            @RequestParam EstadoAprovechamiento estado) {
+        return ResponseEntity.ok(postulacionService.registrarAprovechamiento(id, estado));
     }
 }

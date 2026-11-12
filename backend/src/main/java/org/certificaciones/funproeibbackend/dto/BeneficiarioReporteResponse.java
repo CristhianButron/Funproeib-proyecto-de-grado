@@ -1,5 +1,6 @@
 package org.certificaciones.funproeibbackend.dto;
 
+import org.certificaciones.funproeibbackend.model.enums.EstadoAprovechamiento;
 import org.certificaciones.funproeibbackend.model.enums.Genero;
 import org.certificaciones.funproeibbackend.model.enums.NivelEducativo;
 import org.certificaciones.funproeibbackend.model.enums.TipoPrograma;
@@ -31,4 +32,5 @@ public class BeneficiarioReporteResponse {
     private String edicion;
     private LocalDate fechaPostulacion;
     private LocalDate fechaFinPrograma;
+    private EstadoAprovechamiento estadoAprovechamiento;
 }
