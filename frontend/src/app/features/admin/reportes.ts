@@ -59,12 +59,14 @@ const LABEL_APROVECHAMIENTO: Record<EstadoAprovechamiento, string> = {
   PENDIENTE: 'Pendiente',
   APROBADO: 'Aprobado',
   REPROBADO: 'Reprobado',
+  ABANDONO: 'Abandono',
 };
 
 const COLOR_APROVECHAMIENTO: Record<EstadoAprovechamiento, string> = {
   PENDIENTE: 'FFF3F4F6',
   APROBADO: 'FFDCFCE7',
   REPROBADO: 'FFFEE2E2',
+  ABANDONO: 'FFFEF3C7',
 };
 
 @Component({
@@ -238,7 +240,7 @@ export class ReportesComponent implements OnInit {
   generos: Genero[] = ['MASCULINO', 'FEMENINO', 'OTRO', 'PREFIERO_NO_INDICAR'];
   niveles: NivelEducativo[] = ['SECUNDARIA', 'TECNICO_MEDIO', 'TECNICO_SUPERIOR', 'LICENCIATURA', 'ESPECIALIZACION', 'MAESTRIA', 'DOCTORADO'];
   tipos: TipoPrograma[] = ['DIPLOMADO', 'CURSO', 'TALLER'];
-  estadosAprovechamiento: EstadoAprovechamiento[] = ['PENDIENTE', 'APROBADO', 'REPROBADO'];
+  estadosAprovechamiento: EstadoAprovechamiento[] = ['PENDIENTE', 'APROBADO', 'REPROBADO', 'ABANDONO'];
 
   programas = signal<ProgramaResponse[]>([]);
   paises = signal<PaisResponse[]>([]);

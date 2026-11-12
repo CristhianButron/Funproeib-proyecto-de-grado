@@ -127,11 +127,16 @@ public class PostulacionServiceImpl implements PostulacionService {
             throw new BusinessException("Solo se puede registrar el aprovechamiento de postulaciones ACEPTADAS");
         }
 
-        if (!postulacion.getPrograma().getFechaFin().isBefore(LocalDate.now())) {
-            throw new BusinessException("No se puede registrar el aprovechamiento antes de que finalice el programa");
+        // Aprobado/Reprobado son un resultado final, solo tiene sentido una vez
+        // que el programa terminó. Abandono (y volver a Pendiente) puede
+        // ocurrir en cualquier momento, incluso con el programa todavía en curso.
+        boolean esResultadoFinal = estadoAprovechamiento == EstadoAprovechamiento.APROBADO
+                || estadoAprovechamiento == EstadoAprovechamiento.REPROBADO;
+        if (esResultadoFinal && !postulacion.getPrograma().getFechaFin().isBefore(LocalDate.now())) {
+            throw new BusinessException("No se puede registrar aprobado/reprobado antes de que finalice el programa");
         }
 
-        postulacion.setEstadoAprovechamiento(estadoAprovechamiento);
+        postulacion.setEstadoAprovechamiento(estadoAprovechamiento.name());
         return mapToResponse(postulacionRepository.save(postulacion));
     }
 
@@ -179,7 +184,7 @@ public class PostulacionServiceImpl implements PostulacionService {
                 .nombrePrograma(p.getPrograma().getNombre())
                 .fechaPostulacion(p.getFechaPostulacion())
                 .estado(p.getEstado())
-                .estadoAprovechamiento(p.getEstadoAprovechamiento())
+                .estadoAprovechamiento(EstadoAprovechamiento.valueOf(p.getEstadoAprovechamiento()))
                 .build();
     }
 }

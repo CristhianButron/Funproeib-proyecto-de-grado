@@ -1,6 +1,5 @@
 package org.certificaciones.funproeibbackend.model;
 
-import org.certificaciones.funproeibbackend.model.enums.EstadoAprovechamiento;
 import org.certificaciones.funproeibbackend.model.enums.EstadoPostulacion;
 import jakarta.persistence.*;
 import lombok.*;
@@ -35,12 +34,18 @@ public class Postulacion {
     @Column(name = "estado", nullable = false, length = 20)
     private EstadoPostulacion estado;
 
+    // String y no el enum EstadoAprovechamiento: con @Enumerated (o incluso
+    // con @Convert), Hibernate agrega un CHECK constraint derivado del
+    // conjunto de valores del enum que NO se actualiza solo si luego se
+    // agrega un valor nuevo (como ABANDONO) en una base de datos que ya
+    // tiene esta columna, y rechaza el valor nuevo con un error. Guardando un
+    // String plano evitamos ese constraint; la conversión a/desde
+    // EstadoAprovechamiento se hace en el service.
     // columnDefinition con DEFAULT: evita que Hibernate falle al agregar esta
     // columna contra postulaciones ya existentes (ver el mismo problema en
     // CriterioEvaluacion.activo).
     @Builder.Default
-    @Enumerated(EnumType.STRING)
     @Column(name = "estado_aprovechamiento", nullable = false, length = 20,
             columnDefinition = "varchar(20) not null default 'PENDIENTE'")
-    private EstadoAprovechamiento estadoAprovechamiento = EstadoAprovechamiento.PENDIENTE;
+    private String estadoAprovechamiento = "PENDIENTE";
 }

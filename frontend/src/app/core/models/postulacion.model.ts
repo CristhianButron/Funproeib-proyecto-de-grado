@@ -1,5 +1,5 @@
 export type EstadoPostulacion = 'INCOMPLETA' | 'PENDIENTE' | 'EVALUADA' | 'ACEPTADA' | 'RECHAZADA' | 'BLOQUEADA';
-export type EstadoAprovechamiento = 'PENDIENTE' | 'APROBADO' | 'REPROBADO';
+export type EstadoAprovechamiento = 'PENDIENTE' | 'APROBADO' | 'REPROBADO' | 'ABANDONO';
 
 export interface PostulacionRequest {
   idUsuario: number;

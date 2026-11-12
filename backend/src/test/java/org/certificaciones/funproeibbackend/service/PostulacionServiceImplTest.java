@@ -288,6 +288,20 @@ class PostulacionServiceImplTest {
     }
 
     @Test
+    @DisplayName("Permite registrar un abandono aunque el programa todavía esté en curso")
+    void registrarAprovechamiento_abandonoConProgramaEnCurso_permiteRegistrar() {
+        programa.setFechaFin(LocalDate.now().plusMonths(1));
+        Postulacion aceptada = Postulacion.builder().id(5L).usuario(usuario).programa(programa)
+                .estado(EstadoPostulacion.ACEPTADA).build();
+        when(postulacionRepository.findById(5L)).thenReturn(Optional.of(aceptada));
+        when(postulacionRepository.save(any(Postulacion.class))).thenAnswer(inv -> inv.getArgument(0));
+
+        PostulacionResponse res = service.registrarAprovechamiento(5L, EstadoAprovechamiento.ABANDONO);
+
+        assertThat(res.getEstadoAprovechamiento()).isEqualTo(EstadoAprovechamiento.ABANDONO);
+    }
+
+    @Test
     @DisplayName("No aplica la restricción de diplomado previo a talleres o cursos")
     void crear_taller_noValidaDiplomadoPrevio() {
         programa.setTipo(TipoPrograma.TALLER);

@@ -2,6 +2,7 @@ package org.certificaciones.funproeibbackend.service.impl;
 
 import org.certificaciones.funproeibbackend.dto.BeneficiarioReporteResponse;
 import org.certificaciones.funproeibbackend.dto.ReporteBeneficiariosFiltro;
+import org.certificaciones.funproeibbackend.model.enums.EstadoAprovechamiento;
 import org.certificaciones.funproeibbackend.model.Postulacion;
 import org.certificaciones.funproeibbackend.model.Programa;
 import org.certificaciones.funproeibbackend.model.Usuario;
@@ -67,7 +68,7 @@ public class ReporteServiceImpl implements ReporteService {
                 .edicion(pr.getEdicion())
                 .fechaPostulacion(p.getFechaPostulacion())
                 .fechaFinPrograma(pr.getFechaFin())
-                .estadoAprovechamiento(p.getEstadoAprovechamiento())
+                .estadoAprovechamiento(EstadoAprovechamiento.valueOf(p.getEstadoAprovechamiento()))
                 .build();
     }
 }
