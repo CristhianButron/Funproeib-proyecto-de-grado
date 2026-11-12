@@ -37,7 +37,12 @@ public class CriterioEvaluacion {
     @Column(name = "descripcion", length = 500)
     private String descripcion;
 
+    // columnDefinition con DEFAULT: sin esto, Hibernate genera "add column
+    // activo boolean not null" al actualizar el esquema, lo que falla contra
+    // una tabla con filas ya existentes (como los 6 criterios sembrados antes
+    // de este campo) porque Postgres no tiene con qué completar las filas
+    // viejas. Con el default, esas filas quedan en activo=true automáticamente.
     @Builder.Default
-    @Column(name = "activo", nullable = false)
+    @Column(name = "activo", nullable = false, columnDefinition = "boolean not null default true")
     private Boolean activo = true;
 }
