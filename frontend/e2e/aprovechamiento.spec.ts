@@ -83,7 +83,12 @@ test.describe('Estado final de aprovechamiento de beneficiarios', () => {
     await expect(aprobado).toBeDisabled();
     await expect(reprobado).toBeDisabled();
 
-    await page.click('button:has-text("Abandono")');
+    // Espera la respuesta real del PATCH antes de revisar la clase del botón,
+    // para no correr una carrera contra el round-trip al backend.
+    await Promise.all([
+      page.waitForResponse(res => res.url().includes('/aprovechamiento') && res.request().method() === 'PATCH'),
+      page.click('button:has-text("Abandono")', { force: true }),
+    ]);
     await expect(page.locator('button:has-text("Abandono")')).toHaveClass(/bg-primary-fixed/);
   });
 
@@ -103,12 +108,19 @@ test.describe('Estado final de aprovechamiento de beneficiarios', () => {
 
     const aprobado = page.locator('button:has-text("Aprobado")');
     await expect(aprobado).toBeEnabled();
-    await aprobado.click();
+    await Promise.all([
+      page.waitForResponse(res => res.url().includes('/aprovechamiento') && res.request().method() === 'PATCH'),
+      aprobado.click({ force: true }),
+    ]);
     await expect(page.locator('button:has-text("Aprobado")')).toHaveClass(/bg-secondary-light/);
 
+    // La base puede tener otros beneficiarios reales ya cargados: no asumimos
+    // que la fila de la prueba sea la única ni la primera, la ubicamos por su
+    // texto único y revisamos el select de aprovechamiento de ESA fila.
     await page.goto('/admin/reportes');
     await page.locator('select').nth(2).selectOption({ label: nombrePrograma });
-    await expect(page.locator('tbody tr').first()).toContainText('Beneficiario E2E');
-    await expect(page.locator('tbody select')).toHaveValue('APROBADO');
+    const filaDePrueba = page.locator('tbody tr', { hasText: 'Beneficiario E2E' });
+    await expect(filaDePrueba).toBeVisible();
+    await expect(filaDePrueba.locator('select')).toHaveValue('APROBADO');
   });
 });
