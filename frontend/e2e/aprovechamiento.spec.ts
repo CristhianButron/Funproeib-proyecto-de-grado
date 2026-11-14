@@ -84,11 +84,15 @@ test.describe('Estado final de aprovechamiento de beneficiarios', () => {
     await expect(reprobado).toBeDisabled();
 
     // Espera la respuesta real del PATCH antes de revisar la clase del botón,
-    // para no correr una carrera contra el round-trip al backend.
-    await Promise.all([
+    // para no correr una carrera contra el round-trip al backend. Se revisa
+    // el status primero para que, si el backend rechazó el cambio, la prueba
+    // falle mostrando el motivo real en vez de solo "no cambió de clase".
+    await expect(page.locator('button:has-text("Abandono")')).toBeVisible();
+    const [respuesta] = await Promise.all([
       page.waitForResponse(res => res.url().includes('/aprovechamiento') && res.request().method() === 'PATCH'),
       page.click('button:has-text("Abandono")', { force: true }),
     ]);
+    expect(respuesta.ok(), `PATCH aprovechamiento falló (${respuesta.status()}): ${await respuesta.text()}`).toBeTruthy();
     await expect(page.locator('button:has-text("Abandono")')).toHaveClass(/bg-primary-fixed/);
   });
 
@@ -108,10 +112,11 @@ test.describe('Estado final de aprovechamiento de beneficiarios', () => {
 
     const aprobado = page.locator('button:has-text("Aprobado")');
     await expect(aprobado).toBeEnabled();
-    await Promise.all([
+    const [respuesta] = await Promise.all([
       page.waitForResponse(res => res.url().includes('/aprovechamiento') && res.request().method() === 'PATCH'),
       aprobado.click({ force: true }),
     ]);
+    expect(respuesta.ok(), `PATCH aprovechamiento falló (${respuesta.status()}): ${await respuesta.text()}`).toBeTruthy();
     await expect(page.locator('button:has-text("Aprobado")')).toHaveClass(/bg-secondary-light/);
 
     // La base puede tener otros beneficiarios reales ya cargados: no asumimos
