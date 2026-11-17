@@ -166,4 +166,15 @@ class UsuarioControllerTest {
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.activo").value(false));
     }
+
+    @Test
+    @DisplayName("PATCH /api/usuarios/{id}/resetear-password devuelve la nueva contraseña")
+    void resetearPassword_devuelve200() throws Exception {
+        when(usuarioService.resetearPassword(1L)).thenReturn(
+                UsuarioResponse.builder().id(1L).contrasenaTemporal("Temporal123").build());
+
+        mockMvc.perform(patch("/api/usuarios/1/resetear-password"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.contrasenaTemporal").value("Temporal123"));
+    }
 }

@@ -23,4 +23,5 @@ public interface UsuarioService {
     void restablecerPassword(RestablecerPasswordRequest request);
     UsuarioResponse cambiarRol(Long id, RolUsuario nuevoRol);
     UsuarioResponse cambiarActivo(Long id, boolean activo);
+    UsuarioResponse resetearPassword(Long id);
 }

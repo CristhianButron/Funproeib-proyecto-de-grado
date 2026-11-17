@@ -28,6 +28,7 @@ describe('UsuariosAdminComponent', () => {
       listarTodos: vi.fn(() => of(listaInicial)),
       cambiarRol: vi.fn(),
       cambiarActivo: vi.fn(),
+      resetearPassword: vi.fn(),
     };
     authFake = { usuario: () => usuarioFake({ id: 3 }) };
     component = new UsuariosAdminComponent(usuarioServiceFake, authFake);
@@ -101,5 +102,36 @@ describe('UsuariosAdminComponent', () => {
 
     expect(usuarioServiceFake.cambiarActivo).toHaveBeenCalledWith(1, false);
     expect(component.usuarios().find(u => u.id === 1)?.activo).toBe(false);
+  });
+
+  it('resetearPassword no llama al servicio si no se confirma', () => {
+    vi.spyOn(window, 'confirm').mockReturnValue(false);
+
+    component.resetearPassword(listaInicial[0]);
+
+    expect(usuarioServiceFake.resetearPassword).not.toHaveBeenCalled();
+  });
+
+  it('resetearPassword llama al servicio, actualiza la lista y muestra la nueva contraseña', () => {
+    vi.spyOn(window, 'confirm').mockReturnValue(true);
+    const actualizado = usuarioFake({ id: 1, nombreCompleto: 'Ana Quispe', correo: 'ana@correo.com', contrasenaTemporal: 'Temporal123' });
+    usuarioServiceFake.resetearPassword.mockReturnValue(of(actualizado));
+
+    component.resetearPassword(listaInicial[0]);
+
+    expect(usuarioServiceFake.resetearPassword).toHaveBeenCalledWith(1);
+    expect(component.contrasenaReseteada()).toEqual({
+      nombre: 'Ana Quispe', correo: 'ana@correo.com', contrasena: 'Temporal123',
+    });
+  });
+
+  it('resetearPassword muestra el mensaje de error del backend si falla', () => {
+    vi.spyOn(window, 'confirm').mockReturnValue(true);
+    usuarioServiceFake.resetearPassword.mockReturnValue(throwError(() => ({ error: { mensaje: 'No se pudo resetear la contraseña' } })));
+
+    component.resetearPassword(listaInicial[0]);
+
+    expect(component.mensaje()).toBe('No se pudo resetear la contraseña');
+    expect(component.mensajeError()).toBe(true);
   });
 });

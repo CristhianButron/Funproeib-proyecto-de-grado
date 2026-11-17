@@ -75,7 +75,8 @@ public class SecurityConfig {
 
                         // Solo administrador: gestión de usuarios, catálogos y reportes.
                         .requestMatchers(HttpMethod.GET, "/api/usuarios").hasRole("ADMIN")
-                        .requestMatchers(HttpMethod.PATCH, "/api/usuarios/*/rol", "/api/usuarios/*/activo").hasRole("ADMIN")
+                        .requestMatchers(HttpMethod.PATCH, "/api/usuarios/*/rol", "/api/usuarios/*/activo",
+                                "/api/usuarios/*/resetear-password").hasRole("ADMIN")
                         .requestMatchers(HttpMethod.POST, "/api/programas", "/api/preguntas", "/api/req-documentos")
                         .hasRole("ADMIN")
                         .requestMatchers(HttpMethod.PUT, "/api/programas/**").hasRole("ADMIN")

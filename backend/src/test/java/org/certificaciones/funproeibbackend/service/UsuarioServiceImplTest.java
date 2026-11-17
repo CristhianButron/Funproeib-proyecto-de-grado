@@ -539,4 +539,19 @@ class UsuarioServiceImplTest {
         assertThat(res.getActivo()).isTrue();
         verify(usuarioRepository, never()).countByRolAndActivoTrue(any());
     }
+
+    @Test
+    @DisplayName("Resetear contraseña genera una nueva, exige cambiarla y la devuelve en la respuesta")
+    void resetearPassword_generaNuevaContrasenaYLaDevuelve() {
+        Usuario usuario = Usuario.builder().id(1L).contrasenaHash("HASH_VIEJO").debeCambiarPassword(false).build();
+        when(usuarioRepository.findById(1L)).thenReturn(Optional.of(usuario));
+        when(passwordEncoder.encode(anyString())).thenReturn("HASH_NUEVO");
+
+        UsuarioResponse res = service.resetearPassword(1L);
+
+        assertThat(usuario.getContrasenaHash()).isEqualTo("HASH_NUEVO");
+        assertThat(usuario.getDebeCambiarPassword()).isTrue();
+        assertThat(res.getContrasenaTemporal()).isNotBlank();
+        verify(usuarioRepository).save(usuario);
+    }
 }

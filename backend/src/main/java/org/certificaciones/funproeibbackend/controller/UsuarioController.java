@@ -99,4 +99,13 @@ public class UsuarioController {
     public ResponseEntity<UsuarioResponse> cambiarActivo(@PathVariable Long id, @RequestParam boolean activo) {
         return ResponseEntity.ok(usuarioService.cambiarActivo(id, activo));
     }
+
+    // Para cuando la persona no puede recuperar su cuenta por correo (no le
+    // llegó, no recuerda la contraseña temporal, etc.): el admin le genera
+    // una nueva contraseña temporal y la ve en pantalla, sin depender de
+    // ningún envío de correo.
+    @PatchMapping("/{id}/resetear-password")
+    public ResponseEntity<UsuarioResponse> resetearPassword(@PathVariable Long id) {
+        return ResponseEntity.ok(usuarioService.resetearPassword(id));
+    }
 }

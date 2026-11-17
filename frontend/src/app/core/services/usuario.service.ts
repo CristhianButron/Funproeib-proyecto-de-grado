@@ -54,4 +54,8 @@ export class UsuarioService {
   cambiarActivo(id: number, activo: boolean): Observable<UsuarioResponse> {
     return this.api.patch<UsuarioResponse>(`/usuarios/${id}/activo`, { activo: String(activo) });
   }
+
+  resetearPassword(id: number): Observable<UsuarioResponse> {
+    return this.api.patch<UsuarioResponse>(`/usuarios/${id}/resetear-password`);
+  }
 }

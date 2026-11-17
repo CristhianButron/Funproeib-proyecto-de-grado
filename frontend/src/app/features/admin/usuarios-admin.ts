@@ -68,11 +68,17 @@ import { RolUsuario, UsuarioResponse } from '../../core/models/usuario.model';
                   </select>
                 </td>
                 <td class="px-6 py-4 text-right">
-                  <button (click)="alternarActivo(u)" [disabled]="esUsuarioActual(u)"
-                    class="px-3 py-1.5 rounded-full text-xs font-bold transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
-                    [class]="u.activo ? 'bg-secondary-light text-on-secondary-container hover:opacity-80' : 'bg-error-container text-on-error-container hover:opacity-80'">
-                    {{ u.activo ? 'Activo' : 'Inactivo' }}
-                  </button>
+                  <div class="flex items-center justify-end gap-2">
+                    <button (click)="resetearPassword(u)" title="Resetear contraseña"
+                      class="p-1.5 rounded-lg text-on-surface-variant hover:bg-surface-high transition-colors">
+                      <span class="material-symbols-outlined text-[18px]">lock_reset</span>
+                    </button>
+                    <button (click)="alternarActivo(u)" [disabled]="esUsuarioActual(u)"
+                      class="px-3 py-1.5 rounded-full text-xs font-bold transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                      [class]="u.activo ? 'bg-secondary-light text-on-secondary-container hover:opacity-80' : 'bg-error-container text-on-error-container hover:opacity-80'">
+                      {{ u.activo ? 'Activo' : 'Inactivo' }}
+                    </button>
+                  </div>
                 </td>
               </tr>
             } @empty {
@@ -83,6 +89,27 @@ import { RolUsuario, UsuarioResponse } from '../../core/models/usuario.model';
       }
     </div>
   </div>
+
+  @if (contrasenaReseteada(); as r) {
+    <div class="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4" (click)="contrasenaReseteada.set(null)">
+      <div class="bg-white w-full max-w-md rounded-2xl shadow-xl overflow-hidden p-6 text-center" (click)="$event.stopPropagation()">
+        <span class="material-symbols-outlined text-5xl text-secondary">lock_reset</span>
+        <h2 class="text-xl font-extrabold text-primary-dark mt-4">Contraseña reseteada</h2>
+        <p class="text-on-surface-variant mt-2">
+          Nueva contraseña temporal para <b>{{ r.nombre }}</b> ({{ r.correo }}):
+        </p>
+        <p class="mt-3 inline-block px-4 py-2 rounded-lg bg-primary-fixed text-primary font-mono font-bold text-lg tracking-wide">
+          {{ r.contrasena }}
+        </p>
+        <p class="text-on-surface-variant text-xs mt-2">
+          Pásasela a la persona por el medio que uses para comunicarte con ella. Le va a pedir cambiarla en su próximo ingreso.
+        </p>
+        <button (click)="contrasenaReseteada.set(null)" class="mt-5 px-6 py-2 rounded-lg font-bold bg-primary text-white hover:bg-primary-dark transition-colors">
+          Listo
+        </button>
+      </div>
+    </div>
+  }
   `,
   styles: [`
     .campo { width:100%; padding:.5rem .7rem; border:1px solid #c5c5d3; border-radius:.5rem; outline:none; font-size:.875rem; }
@@ -98,6 +125,7 @@ export class UsuariosAdminComponent implements OnInit {
 
   busqueda = '';
   filtroRol: RolUsuario | '' = '';
+  contrasenaReseteada = signal<{ nombre: string; correo: string; contrasena: string } | null>(null);
 
   usuariosFiltrados(): UsuarioResponse[] {
     const texto = this.busqueda.trim().toLowerCase();
@@ -145,6 +173,21 @@ export class UsuariosAdminComponent implements OnInit {
         this.notificar(`${actualizado.nombreCompleto} ahora está ${actualizado.activo ? 'activo' : 'inactivo'}`, false);
       },
       error: (err) => this.notificar(err.error?.mensaje || 'No se pudo cambiar el estado', true),
+    });
+  }
+
+  resetearPassword(u: UsuarioResponse): void {
+    if (!confirm(`¿Resetear la contraseña de ${u.nombreCompleto}? Su contraseña actual dejará de funcionar.`)) return;
+    this.usuarioService.resetearPassword(u.id).subscribe({
+      next: (actualizado) => {
+        this.usuarios.update(l => l.map(x => x.id === actualizado.id ? actualizado : x));
+        this.contrasenaReseteada.set({
+          nombre: actualizado.nombreCompleto,
+          correo: actualizado.correo,
+          contrasena: actualizado.contrasenaTemporal ?? '',
+        });
+      },
+      error: (err) => this.notificar(err.error?.mensaje || 'No se pudo resetear la contraseña', true),
     });
   }
 

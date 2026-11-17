@@ -309,6 +309,20 @@ public class UsuarioServiceImpl implements UsuarioService {
         return mapToResponse(usuario);
     }
 
+    @Override
+    @Transactional
+    public UsuarioResponse resetearPassword(Long id) {
+        Usuario usuario = buscarUsuario(id);
+        String contrasenaTemporal = generarContrasenaTemporal();
+        usuario.setContrasenaHash(passwordEncoder.encode(contrasenaTemporal));
+        usuario.setDebeCambiarPassword(true);
+        usuarioRepository.save(usuario);
+
+        UsuarioResponse response = mapToResponse(usuario);
+        response.setContrasenaTemporal(contrasenaTemporal);
+        return response;
+    }
+
     /**
      * Evita que se degrade o desactive al último administrador activo del
      * sistema, lo que dejaría el panel de administración inaccesible para
