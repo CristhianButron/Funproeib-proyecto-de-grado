@@ -94,7 +94,10 @@ public class SecurityConfig {
     @Bean
     public CorsConfigurationSource corsConfigurationSource() {
         CorsConfiguration config = new CorsConfiguration();
-        config.setAllowedOrigins(List.of("http://localhost:4200"));
+        // 4200 es el puerto normal de "ng serve"; 4300 queda habilitado también
+        // porque en Windows el 4200 a veces lo bloquea el sistema (EACCES) y
+        // hay que levantar el frontend en otro puerto mientras se resuelve eso.
+        config.setAllowedOrigins(List.of("http://localhost:4200", "http://localhost:4300"));
         config.setAllowedMethods(List.of("GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"));
         config.setAllowedHeaders(List.of("*"));
         config.setAllowCredentials(true);
