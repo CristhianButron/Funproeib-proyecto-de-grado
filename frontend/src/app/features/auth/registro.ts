@@ -30,13 +30,27 @@ import { CARRERAS } from '../../core/constants/carreras';
 
       @if (registroExitoso()) {
         <div class="bg-white rounded-2xl border border-outline-variant shadow-card p-10 text-center">
-          <span class="material-symbols-outlined text-5xl text-secondary">mark_email_read</span>
-          <h2 class="text-xl font-extrabold text-primary-dark mt-4">¡Registro recibido!</h2>
-          <p class="text-on-surface-variant mt-2 max-w-md mx-auto">
-            Te enviamos un correo a <b>{{ correoRegistrado() }}</b> con un enlace de verificación y una
-            contraseña temporal. Verifica tu cuenta y luego inicia sesión; el sistema te pedirá
-            cambiar esa contraseña en tu primer ingreso.
-          </p>
+          @if (contrasenaTemporalMostrar()) {
+            <span class="material-symbols-outlined text-5xl text-secondary">check_circle</span>
+            <h2 class="text-xl font-extrabold text-primary-dark mt-4">¡Cuenta creada!</h2>
+            <p class="text-on-surface-variant mt-2 max-w-md mx-auto">
+              Ya puedes iniciar sesión con <b>{{ correoRegistrado() }}</b> y esta contraseña temporal:
+            </p>
+            <p class="mt-3 inline-block px-4 py-2 rounded-lg bg-primary-fixed text-primary font-mono font-bold text-lg tracking-wide">
+              {{ contrasenaTemporalMostrar() }}
+            </p>
+            <p class="text-on-surface-variant text-xs mt-2 max-w-md mx-auto">
+              El sistema te pedirá cambiarla por una tuya en tu primer ingreso. Guárdala, no se vuelve a mostrar.
+            </p>
+          } @else {
+            <span class="material-symbols-outlined text-5xl text-secondary">mark_email_read</span>
+            <h2 class="text-xl font-extrabold text-primary-dark mt-4">¡Registro recibido!</h2>
+            <p class="text-on-surface-variant mt-2 max-w-md mx-auto">
+              Te enviamos un correo a <b>{{ correoRegistrado() }}</b> con un enlace de verificación y una
+              contraseña temporal. Verifica tu cuenta y luego inicia sesión; el sistema te pedirá
+              cambiar esa contraseña en tu primer ingreso.
+            </p>
+          }
           <a routerLink="/login" class="inline-block mt-6 px-6 py-3 rounded-lg font-bold bg-primary text-white hover:bg-primary-dark transition-colors">
             Ir a iniciar sesión
           </a>
@@ -262,6 +276,7 @@ export class RegistroComponent implements OnInit {
   error = signal<string | null>(null);
   registroExitoso = signal(false);
   correoRegistrado = signal('');
+  contrasenaTemporalMostrar = signal<string | null>(null);
 
   opcionesEtnia = [
     'NINGUNA', 'Quechua', 'Aymara', 'Guaraní', 'Chiquitano', 'Mojeño', 'Guarayo',
@@ -393,6 +408,7 @@ export class RegistroComponent implements OnInit {
       next: (usuario) => {
         this.cargando.set(false);
         this.correoRegistrado.set(usuario.correo);
+        this.contrasenaTemporalMostrar.set(usuario.contrasenaTemporal ?? null);
         this.registroExitoso.set(true);
       },
       error: (err) => {

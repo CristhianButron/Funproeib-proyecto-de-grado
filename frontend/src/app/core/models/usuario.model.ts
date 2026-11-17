@@ -83,6 +83,9 @@ export interface UsuarioResponse {
   // endpoints (perfil, listados, etc.) no viene y hay que conservar el
   // que ya se tenía guardado en sesión.
   token?: string;
+  // Solo viene con valor en la respuesta de registro, y solo mientras el
+  // backend tenga app.registro.requiere-verificacion-correo=false.
+  contrasenaTemporal?: string;
 }
 
 export interface ReenviarVerificacionRequest {

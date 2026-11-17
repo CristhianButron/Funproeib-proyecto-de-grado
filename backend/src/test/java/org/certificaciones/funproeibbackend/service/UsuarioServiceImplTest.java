@@ -72,7 +72,37 @@ class UsuarioServiceImplTest {
         assertThat(res.getCorreo()).isEqualTo("ana@correo.com");
         assertThat(res.getEmailVerificado()).isFalse();
         assertThat(res.getDebeCambiarPassword()).isTrue();
+        assertThat(res.getContrasenaTemporal()).isNull();
         verify(emailService).enviarVerificacionCuenta(eq("ana@correo.com"), eq("Ana"), anyString(), anyString());
+    }
+
+    @Test
+    @DisplayName("Con la verificación de correo desactivada, la cuenta queda verificada de una y la contraseña viene en la respuesta")
+    void registrar_sinVerificacionRequerida_devuelveContrasenaYNoEnviaCorreo() {
+        org.springframework.test.util.ReflectionTestUtils.setField(service, "requiereVerificacionCorreo", false);
+
+        UsuarioRegistroRequest req = new UsuarioRegistroRequest();
+        req.setNombre("Ana");
+        req.setApellidoPaterno("Quispe");
+        req.setCorreo("ana@correo.com");
+        req.setCi("999888");
+        req.setIdCiudad(1L);
+        req.setIdCiudadNacimiento(1L);
+        req.setNivelEducativo(NivelEducativo.SECUNDARIA);
+
+        Ciudad ciudad = Ciudad.builder().id(1L).nombre("La Paz").build();
+
+        when(usuarioRepository.existsByCorreo("ana@correo.com")).thenReturn(false);
+        when(usuarioRepository.existsByCi("999888")).thenReturn(false);
+        when(ciudadRepository.findById(1L)).thenReturn(Optional.of(ciudad));
+        when(passwordEncoder.encode(anyString())).thenReturn("HASH");
+        when(usuarioRepository.save(any(Usuario.class))).thenAnswer(inv -> inv.getArgument(0));
+
+        UsuarioResponse res = service.registrar(req);
+
+        assertThat(res.getEmailVerificado()).isTrue();
+        assertThat(res.getContrasenaTemporal()).isNotBlank();
+        verify(emailService, never()).enviarVerificacionCuenta(any(), any(), any(), any());
     }
 
     @Test

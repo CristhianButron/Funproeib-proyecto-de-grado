@@ -30,6 +30,12 @@ public class UsuarioResponse {
     // endpoints (perfil, listados, etc.) queda null y no se usa.
     private String token;
 
+    // Solo viene con valor en la respuesta de registro, y solo mientras
+    // app.registro.requiere-verificacion-correo=false (ver UsuarioServiceImpl):
+    // es la única forma de que la persona sepa su contraseña temporal si no
+    // hay correo real de por medio. En el resto de los casos queda null.
+    private String contrasenaTemporal;
+
     // Perfil del postulante
     private Genero genero;
     private LocalDate fechaNacimiento;

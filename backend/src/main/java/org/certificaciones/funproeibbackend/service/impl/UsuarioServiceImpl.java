@@ -19,6 +19,7 @@ import org.certificaciones.funproeibbackend.service.EmailService;
 import org.certificaciones.funproeibbackend.service.UsuarioService;
 import org.certificaciones.funproeibbackend.util.CorreoDesechableValidator;
 import lombok.RequiredArgsConstructor;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -45,6 +46,15 @@ public class UsuarioServiceImpl implements UsuarioService {
     private final EmailService emailService;
     private final JwtService jwtService;
     private final SecureRandom secureRandom = new SecureRandom();
+
+    // Interruptor temporal: mientras el envío de correo no esté resuelto del
+    // todo (dominio verificado en el proveedor, etc.), se puede poner en
+    // false para que el registro no dependa de que llegue un correo real -
+    // la cuenta queda verificada de una y la contraseña temporal se devuelve
+    // directo en la respuesta en vez de solo mandarse por correo. Por
+    // defecto en true (el comportamiento normal, correcto para producción).
+    @Value("${app.registro.requiere-verificacion-correo:true}")
+    private boolean requiereVerificacionCorreo = true;
 
     @Override
     @Transactional
@@ -82,9 +92,9 @@ public class UsuarioServiceImpl implements UsuarioService {
                 .rol(RolUsuario.POSTULANTE)
                 .fechaRegistro(LocalDate.now())
                 .activo(true)
-                .emailVerificado(false)
-                .tokenVerificacion(UUID.randomUUID().toString())
-                .tokenVerificacionExpira(LocalDateTime.now().plusHours(HORAS_VALIDEZ_TOKEN_VERIFICACION))
+                .emailVerificado(!requiereVerificacionCorreo)
+                .tokenVerificacion(requiereVerificacionCorreo ? UUID.randomUUID().toString() : null)
+                .tokenVerificacionExpira(requiereVerificacionCorreo ? LocalDateTime.now().plusHours(HORAS_VALIDEZ_TOKEN_VERIFICACION) : null)
                 .debeCambiarPassword(true)
                 .genero(request.getGenero())
                 .fechaNacimiento(request.getFechaNacimiento())
@@ -100,9 +110,17 @@ public class UsuarioServiceImpl implements UsuarioService {
                 .build();
 
         Usuario guardado = usuarioRepository.save(usuario);
-        emailService.enviarVerificacionCuenta(guardado.getCorreo(), guardado.getNombre(), guardado.getTokenVerificacion(), contrasenaTemporal);
 
-        return mapToResponse(guardado);
+        UsuarioResponse response = mapToResponse(guardado);
+        if (requiereVerificacionCorreo) {
+            emailService.enviarVerificacionCuenta(guardado.getCorreo(), guardado.getNombre(), guardado.getTokenVerificacion(), contrasenaTemporal);
+        } else {
+            // Sin correo de por medio, es la única forma de que la persona
+            // sepa su contraseña temporal para el primer ingreso.
+            response.setContrasenaTemporal(contrasenaTemporal);
+        }
+
+        return response;
     }
 
     @Override
