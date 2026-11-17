@@ -71,4 +71,35 @@ public class EmailServiceImpl implements EmailService {
         mailSender.get().send(mensaje);
         log.info("Correo de verificación enviado a {}", destinatario);
     }
+
+    @Override
+    public void enviarRecuperacionPassword(String destinatario, String nombre, String tokenRecuperacion) {
+        String enlace = frontendUrl + "/restablecer-password?token=" + tokenRecuperacion;
+        String asunto = "Recupera tu contraseña - Funproeib Andes";
+        String cuerpo = """
+                Hola %s,
+
+                Recibimos una solicitud para restablecer tu contraseña en el sistema de Funproeib Andes.
+
+                Si fuiste tú, ingresa al siguiente enlace para definir una nueva contraseña:
+                %s
+
+                Este enlace vence en 1 hora. Si no solicitaste este cambio, puedes ignorar este correo:
+                tu contraseña actual seguirá funcionando con normalidad.
+                """.formatted(nombre, enlace);
+
+        if (!mailEnabled || mailSender.isEmpty()) {
+            log.info("[EMAIL SIMULADO - app.mail.enabled=false o SMTP no configurado] Para: {} | Asunto: {}\n{}",
+                    destinatario, asunto, cuerpo);
+            return;
+        }
+
+        SimpleMailMessage mensaje = new SimpleMailMessage();
+        mensaje.setFrom(remitente);
+        mensaje.setTo(destinatario);
+        mensaje.setSubject(asunto);
+        mensaje.setText(cuerpo);
+        mailSender.get().send(mensaje);
+        log.info("Correo de recuperación de contraseña enviado a {}", destinatario);
+    }
 }

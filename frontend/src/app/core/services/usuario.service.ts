@@ -1,7 +1,7 @@
 import { Injectable } from '@angular/core';
 import { Observable } from 'rxjs';
 import { ApiService } from './api.service';
-import { CambiarPasswordRequest, LoginRequest, ReenviarVerificacionRequest, RolUsuario, UsuarioActualizarRequest, UsuarioRegistroRequest, UsuarioResponse } from '../models/usuario.model';
+import { CambiarPasswordRequest, LoginRequest, OlvidePasswordRequest, ReenviarVerificacionRequest, RestablecerPasswordRequest, RolUsuario, UsuarioActualizarRequest, UsuarioRegistroRequest, UsuarioResponse } from '../models/usuario.model';
 
 @Injectable({ providedIn: 'root' })
 export class UsuarioService {
@@ -37,6 +37,14 @@ export class UsuarioService {
 
   cambiarPassword(request: CambiarPasswordRequest): Observable<void> {
     return this.api.post<void>('/usuarios/cambiar-password', request);
+  }
+
+  olvidePassword(request: OlvidePasswordRequest): Observable<void> {
+    return this.api.post<void>('/usuarios/olvide-password', request);
+  }
+
+  restablecerPassword(request: RestablecerPasswordRequest): Observable<void> {
+    return this.api.post<void>('/usuarios/restablecer-password', request);
   }
 
   cambiarRol(id: number, rol: RolUsuario): Observable<UsuarioResponse> {

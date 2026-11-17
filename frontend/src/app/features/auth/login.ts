@@ -55,7 +55,10 @@ import { rutaInicialPorRol } from '../../core/utils/rol-ruta';
               placeholder="correo@ejemplo.com" />
           </div>
           <div>
-            <label class="block text-sm font-semibold text-on-surface mb-1">Contraseña</label>
+            <div class="flex items-center justify-between mb-1">
+              <label class="block text-sm font-semibold text-on-surface">Contraseña</label>
+              <a routerLink="/olvide-password" class="text-xs font-semibold text-primary hover:underline">¿Olvidaste tu contraseña?</a>
+            </div>
             <input type="password" formControlName="contrasena"
               class="w-full px-4 py-3 rounded-lg border border-outline-variant focus:ring-2 focus:ring-primary focus:border-primary outline-none transition"
               placeholder="••••••••" />

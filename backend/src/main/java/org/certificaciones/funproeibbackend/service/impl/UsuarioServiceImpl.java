@@ -2,6 +2,7 @@ package org.certificaciones.funproeibbackend.service.impl;
 
 import org.certificaciones.funproeibbackend.dto.CambiarPasswordRequest;
 import org.certificaciones.funproeibbackend.dto.LoginRequest;
+import org.certificaciones.funproeibbackend.dto.RestablecerPasswordRequest;
 import org.certificaciones.funproeibbackend.dto.UsuarioActualizarRequest;
 import org.certificaciones.funproeibbackend.dto.UsuarioRegistroRequest;
 import org.certificaciones.funproeibbackend.dto.UsuarioResponse;
@@ -36,6 +37,7 @@ public class UsuarioServiceImpl implements UsuarioService {
     private static final String ALFABETO_PASSWORD_TEMPORAL = "ABCDEFGHJKMNPQRSTUVWXYZabcdefghjkmnpqrstuvwxyz23456789";
     private static final int LONGITUD_PASSWORD_TEMPORAL = 10;
     private static final int HORAS_VALIDEZ_TOKEN_VERIFICACION = 24;
+    private static final int HORAS_VALIDEZ_TOKEN_RECUPERACION = 1;
 
     private final UsuarioRepository usuarioRepository;
     private final CiudadRepository ciudadRepository;
@@ -229,6 +231,39 @@ public class UsuarioServiceImpl implements UsuarioService {
 
         usuario.setContrasenaHash(passwordEncoder.encode(request.getContrasenaNueva()));
         usuario.setDebeCambiarPassword(false);
+        usuarioRepository.save(usuario);
+    }
+
+    @Override
+    @Transactional
+    public void solicitarRecuperacionPassword(String correo) {
+        // A propósito no revela si el correo existe o no (ni con una excepción
+        // ni con el tiempo de respuesta): si alguien no encontrara nada acá,
+        // igual sabría que esa cuenta no existe, lo que es información que no
+        // le corresponde. Por eso el controlador siempre responde 204 pase lo
+        // que pase adentro.
+        usuarioRepository.findByCorreo(correo).ifPresent(usuario -> {
+            usuario.setTokenRecuperacion(UUID.randomUUID().toString());
+            usuario.setTokenRecuperacionExpira(LocalDateTime.now().plusHours(HORAS_VALIDEZ_TOKEN_RECUPERACION));
+            usuarioRepository.save(usuario);
+            emailService.enviarRecuperacionPassword(usuario.getCorreo(), usuario.getNombre(), usuario.getTokenRecuperacion());
+        });
+    }
+
+    @Override
+    @Transactional
+    public void restablecerPassword(RestablecerPasswordRequest request) {
+        Usuario usuario = usuarioRepository.findByTokenRecuperacion(request.getToken())
+                .orElseThrow(() -> new BusinessException("El enlace para restablecer la contraseña no es válido"));
+
+        if (usuario.getTokenRecuperacionExpira() == null || usuario.getTokenRecuperacionExpira().isBefore(LocalDateTime.now())) {
+            throw new BusinessException("El enlace para restablecer la contraseña expiró. Solicita uno nuevo.");
+        }
+
+        usuario.setContrasenaHash(passwordEncoder.encode(request.getContrasenaNueva()));
+        usuario.setDebeCambiarPassword(false);
+        usuario.setTokenRecuperacion(null);
+        usuario.setTokenRecuperacionExpira(null);
         usuarioRepository.save(usuario);
     }
 

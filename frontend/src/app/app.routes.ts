@@ -6,6 +6,8 @@ export const routes: Routes = [
   { path: 'login', loadComponent: () => import('./features/auth/login').then(m => m.LoginComponent) },
   { path: 'registro', loadComponent: () => import('./features/auth/registro').then(m => m.RegistroComponent) },
   { path: 'verificar-correo', loadComponent: () => import('./features/auth/verificar-correo').then(m => m.VerificarCorreoComponent) },
+  { path: 'olvide-password', loadComponent: () => import('./features/auth/olvide-password').then(m => m.OlvidePasswordComponent) },
+  { path: 'restablecer-password', loadComponent: () => import('./features/auth/restablecer-password').then(m => m.RestablecerPasswordComponent) },
   {
     path: 'cambiar-password',
     canActivate: [authGuard],
@@ -20,6 +22,7 @@ export const routes: Routes = [
       { path: '', loadComponent: () => import('./features/admin/dashboard').then(m => m.AdminDashboardComponent) },
       { path: 'programas', loadComponent: () => import('./features/admin/programas-admin').then(m => m.ProgramasAdminComponent) },
       { path: 'postulantes', loadComponent: () => import('./features/admin/postulantes').then(m => m.PostulantesComponent) },
+      { path: 'beneficiarios', loadComponent: () => import('./features/admin/beneficiarios').then(m => m.BeneficiariosComponent) },
       { path: 'evaluaciones', loadComponent: () => import('./features/admin/evaluaciones').then(m => m.EvaluacionesComponent) },
       { path: 'reportes', loadComponent: () => import('./features/admin/reportes').then(m => m.ReportesComponent) },
       { path: 'lista-negra', loadComponent: () => import('./features/admin/lista-negra').then(m => m.ListaNegraComponent) },
@@ -46,6 +49,7 @@ export const routes: Routes = [
     children: [
       { path: '', loadComponent: () => import('./features/admin/evaluaciones').then(m => m.EvaluacionesComponent) },
       { path: 'postulantes', loadComponent: () => import('./features/admin/postulantes').then(m => m.PostulantesComponent) },
+      { path: 'beneficiarios', loadComponent: () => import('./features/admin/beneficiarios').then(m => m.BeneficiariosComponent) },
       { path: 'reportes', loadComponent: () => import('./features/admin/reportes').then(m => m.ReportesComponent) },
       { path: 'perfil', loadComponent: () => import('./features/perfil/mi-perfil').then(m => m.MiPerfilComponent) },
     ],

@@ -48,4 +48,24 @@ class EmailServiceImplTest {
 
         verify(mailSender).send(any(SimpleMailMessage.class));
     }
+
+    @Test
+    @DisplayName("Recuperación de contraseña: con app.mail.enabled=false no intenta enviar")
+    void enviarRecuperacion_mailDeshabilitado_noEnvia() {
+        EmailServiceImpl service = new EmailServiceImpl(Optional.of(mailSender), false, "no-responder@funproeib.org", "http://localhost:4200");
+
+        service.enviarRecuperacionPassword("ana@correo.com", "Ana", "token-456");
+
+        verifyNoInteractions(mailSender);
+    }
+
+    @Test
+    @DisplayName("Recuperación de contraseña: con app.mail.enabled=true y JavaMailSender disponible, envía el correo")
+    void enviarRecuperacion_mailHabilitado_envia() {
+        EmailServiceImpl service = new EmailServiceImpl(Optional.of(mailSender), true, "no-responder@funproeib.org", "http://localhost:4200");
+
+        service.enviarRecuperacionPassword("ana@correo.com", "Ana", "token-456");
+
+        verify(mailSender).send(any(SimpleMailMessage.class));
+    }
 }

@@ -62,9 +62,11 @@ public class SecurityConfig {
                         .requestMatchers(HttpMethod.OPTIONS, "/**").permitAll()
                         .requestMatchers("/v3/api-docs/**", "/swagger-ui/**", "/swagger-ui.html").permitAll()
 
-                        // Público: sin esto nadie podría ni registrarse ni entrar.
+                        // Público: sin esto nadie podría ni registrarse ni entrar, ni
+                        // recuperar su contraseña si la olvida sin tener sesión.
                         .requestMatchers(HttpMethod.POST, "/api/usuarios/registro", "/api/usuarios/login",
-                                "/api/usuarios/reenviar-verificacion").permitAll()
+                                "/api/usuarios/reenviar-verificacion", "/api/usuarios/olvide-password",
+                                "/api/usuarios/restablecer-password").permitAll()
                         .requestMatchers(HttpMethod.GET, "/api/usuarios/verificar-correo").permitAll()
                         .requestMatchers(HttpMethod.GET, "/api/ubicaciones/**").permitAll()
 
@@ -82,12 +84,13 @@ public class SecurityConfig {
                         .requestMatchers(HttpMethod.PATCH, "/api/criterios/**").hasRole("ADMIN")
                         .requestMatchers(HttpMethod.PATCH, "/api/documentos/*/verificar",
                                 "/api/documentos/postulacion/*/verificar-todos").hasRole("ADMIN")
-                        .requestMatchers(HttpMethod.PATCH, "/api/postulaciones/*/aprovechamiento").hasRole("ADMIN")
                         .requestMatchers(HttpMethod.GET, "/api/postulaciones/estado/**").hasRole("ADMIN")
                         .requestMatchers("/api/reportes/**").hasRole("ADMIN")
 
-                        // Administrador o evaluador: revisión y evaluación de postulaciones.
+                        // Administrador o evaluador: revisión/evaluación de postulaciones, y
+                        // registrar el estado final (aprovechamiento) de los beneficiarios.
                         .requestMatchers(HttpMethod.PATCH, "/api/postulaciones/*/estado").hasAnyRole("ADMIN", "EVALUADOR")
+                        .requestMatchers(HttpMethod.PATCH, "/api/postulaciones/*/aprovechamiento").hasAnyRole("ADMIN", "EVALUADOR")
                         .requestMatchers(HttpMethod.GET, "/api/postulaciones/programa/**").hasAnyRole("ADMIN", "EVALUADOR")
                         .requestMatchers("/api/evaluaciones/**").hasAnyRole("ADMIN", "EVALUADOR")
                         .requestMatchers(HttpMethod.GET, "/api/criterios/activos").hasAnyRole("ADMIN", "EVALUADOR")

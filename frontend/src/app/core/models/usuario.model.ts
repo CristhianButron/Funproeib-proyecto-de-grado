@@ -89,6 +89,15 @@ export interface ReenviarVerificacionRequest {
   correo: string;
 }
 
+export interface OlvidePasswordRequest {
+  correo: string;
+}
+
+export interface RestablecerPasswordRequest {
+  token: string;
+  contrasenaNueva: string;
+}
+
 export interface CambiarPasswordRequest {
   idUsuario: number;
   contrasenaActual: string;

@@ -2,7 +2,9 @@ package org.certificaciones.funproeibbackend.controller;
 
 import org.certificaciones.funproeibbackend.dto.CambiarPasswordRequest;
 import org.certificaciones.funproeibbackend.dto.LoginRequest;
+import org.certificaciones.funproeibbackend.dto.OlvidePasswordRequest;
 import org.certificaciones.funproeibbackend.dto.ReenviarVerificacionRequest;
+import org.certificaciones.funproeibbackend.dto.RestablecerPasswordRequest;
 import org.certificaciones.funproeibbackend.dto.UsuarioActualizarRequest;
 import org.certificaciones.funproeibbackend.dto.UsuarioRegistroRequest;
 import org.certificaciones.funproeibbackend.dto.UsuarioResponse;
@@ -62,6 +64,20 @@ public class UsuarioController {
     @PostMapping("/reenviar-verificacion")
     public ResponseEntity<Void> reenviarVerificacion(@Valid @RequestBody ReenviarVerificacionRequest request) {
         usuarioService.reenviarVerificacion(request.getCorreo());
+        return ResponseEntity.noContent().build();
+    }
+
+    // Siempre responde 204, exista o no esa cuenta: revelarlo permitiría
+    // averiguar qué correos están registrados probando uno por uno.
+    @PostMapping("/olvide-password")
+    public ResponseEntity<Void> olvidePassword(@Valid @RequestBody OlvidePasswordRequest request) {
+        usuarioService.solicitarRecuperacionPassword(request.getCorreo());
+        return ResponseEntity.noContent().build();
+    }
+
+    @PostMapping("/restablecer-password")
+    public ResponseEntity<Void> restablecerPassword(@Valid @RequestBody RestablecerPasswordRequest request) {
+        usuarioService.restablecerPassword(request);
         return ResponseEntity.noContent().build();
     }
 

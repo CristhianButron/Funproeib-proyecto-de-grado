@@ -117,6 +117,35 @@ class UsuarioControllerTest {
     }
 
     @Test
+    @DisplayName("POST /api/usuarios/olvide-password devuelve 204")
+    void olvidePassword_devuelve204() throws Exception {
+        OlvidePasswordRequest request = new OlvidePasswordRequest();
+        request.setCorreo("ana@correo.com");
+
+        mockMvc.perform(post("/api/usuarios/olvide-password")
+                        .contentType("application/json")
+                        .content(objectMapper.writeValueAsString(request)))
+                .andExpect(status().isNoContent());
+
+        verify(usuarioService).solicitarRecuperacionPassword("ana@correo.com");
+    }
+
+    @Test
+    @DisplayName("POST /api/usuarios/restablecer-password devuelve 204")
+    void restablecerPassword_devuelve204() throws Exception {
+        RestablecerPasswordRequest request = new RestablecerPasswordRequest();
+        request.setToken("token-123");
+        request.setContrasenaNueva("nuevaClave123");
+
+        mockMvc.perform(post("/api/usuarios/restablecer-password")
+                        .contentType("application/json")
+                        .content(objectMapper.writeValueAsString(request)))
+                .andExpect(status().isNoContent());
+
+        verify(usuarioService).restablecerPassword(any());
+    }
+
+    @Test
     @DisplayName("PATCH /api/usuarios/{id}/rol cambia el rol")
     void cambiarRol_devuelve200() throws Exception {
         when(usuarioService.cambiarRol(1L, RolUsuario.EVALUADOR)).thenReturn(

@@ -2,6 +2,7 @@ package org.certificaciones.funproeibbackend.service;
 
 import org.certificaciones.funproeibbackend.dto.CambiarPasswordRequest;
 import org.certificaciones.funproeibbackend.dto.LoginRequest;
+import org.certificaciones.funproeibbackend.dto.RestablecerPasswordRequest;
 import org.certificaciones.funproeibbackend.dto.UsuarioActualizarRequest;
 import org.certificaciones.funproeibbackend.dto.UsuarioRegistroRequest;
 import org.certificaciones.funproeibbackend.dto.UsuarioResponse;
@@ -347,6 +348,81 @@ class UsuarioServiceImplTest {
         assertThatThrownBy(() -> service.cambiarPassword(req))
                 .isInstanceOf(BusinessException.class)
                 .hasMessageContaining("actual");
+    }
+
+    @Test
+    @DisplayName("Solicitar recuperación con un correo existente genera token y envía el correo")
+    void solicitarRecuperacion_correoExiste_generaTokenYEnviaCorreo() {
+        Usuario usuario = Usuario.builder().id(1L).correo("ana@correo.com").nombre("Ana").build();
+        when(usuarioRepository.findByCorreo("ana@correo.com")).thenReturn(Optional.of(usuario));
+
+        service.solicitarRecuperacionPassword("ana@correo.com");
+
+        assertThat(usuario.getTokenRecuperacion()).isNotBlank();
+        assertThat(usuario.getTokenRecuperacionExpira()).isAfter(LocalDateTime.now());
+        verify(usuarioRepository).save(usuario);
+        verify(emailService).enviarRecuperacionPassword(eq("ana@correo.com"), eq("Ana"), anyString());
+    }
+
+    @Test
+    @DisplayName("Solicitar recuperación con un correo inexistente no lanza excepción ni envía nada")
+    void solicitarRecuperacion_correoNoExiste_noHaceNadaVisible() {
+        when(usuarioRepository.findByCorreo("fantasma@correo.com")).thenReturn(Optional.empty());
+
+        service.solicitarRecuperacionPassword("fantasma@correo.com");
+
+        verify(usuarioRepository, never()).save(any());
+        verify(emailService, never()).enviarRecuperacionPassword(any(), any(), any());
+    }
+
+    @Test
+    @DisplayName("Restablecer contraseña con token válido la actualiza y limpia el token")
+    void restablecerPassword_tokenValido_actualizaContrasena() {
+        Usuario usuario = Usuario.builder().id(1L).contrasenaHash("HASH_VIEJO")
+                .tokenRecuperacion("token-456").tokenRecuperacionExpira(LocalDateTime.now().plusMinutes(30))
+                .debeCambiarPassword(false).build();
+        RestablecerPasswordRequest req = new RestablecerPasswordRequest();
+        req.setToken("token-456");
+        req.setContrasenaNueva("nuevaClave123");
+
+        when(usuarioRepository.findByTokenRecuperacion("token-456")).thenReturn(Optional.of(usuario));
+        when(passwordEncoder.encode("nuevaClave123")).thenReturn("HASH_NUEVO");
+
+        service.restablecerPassword(req);
+
+        assertThat(usuario.getContrasenaHash()).isEqualTo("HASH_NUEVO");
+        assertThat(usuario.getTokenRecuperacion()).isNull();
+        assertThat(usuario.getTokenRecuperacionExpira()).isNull();
+        verify(usuarioRepository).save(usuario);
+    }
+
+    @Test
+    @DisplayName("Restablecer contraseña con token vencido lanza excepción")
+    void restablecerPassword_tokenExpirado_lanzaExcepcion() {
+        Usuario usuario = Usuario.builder().id(1L).tokenRecuperacion("token-456")
+                .tokenRecuperacionExpira(LocalDateTime.now().minusMinutes(1)).build();
+        RestablecerPasswordRequest req = new RestablecerPasswordRequest();
+        req.setToken("token-456");
+        req.setContrasenaNueva("nuevaClave123");
+
+        when(usuarioRepository.findByTokenRecuperacion("token-456")).thenReturn(Optional.of(usuario));
+
+        assertThatThrownBy(() -> service.restablecerPassword(req))
+                .isInstanceOf(BusinessException.class)
+                .hasMessageContaining("expiró");
+    }
+
+    @Test
+    @DisplayName("Restablecer contraseña con token inexistente lanza excepción")
+    void restablecerPassword_tokenInvalido_lanzaExcepcion() {
+        RestablecerPasswordRequest req = new RestablecerPasswordRequest();
+        req.setToken("no-existe");
+        req.setContrasenaNueva("nuevaClave123");
+
+        when(usuarioRepository.findByTokenRecuperacion("no-existe")).thenReturn(Optional.empty());
+
+        assertThatThrownBy(() -> service.restablecerPassword(req))
+                .isInstanceOf(BusinessException.class);
     }
 
     @Test

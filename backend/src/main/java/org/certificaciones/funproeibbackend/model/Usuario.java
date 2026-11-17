@@ -73,6 +73,14 @@ public class Usuario {
     @Builder.Default
     private Boolean debeCambiarPassword = false;
 
+    // --- Recuperación de contraseña olvidada ---
+
+    @Column(name = "token_recuperacion", length = 100)
+    private String tokenRecuperacion;
+
+    @Column(name = "token_recuperacion_expira")
+    private LocalDateTime tokenRecuperacionExpira;
+
     // --- Campos de perfil del postulante ---
 
     @Enumerated(EnumType.STRING)
