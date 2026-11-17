@@ -6,6 +6,7 @@ import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.mail.SimpleMailMessage;
 import org.springframework.mail.javamail.JavaMailSender;
+import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Service;
 
 import java.util.Optional;
@@ -15,6 +16,12 @@ import java.util.Optional;
  * configurado (spring.mail.host presente). Mientras no haya SMTP configurado
  * (por ejemplo en desarrollo), el correo se escribe en el log para poder seguir
  * el flujo sin depender de un proveedor real.
+ *
+ * @Async en los dos métodos: el SMTP es un servicio externo que puede
+ * colgarse o tardar (p. ej. si el proveedor bloquea el puerto saliente); sin
+ * esto, quien llama (registrar, reenviar verificación, recuperar contraseña)
+ * se queda esperando esa respuesta HTTP indefinidamente en vez de recibir la
+ * suya de inmediato.
  */
 @Service
 public class EmailServiceImpl implements EmailService {
@@ -38,6 +45,7 @@ public class EmailServiceImpl implements EmailService {
     }
 
     @Override
+    @Async
     public void enviarVerificacionCuenta(String destinatario, String nombre, String tokenVerificacion, String contrasenaTemporal) {
         String enlace = frontendUrl + "/verificar-correo?token=" + tokenVerificacion;
         String asunto = "Verifica tu cuenta - Funproeib Andes";
@@ -73,6 +81,7 @@ public class EmailServiceImpl implements EmailService {
     }
 
     @Override
+    @Async
     public void enviarRecuperacionPassword(String destinatario, String nombre, String tokenRecuperacion) {
         String enlace = frontendUrl + "/restablecer-password?token=" + tokenRecuperacion;
         String asunto = "Recupera tu contraseña - Funproeib Andes";
