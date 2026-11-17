@@ -5,7 +5,7 @@ import { PostulacionService } from '../../core/services/postulacion.service';
 import { DocumentoService } from '../../core/services/documento.service';
 import { UsuarioService } from '../../core/services/usuario.service';
 import { ProgramaResponse } from '../../core/models/programa.model';
-import { PostulacionResponse, EstadoPostulacion, EstadoAprovechamiento } from '../../core/models/postulacion.model';
+import { PostulacionResponse, EstadoPostulacion } from '../../core/models/postulacion.model';
 import { DocumentoResponse } from '../../core/models/documento.model';
 import { UsuarioResponse } from '../../core/models/usuario.model';
 
@@ -134,26 +134,13 @@ import { UsuarioResponse } from '../../core/models/usuario.model';
                 </button>
               }
             </div>
-          </section>
-
-          @if (ps.estado === 'ACEPTADA') {
-            <section class="border-t border-outline-variant pt-4">
-              <h3 class="font-bold text-primary-dark mb-1">Estado final de aprovechamiento</h3>
-              <p class="text-xs text-on-surface-variant mb-3">
-                Abandono se puede marcar en cualquier momento. Aprobado/Reprobado solo una vez que el programa finalice{{ programaYaFinalizo() ? '' : ' (' + fechaFinProgramaSel() + ')' }}.
+            @if (ps.estado === 'ACEPTADA') {
+              <p class="text-xs text-on-surface-variant mt-3">
+                Una vez aceptado, este postulante pasa a ser beneficiario del programa. Su estado final
+                (Aprobado/Reprobado/Abandono) se registra desde <strong>Beneficiarios</strong>, no desde acá.
               </p>
-              <div class="flex flex-wrap gap-2">
-                @for (e of estadosAprovechamiento; track e) {
-                  <button (click)="actualizarAprovechamiento(ps, e)"
-                    [disabled]="!programaYaFinalizo() && (e === 'APROBADO' || e === 'REPROBADO')"
-                    class="px-3 py-1.5 rounded-lg text-xs font-bold border transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
-                    [class]="ps.estadoAprovechamiento === e ? badgeAprovechamiento(e) + ' border-transparent' : 'border-outline-variant text-on-surface-variant hover:bg-surface-low'">
-                    {{ LABEL_APROVECHAMIENTO[e] }}
-                  </button>
-                }
-              </div>
-            </section>
-          }
+            }
+          </section>
         </div>
       </div>
     </div>
@@ -175,21 +162,6 @@ export class PostulantesComponent implements OnInit {
   documentos = signal<DocumentoResponse[]>([]);
 
   estados: EstadoPostulacion[] = ['INCOMPLETA', 'PENDIENTE', 'EVALUADA', 'ACEPTADA', 'RECHAZADA', 'BLOQUEADA'];
-  estadosAprovechamiento: EstadoAprovechamiento[] = ['PENDIENTE', 'ABANDONO', 'APROBADO', 'REPROBADO'];
-
-  LABEL_APROVECHAMIENTO: Record<EstadoAprovechamiento, string> = {
-    PENDIENTE: 'Pendiente', APROBADO: 'Aprobado', REPROBADO: 'Reprobado', ABANDONO: 'Abandono',
-  };
-
-  programaYaFinalizo(): boolean {
-    const p = this.programaSel ? this.programas().find(x => x.id === this.programaSel) : null;
-    return !!p && p.fechaFin < new Date().toISOString().slice(0, 10);
-  }
-
-  fechaFinProgramaSel(): string {
-    const p = this.programaSel ? this.programas().find(x => x.id === this.programaSel) : null;
-    return p ? 'finaliza el ' + p.fechaFin : '';
-  }
 
   constructor(
     private programaService: ProgramaService,
@@ -232,26 +204,6 @@ export class PostulantesComponent implements OnInit {
       po.estado = actualizado.estado;
       this.postulaciones.update(list => [...list]);
     });
-  }
-
-  actualizarAprovechamiento(po: PostulacionResponse, estado: EstadoAprovechamiento): void {
-    this.postulacionService.registrarAprovechamiento(po.id, estado).subscribe({
-      next: (actualizado) => {
-        po.estadoAprovechamiento = actualizado.estadoAprovechamiento;
-        this.postulaciones.update(list => [...list]);
-      },
-      error: (err) => alert(err?.error?.mensaje ?? 'No se pudo actualizar el estado de aprovechamiento.'),
-    });
-  }
-
-  badgeAprovechamiento(estado: string): string {
-    const map: Record<string, string> = {
-      PENDIENTE: 'bg-surface-high text-on-surface-variant',
-      APROBADO: 'bg-secondary-light text-on-secondary-container',
-      REPROBADO: 'bg-error-container text-on-error-container',
-      ABANDONO: 'bg-primary-fixed text-primary',
-    };
-    return map[estado] ?? 'bg-surface-high text-on-surface-variant';
   }
 
   cerrar(): void { this.postulacionSel.set(null); }

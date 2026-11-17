@@ -57,6 +57,7 @@ export class EvaluadorLayoutComponent {
   menu = [
     { ruta: '/evaluador', label: 'Evaluaciones', icono: 'assessment', exact: true },
     { ruta: '/evaluador/postulantes', label: 'Postulantes', icono: 'group', exact: false },
+    { ruta: '/evaluador/beneficiarios', label: 'Beneficiarios', icono: 'workspace_premium', exact: false },
     { ruta: '/evaluador/reportes', label: 'Reportes', icono: 'summarize', exact: false },
     { ruta: '/evaluador/perfil', label: 'Mi perfil', icono: 'person', exact: false },
   ];

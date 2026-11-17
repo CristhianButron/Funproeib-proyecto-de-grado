@@ -58,6 +58,7 @@ export class AdminLayoutComponent {
     { ruta: '/admin', label: 'Dashboard', icono: 'dashboard', exact: true },
     { ruta: '/admin/programas', label: 'Programas', icono: 'school', exact: false },
     { ruta: '/admin/postulantes', label: 'Postulantes', icono: 'group', exact: false },
+    { ruta: '/admin/beneficiarios', label: 'Beneficiarios', icono: 'workspace_premium', exact: false },
     { ruta: '/admin/evaluaciones', label: 'Evaluaciones', icono: 'assessment', exact: false },
     { ruta: '/admin/reportes', label: 'Reportes', icono: 'summarize', exact: false },
     { ruta: '/admin/lista-negra', label: 'Lista negra', icono: 'block', exact: false },

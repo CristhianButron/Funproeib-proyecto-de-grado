@@ -4,7 +4,6 @@ import { Workbook, Fill, Borders } from 'exceljs';
 import { ReporteService } from '../../core/services/reporte.service';
 import { ProgramaService } from '../../core/services/programa.service';
 import { UbicacionService } from '../../core/services/ubicacion.service';
-import { PostulacionService } from '../../core/services/postulacion.service';
 import { BeneficiarioReporte, ReporteFiltro } from '../../core/models/reporte.model';
 import { ProgramaResponse, TipoPrograma } from '../../core/models/programa.model';
 import { Genero, NivelEducativo } from '../../core/models/usuario.model';
@@ -76,7 +75,10 @@ const COLOR_APROVECHAMIENTO: Record<EstadoAprovechamiento, string> = {
   <div>
     <div class="mb-6">
       <h1 class="text-3xl font-extrabold text-primary-dark">Reportes de beneficiarios</h1>
-      <p class="text-on-surface-variant">Personas que completaron talleres y diplomados ya finalizados, de todo el histórico. No incluye postulaciones en trámite.</p>
+      <p class="text-on-surface-variant">
+        Personas que completaron talleres y diplomados ya finalizados, de todo el histórico. No incluye postulaciones en trámite.
+        Es un reporte de solo lectura; para registrar el estado final de un beneficiario ve a <strong>Beneficiarios</strong>.
+      </p>
     </div>
 
     <!-- Filtros -->
@@ -207,10 +209,9 @@ const COLOR_APROVECHAMIENTO: Record<EstadoAprovechamiento, string> = {
                   </td>
                   <td class="px-6 py-4 text-sm">{{ b.fechaFinPrograma }}</td>
                   <td class="px-6 py-4 text-sm">
-                    <select class="campo-aprovechamiento" [ngModel]="b.estadoAprovechamiento"
-                      (ngModelChange)="actualizarAprovechamiento(b, $event)" [disabled]="guardandoAprovechamiento() === b.idPostulacion">
-                      @for (e of estadosAprovechamiento; track e) { <option [value]="e">{{ LABEL_APROVECHAMIENTO[e] }}</option> }
-                    </select>
+                    <span class="px-3 py-1 rounded-full text-xs font-bold" [class]="badgeAprovechamiento(b.estadoAprovechamiento)">
+                      {{ LABEL_APROVECHAMIENTO[b.estadoAprovechamiento] }}
+                    </span>
                   </td>
                 </tr>
               } @empty {
@@ -227,8 +228,6 @@ const COLOR_APROVECHAMIENTO: Record<EstadoAprovechamiento, string> = {
     .campo { width:100%; padding:.5rem .7rem; border:1px solid #c5c5d3; border-radius:.5rem; outline:none; font-size:.875rem; }
     .campo:focus { border-color:#1e3a8a; box-shadow:0 0 0 2px rgba(30,58,138,.2); }
     .etiqueta { display:block; font-size:.7rem; font-weight:700; text-transform:uppercase; color:#6b7280; margin-bottom:.3rem; }
-    .campo-aprovechamiento { padding:.35rem .5rem; border:1px solid #c5c5d3; border-radius:.5rem; outline:none; font-size:.8rem; font-weight:600; }
-    .campo-aprovechamiento:disabled { opacity:.5; }
   `],
 })
 export class ReportesComponent implements OnInit {
@@ -248,7 +247,6 @@ export class ReportesComponent implements OnInit {
   beneficiarios = signal<BeneficiarioReporte[]>([]);
   cargando = signal(false);
   exportando = signal(false);
-  guardandoAprovechamiento = signal<number | null>(null);
   error = signal<string | null>(null);
 
   filtro = signal<ReporteFiltro>({});
@@ -272,7 +270,6 @@ export class ReportesComponent implements OnInit {
     private reporteService: ReporteService,
     private programaService: ProgramaService,
     private ubicacionService: UbicacionService,
-    private postulacionService: PostulacionService,
   ) {}
 
   ngOnInit(): void {
@@ -319,22 +316,14 @@ export class ReportesComponent implements OnInit {
     });
   }
 
-  actualizarAprovechamiento(b: BeneficiarioReporte, nuevoEstado: EstadoAprovechamiento): void {
-    const anterior = b.estadoAprovechamiento;
-    this.guardandoAprovechamiento.set(b.idPostulacion);
-    this.postulacionService.registrarAprovechamiento(b.idPostulacion, nuevoEstado).subscribe({
-      next: () => {
-        this.beneficiarios.update(lista => lista.map(x =>
-          x.idPostulacion === b.idPostulacion ? { ...x, estadoAprovechamiento: nuevoEstado } : x));
-        this.guardandoAprovechamiento.set(null);
-      },
-      error: () => {
-        this.beneficiarios.update(lista => lista.map(x =>
-          x.idPostulacion === b.idPostulacion ? { ...x, estadoAprovechamiento: anterior } : x));
-        this.guardandoAprovechamiento.set(null);
-        this.error.set('No se pudo actualizar el estado de aprovechamiento.');
-      },
-    });
+  badgeAprovechamiento(estado: EstadoAprovechamiento): string {
+    const map: Record<EstadoAprovechamiento, string> = {
+      PENDIENTE: 'bg-surface-high text-on-surface-variant',
+      APROBADO: 'bg-secondary-light text-on-secondary-container',
+      REPROBADO: 'bg-error-container text-on-error-container',
+      ABANDONO: 'bg-primary-fixed text-primary',
+    };
+    return map[estado] ?? 'bg-surface-high text-on-surface-variant';
   }
 
   async exportarExcel(): Promise<void> {

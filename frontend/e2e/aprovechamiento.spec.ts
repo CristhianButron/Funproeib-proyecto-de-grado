@@ -88,14 +88,15 @@ test.describe('Estado final de aprovechamiento de beneficiarios', () => {
     const nombrePrograma = `Taller E2E en curso ${sufijo}`;
     await crearProgramaAceptado(request, token, idUsuario, nombrePrograma, fechaInicio, fechaFin);
 
-    await page.goto('/admin/postulantes');
+    await page.goto('/admin/beneficiarios');
     await page.selectOption('select', { label: nombrePrograma });
-    // force: la fila todavía se está reacomodando (carga async) cuando Playwright
-    // intenta el clic, y por una fracción de segundo otro elemento queda encima.
-    await page.click('button:has-text("Ver ficha")', { force: true });
+    // La tabla de Beneficiarios puede tener otras filas: se ubica la de esta
+    // prueba por su texto único, igual que ya se hace en reportes más abajo.
+    const fila = page.locator('tbody tr', { hasText: 'Beneficiario E2E' });
+    await expect(fila).toBeVisible();
 
-    const aprobado = page.locator('button:has-text("Aprobado")');
-    const reprobado = page.locator('button:has-text("Reprobado")');
+    const aprobado = fila.locator('button:has-text("Aprobado")');
+    const reprobado = fila.locator('button:has-text("Reprobado")');
     await expect(aprobado).toBeDisabled();
     await expect(reprobado).toBeDisabled();
 
@@ -103,13 +104,12 @@ test.describe('Estado final de aprovechamiento de beneficiarios', () => {
     // para no correr una carrera contra el round-trip al backend. Se revisa
     // el status primero para que, si el backend rechazó el cambio, la prueba
     // falle mostrando el motivo real en vez de solo "no cambió de clase".
-    await expect(page.locator('button:has-text("Abandono")')).toBeVisible();
     const [respuesta] = await Promise.all([
       page.waitForResponse(res => res.url().includes('/aprovechamiento') && res.request().method() === 'PATCH'),
-      page.click('button:has-text("Abandono")', { force: true }),
+      fila.locator('button:has-text("Abandono")').click({ force: true }),
     ]);
     expect(respuesta.ok(), `PATCH aprovechamiento falló (${respuesta.status()}): ${await respuesta.text()}`).toBeTruthy();
-    await expect(page.locator('button:has-text("Abandono")')).toHaveClass(/bg-primary-fixed/);
+    await expect(fila.locator('button:has-text("Abandono")')).toHaveClass(/bg-primary-fixed/);
   });
 
   test('Aprobado se puede marcar una vez que el programa finalizó, y aparece en el reporte de beneficiarios', async ({ page, request }) => {
@@ -123,26 +123,29 @@ test.describe('Estado final de aprovechamiento de beneficiarios', () => {
     const nombrePrograma = `Taller E2E finalizado ${sufijo}`;
     await crearProgramaAceptado(request, token, idUsuario, nombrePrograma, fechaInicio, fechaFin);
 
-    await page.goto('/admin/postulantes');
+    await page.goto('/admin/beneficiarios');
     await page.selectOption('select', { label: nombrePrograma });
-    await page.click('button:has-text("Ver ficha")', { force: true });
+    const fila = page.locator('tbody tr', { hasText: 'Beneficiario E2E' });
+    await expect(fila).toBeVisible();
 
-    const aprobado = page.locator('button:has-text("Aprobado")');
+    const aprobado = fila.locator('button:has-text("Aprobado")');
     await expect(aprobado).toBeEnabled();
     const [respuesta] = await Promise.all([
       page.waitForResponse(res => res.url().includes('/aprovechamiento') && res.request().method() === 'PATCH'),
       aprobado.click({ force: true }),
     ]);
     expect(respuesta.ok(), `PATCH aprovechamiento falló (${respuesta.status()}): ${await respuesta.text()}`).toBeTruthy();
-    await expect(page.locator('button:has-text("Aprobado")')).toHaveClass(/bg-secondary-light/);
+    await expect(fila.locator('button:has-text("Aprobado")')).toHaveClass(/bg-secondary-light/);
 
-    // La base puede tener otros beneficiarios reales ya cargados: no asumimos
-    // que la fila de la prueba sea la única ni la primera, la ubicamos por su
-    // texto único y revisamos el select de aprovechamiento de ESA fila.
+    // Reportes es de solo lectura: el estado se ve como una insignia de texto,
+    // no como un <select> editable (eso ahora vive solo en Beneficiarios). La
+    // base puede tener otros beneficiarios reales ya cargados: no asumimos que
+    // la fila de la prueba sea la única ni la primera, la ubicamos por su texto único.
     await page.goto('/admin/reportes');
     await page.locator('select').nth(2).selectOption({ label: nombrePrograma });
-    const filaDePrueba = page.locator('tbody tr', { hasText: 'Beneficiario E2E' });
-    await expect(filaDePrueba).toBeVisible();
-    await expect(filaDePrueba.locator('select')).toHaveValue('APROBADO');
+    const filaReporte = page.locator('tbody tr', { hasText: 'Beneficiario E2E' });
+    await expect(filaReporte).toBeVisible();
+    await expect(filaReporte.getByText('Aprobado', { exact: true })).toBeVisible();
+    await expect(filaReporte.locator('select')).toHaveCount(0);
   });
 });
