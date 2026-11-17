@@ -2,6 +2,7 @@ package org.certificaciones.funproeibbackend.config;
 
 import org.certificaciones.funproeibbackend.security.JwtAuthenticationFilter;
 import lombok.RequiredArgsConstructor;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.http.HttpMethod;
@@ -17,6 +18,7 @@ import org.springframework.web.cors.CorsConfiguration;
 import org.springframework.web.cors.CorsConfigurationSource;
 import org.springframework.web.cors.UrlBasedCorsConfigurationSource;
 
+import java.util.Arrays;
 import java.util.List;
 
 /**
@@ -40,6 +42,15 @@ import java.util.List;
 public class SecurityConfig {
 
     private final JwtAuthenticationFilter jwtAuthenticationFilter;
+
+    // Lista separada por comas de orígenes permitidos. Por defecto trae los
+    // dos puertos que se usan en desarrollo local (4200 es el normal de
+    // "ng serve"; 4300 es el alterno cuando Windows bloquea el 4200). En
+    // producción hay que definir APP_CORS_ORIGENES con el/los dominio(s)
+    // reales del frontend desplegado -por ejemplo "https://funproeib.org"-,
+    // porque "localhost" nunca va a coincidir con el origen real del navegador.
+    @Value("${app.cors.origenes}")
+    private String corsOrigenes;
 
     @Bean
     public SecurityFilterChain filterChain(HttpSecurity http) throws Exception {
@@ -94,10 +105,10 @@ public class SecurityConfig {
     @Bean
     public CorsConfigurationSource corsConfigurationSource() {
         CorsConfiguration config = new CorsConfiguration();
-        // 4200 es el puerto normal de "ng serve"; 4300 queda habilitado también
-        // porque en Windows el 4200 a veces lo bloquea el sistema (EACCES) y
-        // hay que levantar el frontend en otro puerto mientras se resuelve eso.
-        config.setAllowedOrigins(List.of("http://localhost:4200", "http://localhost:4300"));
+        config.setAllowedOrigins(Arrays.stream(corsOrigenes.split(","))
+                .map(String::strip)
+                .filter(origen -> !origen.isBlank())
+                .toList());
         config.setAllowedMethods(List.of("GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"));
         config.setAllowedHeaders(List.of("*"));
         config.setAllowCredentials(true);
