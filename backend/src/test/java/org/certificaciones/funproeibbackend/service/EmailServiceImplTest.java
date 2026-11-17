@@ -3,69 +3,96 @@ package org.certificaciones.funproeibbackend.service;
 import org.certificaciones.funproeibbackend.service.impl.EmailServiceImpl;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
-import org.junit.jupiter.api.extension.ExtendWith;
-import org.mockito.Mock;
-import org.mockito.junit.jupiter.MockitoExtension;
-import org.springframework.mail.SimpleMailMessage;
-import org.springframework.mail.javamail.JavaMailSender;
+import org.springframework.http.HttpMethod;
+import org.springframework.test.web.client.MockRestServiceServer;
+import org.springframework.web.client.RestClient;
 
-import java.util.Optional;
+import static org.springframework.test.web.client.match.MockRestRequestMatchers.header;
+import static org.springframework.test.web.client.match.MockRestRequestMatchers.method;
+import static org.springframework.test.web.client.match.MockRestRequestMatchers.requestTo;
+import static org.springframework.test.web.client.response.MockRestResponseCreators.withServerError;
+import static org.springframework.test.web.client.response.MockRestResponseCreators.withSuccess;
 
-import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.Mockito.*;
-
-@ExtendWith(MockitoExtension.class)
-@DisplayName("EmailService - envío real vs. modo simulado")
+@DisplayName("EmailService - envío real (API de Resend) vs. modo simulado")
 class EmailServiceImplTest {
 
-    @Mock private JavaMailSender mailSender;
+    private EmailServiceImpl crearServicio(MockRestServiceServer[] serverOut, boolean mailEnabled, String apiKey) {
+        RestClient.Builder builder = RestClient.builder();
+        serverOut[0] = MockRestServiceServer.bindTo(builder).build();
+        return new EmailServiceImpl(builder, mailEnabled, apiKey, "no-responder@funproeib.org", "http://localhost:4200");
+    }
 
     @Test
-    @DisplayName("Con app.mail.enabled=false no intenta enviar, aunque haya un JavaMailSender disponible")
+    @DisplayName("Con app.mail.enabled=false no llama a la API de Resend, aunque haya API key")
     void enviarVerificacion_mailDeshabilitado_noEnvia() {
-        EmailServiceImpl service = new EmailServiceImpl(Optional.of(mailSender), false, "no-responder@funproeib.org", "http://localhost:4200");
+        MockRestServiceServer[] serverRef = new MockRestServiceServer[1];
+        EmailServiceImpl service = crearServicio(serverRef, false, "re_test_key");
 
         service.enviarVerificacionCuenta("ana@correo.com", "Ana", "token-123", "Temporal123");
 
-        verifyNoInteractions(mailSender);
+        serverRef[0].verify();
     }
 
     @Test
-    @DisplayName("Sin JavaMailSender configurado no falla, aunque app.mail.enabled=true")
-    void enviarVerificacion_sinMailSender_noFalla() {
-        EmailServiceImpl service = new EmailServiceImpl(Optional.empty(), true, "no-responder@funproeib.org", "http://localhost:4200");
-
-        service.enviarVerificacionCuenta("ana@correo.com", "Ana", "token-123", "Temporal123");
-        // No debe lanzar excepción: simplemente registra el correo en el log.
-    }
-
-    @Test
-    @DisplayName("Con app.mail.enabled=true y JavaMailSender disponible, envía el correo")
-    void enviarVerificacion_mailHabilitado_envia() {
-        EmailServiceImpl service = new EmailServiceImpl(Optional.of(mailSender), true, "no-responder@funproeib.org", "http://localhost:4200");
+    @DisplayName("Sin API key configurada no llama a Resend ni falla, aunque app.mail.enabled=true")
+    void enviarVerificacion_sinApiKey_noFalla() {
+        MockRestServiceServer[] serverRef = new MockRestServiceServer[1];
+        EmailServiceImpl service = crearServicio(serverRef, true, "");
 
         service.enviarVerificacionCuenta("ana@correo.com", "Ana", "token-123", "Temporal123");
 
-        verify(mailSender).send(any(SimpleMailMessage.class));
+        serverRef[0].verify();
     }
 
     @Test
-    @DisplayName("Recuperación de contraseña: con app.mail.enabled=false no intenta enviar")
+    @DisplayName("Con app.mail.enabled=true y API key, llama a la API de Resend con el token correcto")
+    void enviarVerificacion_mailHabilitado_llamaApiResend() {
+        MockRestServiceServer[] serverRef = new MockRestServiceServer[1];
+        EmailServiceImpl service = crearServicio(serverRef, true, "re_test_key");
+        serverRef[0].expect(requestTo("https://api.resend.com/emails"))
+                .andExpect(method(HttpMethod.POST))
+                .andExpect(header("Authorization", "Bearer re_test_key"))
+                .andRespond(withSuccess());
+
+        service.enviarVerificacionCuenta("ana@correo.com", "Ana", "token-123", "Temporal123");
+
+        serverRef[0].verify();
+    }
+
+    @Test
+    @DisplayName("Si Resend responde con error, no se propaga la excepción (solo se registra)")
+    void enviarVerificacion_resendFalla_noPropagaExcepcion() {
+        MockRestServiceServer[] serverRef = new MockRestServiceServer[1];
+        EmailServiceImpl service = crearServicio(serverRef, true, "re_test_key");
+        serverRef[0].expect(requestTo("https://api.resend.com/emails"))
+                .andRespond(withServerError());
+
+        service.enviarVerificacionCuenta("ana@correo.com", "Ana", "token-123", "Temporal123");
+        // No debe lanzar excepción.
+    }
+
+    @Test
+    @DisplayName("Recuperación de contraseña: con app.mail.enabled=false no llama a Resend")
     void enviarRecuperacion_mailDeshabilitado_noEnvia() {
-        EmailServiceImpl service = new EmailServiceImpl(Optional.of(mailSender), false, "no-responder@funproeib.org", "http://localhost:4200");
+        MockRestServiceServer[] serverRef = new MockRestServiceServer[1];
+        EmailServiceImpl service = crearServicio(serverRef, false, "re_test_key");
 
         service.enviarRecuperacionPassword("ana@correo.com", "Ana", "token-456");
 
-        verifyNoInteractions(mailSender);
+        serverRef[0].verify();
     }
 
     @Test
-    @DisplayName("Recuperación de contraseña: con app.mail.enabled=true y JavaMailSender disponible, envía el correo")
-    void enviarRecuperacion_mailHabilitado_envia() {
-        EmailServiceImpl service = new EmailServiceImpl(Optional.of(mailSender), true, "no-responder@funproeib.org", "http://localhost:4200");
+    @DisplayName("Recuperación de contraseña: con app.mail.enabled=true y API key, llama a Resend")
+    void enviarRecuperacion_mailHabilitado_llamaApiResend() {
+        MockRestServiceServer[] serverRef = new MockRestServiceServer[1];
+        EmailServiceImpl service = crearServicio(serverRef, true, "re_test_key");
+        serverRef[0].expect(requestTo("https://api.resend.com/emails"))
+                .andExpect(method(HttpMethod.POST))
+                .andRespond(withSuccess());
 
         service.enviarRecuperacionPassword("ana@correo.com", "Ana", "token-456");
 
-        verify(mailSender).send(any(SimpleMailMessage.class));
+        serverRef[0].verify();
     }
 }
