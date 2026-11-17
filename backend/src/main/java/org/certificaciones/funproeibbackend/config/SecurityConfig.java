@@ -69,6 +69,9 @@ public class SecurityConfig {
                                 "/api/usuarios/restablecer-password").permitAll()
                         .requestMatchers(HttpMethod.GET, "/api/usuarios/verificar-correo").permitAll()
                         .requestMatchers(HttpMethod.GET, "/api/ubicaciones/**").permitAll()
+                        // La página de inicio (sin sesión) necesita ver los programas abiertos
+                        // para que alguien decida postularse; no expone nada sensible.
+                        .requestMatchers(HttpMethod.GET, "/api/programas/**").permitAll()
 
                         // Solo administrador: gestión de usuarios, catálogos y reportes.
                         .requestMatchers(HttpMethod.GET, "/api/usuarios").hasRole("ADMIN")
