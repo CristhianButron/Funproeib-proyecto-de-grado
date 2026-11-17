@@ -12,6 +12,7 @@ import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
@@ -33,11 +34,15 @@ public class UsuarioController {
         return ResponseEntity.ok(usuarioService.login(request));
     }
 
+    // Cualquiera puede ver/editar su propio perfil; un admin puede ver/editar
+    // el de cualquiera (por ejemplo, la ficha del postulante en el panel).
+    @PreAuthorize("hasRole('ADMIN') or #id.toString() == authentication.name")
     @GetMapping("/{id}")
     public ResponseEntity<UsuarioResponse> obtenerPorId(@PathVariable Long id) {
         return ResponseEntity.ok(usuarioService.obtenerPorId(id));
     }
 
+    @PreAuthorize("hasRole('ADMIN') or #id.toString() == authentication.name")
     @PutMapping("/{id}")
     public ResponseEntity<UsuarioResponse> actualizarPerfil(@PathVariable Long id, @Valid @RequestBody UsuarioActualizarRequest request) {
         return ResponseEntity.ok(usuarioService.actualizarPerfil(id, request));
@@ -60,6 +65,9 @@ public class UsuarioController {
         return ResponseEntity.noContent().build();
     }
 
+    // Solo uno mismo: ni siquiera el admin puede usar esto para cambiarle la
+    // contraseña a otro (exige la actual, que el admin no conoce).
+    @PreAuthorize("#request.idUsuario.toString() == authentication.name")
     @PostMapping("/cambiar-password")
     public ResponseEntity<Void> cambiarPassword(@Valid @RequestBody CambiarPasswordRequest request) {
         usuarioService.cambiarPassword(request);

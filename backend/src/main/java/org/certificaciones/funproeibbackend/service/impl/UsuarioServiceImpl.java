@@ -13,6 +13,7 @@ import org.certificaciones.funproeibbackend.model.enums.NivelEducativo;
 import org.certificaciones.funproeibbackend.model.enums.RolUsuario;
 import org.certificaciones.funproeibbackend.repository.CiudadRepository;
 import org.certificaciones.funproeibbackend.repository.UsuarioRepository;
+import org.certificaciones.funproeibbackend.security.JwtService;
 import org.certificaciones.funproeibbackend.service.EmailService;
 import org.certificaciones.funproeibbackend.service.UsuarioService;
 import org.certificaciones.funproeibbackend.util.CorreoDesechableValidator;
@@ -40,6 +41,7 @@ public class UsuarioServiceImpl implements UsuarioService {
     private final CiudadRepository ciudadRepository;
     private final PasswordEncoder passwordEncoder;
     private final EmailService emailService;
+    private final JwtService jwtService;
     private final SecureRandom secureRandom = new SecureRandom();
 
     @Override
@@ -119,7 +121,9 @@ public class UsuarioServiceImpl implements UsuarioService {
             throw new BusinessException("La cuenta está desactivada");
         }
 
-        return mapToResponse(usuario);
+        UsuarioResponse response = mapToResponse(usuario);
+        response.setToken(jwtService.generarToken(usuario.getId(), usuario.getRol()));
+        return response;
     }
 
     @Override

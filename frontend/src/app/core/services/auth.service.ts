@@ -48,8 +48,13 @@ export class AuthService {
   }
 
   private guardarSesion(usuario: UsuarioResponse): void {
-    localStorage.setItem(STORAGE_KEY, JSON.stringify(usuario));
-    this.usuarioSignal.set(usuario);
+    // Solo login manda token; en cualquier otra respuesta (editar perfil,
+    // etc.) hay que conservar el que ya estaba guardado o se perdería la
+    // sesión sin que la persona haya cerrado sesión.
+    const token = usuario.token ?? this.usuarioSignal()?.token;
+    const aGuardar = { ...usuario, token };
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(aGuardar));
+    this.usuarioSignal.set(aGuardar);
   }
 
   private cargarDeStorage(): UsuarioResponse | null {

@@ -12,6 +12,7 @@ import org.certificaciones.funproeibbackend.model.enums.NivelEducativo;
 import org.certificaciones.funproeibbackend.model.enums.RolUsuario;
 import org.certificaciones.funproeibbackend.repository.CiudadRepository;
 import org.certificaciones.funproeibbackend.repository.UsuarioRepository;
+import org.certificaciones.funproeibbackend.security.JwtService;
 import org.certificaciones.funproeibbackend.service.impl.UsuarioServiceImpl;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -40,6 +41,7 @@ class UsuarioServiceImplTest {
     @Mock private CiudadRepository ciudadRepository;
     @Mock private PasswordEncoder passwordEncoder;
     @Mock private EmailService emailService;
+    @Mock private JwtService jwtService;
 
     @InjectMocks private UsuarioServiceImpl service;
 
@@ -230,10 +232,12 @@ class UsuarioServiceImplTest {
 
         when(usuarioRepository.findByCorreo("admin@funproeib.org")).thenReturn(Optional.of(usuario));
         when(passwordEncoder.matches("admin12345", "HASH")).thenReturn(true);
+        when(jwtService.generarToken(1L, RolUsuario.ADMIN)).thenReturn("fake-token");
 
         UsuarioResponse res = service.login(req);
 
         assertThat(res.getRol()).isEqualTo(RolUsuario.ADMIN);
+        assertThat(res.getToken()).isEqualTo("fake-token");
     }
 
     @Test

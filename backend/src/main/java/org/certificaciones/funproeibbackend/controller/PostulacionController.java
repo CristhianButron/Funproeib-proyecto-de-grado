@@ -9,6 +9,7 @@ import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
@@ -20,6 +21,9 @@ public class PostulacionController {
 
     private final PostulacionService postulacionService;
 
+    // Uno mismo postula por sí mismo; un admin también puede crearla a nombre
+    // de otro (de darse un caso de carga manual).
+    @PreAuthorize("hasRole('ADMIN') or #request.idUsuario.toString() == authentication.name")
     @PostMapping
     public ResponseEntity<PostulacionResponse> crear(@Valid @RequestBody PostulacionRequest request) {
         return ResponseEntity.status(HttpStatus.CREATED).body(postulacionService.crear(request));
@@ -35,6 +39,7 @@ public class PostulacionController {
         return ResponseEntity.ok(postulacionService.listarPorPrograma(idPrograma));
     }
 
+    @PreAuthorize("hasAnyRole('ADMIN','EVALUADOR') or #idUsuario.toString() == authentication.name")
     @GetMapping("/usuario/{idUsuario}")
     public ResponseEntity<List<PostulacionResponse>> listarPorUsuario(@PathVariable Long idUsuario) {
         return ResponseEntity.ok(postulacionService.listarPorUsuario(idUsuario));

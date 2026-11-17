@@ -79,6 +79,10 @@ export interface UsuarioResponse {
   provinciaNacimiento?: string;
   direccionDomicilio?: string;
   carreras?: string[];
+  // Solo viene con valor en la respuesta de login; en el resto de los
+  // endpoints (perfil, listados, etc.) no viene y hay que conservar el
+  // que ya se tenía guardado en sesión.
+  token?: string;
 }
 
 export interface ReenviarVerificacionRequest {

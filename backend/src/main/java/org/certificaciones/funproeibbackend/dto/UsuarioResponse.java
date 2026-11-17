@@ -26,6 +26,10 @@ public class UsuarioResponse {
     private Boolean emailVerificado;
     private Boolean debeCambiarPassword;
 
+    // Solo viene con valor en la respuesta de login; en el resto de los
+    // endpoints (perfil, listados, etc.) queda null y no se usa.
+    private String token;
+
     // Perfil del postulante
     private Genero genero;
     private LocalDate fechaNacimiento;
