@@ -32,24 +32,39 @@ async function idCiudadLaPaz(request: APIRequestContext): Promise<number> {
   return laPaz.id;
 }
 
+/**
+ * El contexto `request` de Playwright no comparte sesión con `page` (el
+ * token queda en el localStorage del navegador, no en cookies), así que
+ * para llamar a los endpoints de administrador directamente por API hay
+ * que loguearse de nuevo acá y armar el header a mano.
+ */
+async function tokenAdmin(request: APIRequestContext): Promise<string> {
+  const res = await request.post(`${API}/usuarios/login`, {
+    data: { correo: 'admin@funproeib.org', contrasena: 'admin12345' },
+  });
+  if (!res.ok()) throw new Error(`login de admin falló (${res.status()}): ${await res.text()}`);
+  return `Bearer ${(await res.json()).token}`;
+}
+
 async function crearProgramaAceptado(
-  request: APIRequestContext, idUsuario: number, nombre: string, fechaInicio: string, fechaFin: string,
+  request: APIRequestContext, token: string, idUsuario: number, nombre: string, fechaInicio: string, fechaFin: string,
 ): Promise<number> {
+  const headers = { Authorization: token };
   const resPrograma = await request.post(`${API}/programas`, {
-    data: { nombre, tipo: 'TALLER', fechaInicio, fechaFin, cuposDisponibles: 5 },
+    headers, data: { nombre, tipo: 'TALLER', fechaInicio, fechaFin, cuposDisponibles: 5 },
   });
   expect(resPrograma.ok()).toBeTruthy();
   const idPrograma = (await resPrograma.json()).id;
 
-  await request.patch(`${API}/programas/${idPrograma}/estado`, { params: { estado: 'ABIERTO' } });
+  await request.patch(`${API}/programas/${idPrograma}/estado`, { headers, params: { estado: 'ABIERTO' } });
 
   const resPostulacion = await request.post(`${API}/postulaciones`, {
-    data: { idUsuario, idPrograma },
+    headers, data: { idUsuario, idPrograma },
   });
   expect(resPostulacion.ok()).toBeTruthy();
   const idPostulacion = (await resPostulacion.json()).id;
 
-  await request.patch(`${API}/postulaciones/${idPostulacion}/estado`, { params: { estado: 'ACEPTADA' } });
+  await request.patch(`${API}/postulaciones/${idPostulacion}/estado`, { headers, params: { estado: 'ACEPTADA' } });
   return idPrograma;
 }
 
@@ -64,13 +79,14 @@ test.describe('Estado final de aprovechamiento de beneficiarios', () => {
 
   test('Abandono se puede marcar con el programa en curso; Aprobado/Reprobado quedan deshabilitados', async ({ page, request }) => {
     const sufijo = `${Date.now()}`;
+    const token = await tokenAdmin(request);
     const idCiudad = await idCiudadLaPaz(request);
     const idUsuario = await crearPostulante(request, idCiudad, sufijo, `curso${sufijo}`);
     const hoy = new Date();
     const fechaInicio = new Date(hoy.getFullYear(), hoy.getMonth() - 1, 1).toISOString().slice(0, 10);
     const fechaFin = new Date(hoy.getFullYear(), hoy.getMonth() + 2, 1).toISOString().slice(0, 10);
     const nombrePrograma = `Taller E2E en curso ${sufijo}`;
-    await crearProgramaAceptado(request, idUsuario, nombrePrograma, fechaInicio, fechaFin);
+    await crearProgramaAceptado(request, token, idUsuario, nombrePrograma, fechaInicio, fechaFin);
 
     await page.goto('/admin/postulantes');
     await page.selectOption('select', { label: nombrePrograma });
@@ -98,13 +114,14 @@ test.describe('Estado final de aprovechamiento de beneficiarios', () => {
 
   test('Aprobado se puede marcar una vez que el programa finalizó, y aparece en el reporte de beneficiarios', async ({ page, request }) => {
     const sufijo = `${Date.now()}`;
+    const token = await tokenAdmin(request);
     const idCiudad = await idCiudadLaPaz(request);
     const idUsuario = await crearPostulante(request, idCiudad, sufijo, `fin${sufijo}`);
     const hoy = new Date();
     const fechaInicio = new Date(hoy.getFullYear(), hoy.getMonth() - 3, 1).toISOString().slice(0, 10);
     const fechaFin = new Date(hoy.getFullYear(), hoy.getMonth(), hoy.getDate() - 1).toISOString().slice(0, 10);
     const nombrePrograma = `Taller E2E finalizado ${sufijo}`;
-    await crearProgramaAceptado(request, idUsuario, nombrePrograma, fechaInicio, fechaFin);
+    await crearProgramaAceptado(request, token, idUsuario, nombrePrograma, fechaInicio, fechaFin);
 
     await page.goto('/admin/postulantes');
     await page.selectOption('select', { label: nombrePrograma });
