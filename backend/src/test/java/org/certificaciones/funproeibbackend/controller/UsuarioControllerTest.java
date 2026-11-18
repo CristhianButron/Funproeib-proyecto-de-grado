@@ -88,6 +88,25 @@ class UsuarioControllerTest {
     }
 
     @Test
+    @DisplayName("GET /api/usuarios/pendientes-identidad lista las cuentas por verificar")
+    void listarPendientesIdentidad_devuelveLista() throws Exception {
+        when(usuarioService.listarPendientesIdentidad()).thenReturn(List.of(responseDePrueba()));
+
+        mockMvc.perform(get("/api/usuarios/pendientes-identidad"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.length()").value(1));
+    }
+
+    @Test
+    @DisplayName("DELETE /api/usuarios/{id} elimina la cuenta y responde 204")
+    void eliminar_devuelve204() throws Exception {
+        mockMvc.perform(delete("/api/usuarios/1"))
+                .andExpect(status().isNoContent());
+
+        verify(usuarioService).eliminar(1L);
+    }
+
+    @Test
     @DisplayName("POST /api/usuarios/reenviar-verificacion devuelve 204")
     void reenviarVerificacion_devuelve204() throws Exception {
         ReenviarVerificacionRequest request = new ReenviarVerificacionRequest();

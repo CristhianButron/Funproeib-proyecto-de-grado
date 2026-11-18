@@ -10,4 +10,6 @@ public interface EvaluacionRepository extends JpaRepository<Evaluacion, Long> {
     Optional<Evaluacion> findByPostulacionId(Long idPostulacion);
 
     boolean existsByPostulacionId(Long idPostulacion);
+
+    boolean existsByEvaluadorId(Long idEvaluador);
 }

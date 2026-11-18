@@ -3,6 +3,7 @@ import { RouterLink } from '@angular/router';
 import { ProgramaService } from '../../core/services/programa.service';
 import { UsuarioService } from '../../core/services/usuario.service';
 import { ProgramaResponse } from '../../core/models/programa.model';
+import { UsuarioResponse } from '../../core/models/usuario.model';
 
 @Component({
   selector: 'app-admin-dashboard',
@@ -26,6 +27,34 @@ import { ProgramaResponse } from '../../core/models/programa.model';
         </div>
       }
     </div>
+
+    <!-- Solicitudes de verificación de identidad -->
+    @if (pendientesIdentidad().length > 0) {
+      <div class="bg-white rounded-xl shadow-card border border-outline-variant overflow-hidden mb-8">
+        <div class="px-6 py-4 border-b border-outline-variant flex items-center justify-between">
+          <h2 class="font-bold text-primary-dark flex items-center gap-2">
+            <span class="material-symbols-outlined text-primary">fingerprint</span>
+            Cuentas por verificar
+            <span class="px-2.5 py-0.5 rounded-full text-xs font-bold bg-error-container text-on-error-container">{{ pendientesIdentidad().length }}</span>
+          </h2>
+          <a routerLink="/admin/usuarios" class="text-primary text-sm font-semibold hover:underline">Ver todas</a>
+        </div>
+        <div class="divide-y divide-outline-variant max-h-80 overflow-y-auto">
+          @for (u of pendientesIdentidad(); track u.id) {
+            <div class="px-6 py-3 flex items-center justify-between">
+              <div>
+                <p class="font-semibold text-sm text-on-surface">{{ u.nombreCompleto }}</p>
+                <p class="text-xs text-on-surface-variant">{{ u.correo }} · registrado el {{ u.fechaRegistro }}</p>
+              </div>
+              <a [routerLink]="['/admin/usuarios']" [queryParams]="{ revisar: u.id }"
+                class="px-3 py-1.5 rounded-lg text-xs font-bold bg-primary text-white hover:bg-primary-dark transition-colors flex items-center gap-1 shrink-0">
+                <span class="material-symbols-outlined text-[16px]">visibility</span> Revisar
+              </a>
+            </div>
+          }
+        </div>
+      </div>
+    }
 
     <!-- Acciones rápidas -->
     <h2 class="font-bold text-lg text-on-surface mb-4 flex items-center gap-2">
@@ -88,12 +117,14 @@ export class AdminDashboardComponent implements OnInit {
   programas = signal<ProgramaResponse[]>([]);
   totalPostulantes = signal(0);
   cargando = signal(true);
+  pendientesIdentidad = signal<UsuarioResponse[]>([]);
 
   kpis = signal<{ label: string; valor: number; icono: string; bg: string; fg: string }[]>([]);
 
   constructor(private programaService: ProgramaService, private usuarioService: UsuarioService) {}
 
   ngOnInit(): void {
+    this.cargarPendientesIdentidad();
     this.programaService.listarTodos().subscribe({
       next: (data) => {
         this.programas.set(data);
@@ -109,6 +140,13 @@ export class AdminDashboardComponent implements OnInit {
         });
       },
       error: () => this.cargando.set(false),
+    });
+  }
+
+  private cargarPendientesIdentidad(): void {
+    this.usuarioService.listarPendientesIdentidad().subscribe({
+      next: (d) => this.pendientesIdentidad.set(d),
+      error: () => {},
     });
   }
 

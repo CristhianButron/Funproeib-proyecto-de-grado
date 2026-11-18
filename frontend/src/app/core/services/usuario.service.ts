@@ -31,6 +31,10 @@ export class UsuarioService {
     return this.api.get<UsuarioResponse[]>('/usuarios');
   }
 
+  listarPendientesIdentidad(): Observable<UsuarioResponse[]> {
+    return this.api.get<UsuarioResponse[]>('/usuarios/pendientes-identidad');
+  }
+
   verificarCorreo(token: string): Observable<void> {
     return this.api.get<void>(`/usuarios/verificar-correo?token=${encodeURIComponent(token)}`);
   }
@@ -71,5 +75,11 @@ export class UsuarioService {
 
   obtenerCarnet(id: number, lado: 'anverso' | 'reverso'): Observable<Blob> {
     return this.api.getBlob(`/usuarios/${id}/carnet/${lado}`);
+  }
+
+  // Distinta de rechazarIdentidad: esta es una baja administrativa normal
+  // (sin correo de aviso), para cuentas que ya no corresponde que existan.
+  eliminar(id: number): Observable<void> {
+    return this.api.delete<void>(`/usuarios/${id}`);
   }
 }

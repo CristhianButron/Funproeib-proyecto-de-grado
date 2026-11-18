@@ -1,5 +1,6 @@
 import { Component, OnInit, signal } from '@angular/core';
 import { FormsModule } from '@angular/forms';
+import { ActivatedRoute } from '@angular/router';
 import { UsuarioService } from '../../core/services/usuario.service';
 import { AuthService } from '../../core/services/auth.service';
 import { RolUsuario, UsuarioResponse } from '../../core/models/usuario.model';
@@ -45,6 +46,7 @@ import { RolUsuario, UsuarioResponse } from '../../core/models/usuario.model';
               <th class="px-6 py-3 text-xs font-bold text-on-surface-variant uppercase">Identidad</th>
               <th class="px-6 py-3 text-xs font-bold text-on-surface-variant uppercase">Rol</th>
               <th class="px-6 py-3 text-xs font-bold text-on-surface-variant uppercase text-right">Estado</th>
+              <th class="px-6 py-3 text-xs font-bold text-on-surface-variant uppercase text-right">Acciones</th>
             </tr>
           </thead>
           <tbody class="divide-y divide-outline-variant">
@@ -84,9 +86,16 @@ import { RolUsuario, UsuarioResponse } from '../../core/models/usuario.model';
                     {{ u.activo ? 'Activo' : 'Inactivo' }}
                   </button>
                 </td>
+                <td class="px-6 py-4 text-right">
+                  <button (click)="eliminar(u)" [disabled]="esUsuarioActual(u)"
+                    class="px-2 py-1.5 rounded-lg text-error hover:bg-error-container transition-colors disabled:opacity-30 disabled:cursor-not-allowed"
+                    title="Eliminar cuenta">
+                    <span class="material-symbols-outlined text-[20px]">delete</span>
+                  </button>
+                </td>
               </tr>
             } @empty {
-              <tr><td colspan="6" class="px-6 py-10 text-center text-on-surface-variant">No se encontraron usuarios.</td></tr>
+              <tr><td colspan="7" class="px-6 py-10 text-center text-on-surface-variant">No se encontraron usuarios.</td></tr>
             }
           </tbody>
         </table>
@@ -170,16 +179,31 @@ export class UsuariosAdminComponent implements OnInit {
     });
   }
 
-  constructor(private usuarioService: UsuarioService, private auth: AuthService) {}
+  constructor(private usuarioService: UsuarioService, private auth: AuthService, private route: ActivatedRoute) {}
 
   ngOnInit(): void { this.cargar(); }
 
   cargar(): void {
     this.cargando.set(true);
     this.usuarioService.listarTodos().subscribe({
-      next: (d) => { this.usuarios.set(d); this.cargando.set(false); },
+      next: (d) => {
+        this.usuarios.set(d);
+        this.cargando.set(false);
+        this.abrirRevisionDesdeUrl();
+      },
       error: () => { this.cargando.set(false); this.notificar('Error al cargar los usuarios. Verifica que el servidor esté corriendo.', true); },
     });
+  }
+
+  // Permite llegar directo a la ficha de revisión desde el dashboard
+  // (?revisar=<id>), en vez de obligar a buscar al usuario a mano en la lista.
+  private abrirRevisionDesdeUrl(): void {
+    const idRevisar = this.route.snapshot.queryParamMap.get('revisar');
+    if (!idRevisar) return;
+    const usuario = this.usuarios().find(u => u.id === +idRevisar);
+    if (usuario && !usuario.identidadVerificada) {
+      this.revisarIdentidad(usuario);
+    }
   }
 
   esUsuarioActual(u: UsuarioResponse): boolean {
@@ -249,6 +273,26 @@ export class UsuariosAdminComponent implements OnInit {
         this.notificar('Cuenta eliminada y correo enviado al postulante.', false);
       },
       error: (err) => this.notificar(err.error?.mensaje || 'No se pudo rechazar la identidad', true),
+    });
+  }
+
+  // Distinto de rechazarIdentidad: esto es una baja administrativa normal
+  // (sin correo de aviso), por eso también pide confirmación fuerte. Activo
+  // /inactivo sigue siendo la forma de suspender sin perder el historial.
+  eliminar(u: UsuarioResponse): void {
+    const confirmado = window.confirm(
+      `¿Eliminar la cuenta de ${u.nombreCompleto}?\n\n` +
+      'Esta acción borra PERMANENTEMENTE la cuenta y todas sus postulaciones. No se puede deshacer. ' +
+      'Si solo quieres que deje de usar el sistema sin perder su historial, usa el botón Activo/Inactivo en vez de esto.'
+    );
+    if (!confirmado) return;
+
+    this.usuarioService.eliminar(u.id).subscribe({
+      next: () => {
+        this.usuarios.update(l => l.filter(x => x.id !== u.id));
+        this.notificar(`Cuenta de ${u.nombreCompleto} eliminada.`, false);
+      },
+      error: (err) => this.notificar(err.error?.mensaje || 'No se pudo eliminar la cuenta', true),
     });
   }
 

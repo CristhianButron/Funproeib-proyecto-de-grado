@@ -63,6 +63,11 @@ public class UsuarioController {
         return ResponseEntity.ok(usuarioService.listarTodos());
     }
 
+    @GetMapping("/pendientes-identidad")
+    public ResponseEntity<List<UsuarioResponse>> listarPendientesIdentidad() {
+        return ResponseEntity.ok(usuarioService.listarPendientesIdentidad());
+    }
+
     @GetMapping("/verificar-correo")
     public ResponseEntity<Void> verificarCorreo(@RequestParam String token) {
         usuarioService.verificarCorreo(token);
@@ -135,6 +140,12 @@ public class UsuarioController {
     @PatchMapping("/{id}/identidad/rechazar")
     public ResponseEntity<Void> rechazarIdentidad(@PathVariable Long id) {
         usuarioService.rechazarIdentidad(id);
+        return ResponseEntity.noContent().build();
+    }
+
+    @DeleteMapping("/{id}")
+    public ResponseEntity<Void> eliminar(@PathVariable Long id) {
+        usuarioService.eliminar(id);
         return ResponseEntity.noContent().build();
     }
 }

@@ -1,6 +1,7 @@
-import { Component } from '@angular/core';
+import { Component, OnDestroy, OnInit, signal } from '@angular/core';
 import { RouterLink, RouterLinkActive, RouterOutlet, Router } from '@angular/router';
 import { AuthService } from '../../core/services/auth.service';
+import { UsuarioService } from '../../core/services/usuario.service';
 
 @Component({
   selector: 'app-admin-layout',
@@ -23,7 +24,10 @@ import { AuthService } from '../../core/services/auth.service';
             [routerLinkActiveOptions]="{ exact: item.exact }"
             class="flex items-center gap-3 px-4 py-3 rounded-xl text-on-tertiary-container hover:bg-tertiary-container hover:text-white transition-colors">
             <span class="material-symbols-outlined">{{ item.icono }}</span>
-            <span class="font-medium text-sm">{{ item.label }}</span>
+            <span class="font-medium text-sm flex-1">{{ item.label }}</span>
+            @if (item.ruta === '/admin/usuarios' && pendientesIdentidad() > 0) {
+              <span class="px-2 py-0.5 rounded-full text-[11px] font-bold bg-error text-white">{{ pendientesIdentidad() }}</span>
+            }
           </a>
         }
       </nav>
@@ -53,7 +57,7 @@ import { AuthService } from '../../core/services/auth.service';
   </div>
   `,
 })
-export class AdminLayoutComponent {
+export class AdminLayoutComponent implements OnInit, OnDestroy {
   menu = [
     { ruta: '/admin', label: 'Dashboard', icono: 'dashboard', exact: true },
     { ruta: '/admin/programas', label: 'Programas', icono: 'school', exact: false },
@@ -66,7 +70,28 @@ export class AdminLayoutComponent {
     { ruta: '/admin/perfil', label: 'Mi perfil', icono: 'person', exact: false },
   ];
 
-  constructor(public auth: AuthService, private router: Router) {}
+  pendientesIdentidad = signal(0);
+  private intervalId?: ReturnType<typeof setInterval>;
+
+  constructor(public auth: AuthService, private router: Router, private usuarioService: UsuarioService) {}
+
+  ngOnInit(): void {
+    this.cargarPendientesIdentidad();
+    // No hay notificaciones push: esto aproxima el "aviso" refrescando el
+    // contador cada 30s mientras el administrador está en el panel.
+    this.intervalId = setInterval(() => this.cargarPendientesIdentidad(), 30000);
+  }
+
+  ngOnDestroy(): void {
+    if (this.intervalId) clearInterval(this.intervalId);
+  }
+
+  private cargarPendientesIdentidad(): void {
+    this.usuarioService.listarPendientesIdentidad().subscribe({
+      next: (d) => this.pendientesIdentidad.set(d.length),
+      error: () => {},
+    });
+  }
 
   inicial(): string {
     return this.auth.usuario()?.nombreCompleto?.charAt(0)?.toUpperCase() ?? 'A';

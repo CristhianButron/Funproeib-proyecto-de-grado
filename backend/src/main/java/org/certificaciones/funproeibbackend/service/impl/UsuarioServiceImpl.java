@@ -403,6 +403,20 @@ public class UsuarioServiceImpl implements UsuarioService {
         }
     }
 
+    // Filtra en memoria en vez de con una consulta derivada
+    // ("findByIdentidadVerificadaFalse"): en SQL, "= false" o "<> true" no
+    // devuelve las filas con NULL (p. ej. cuentas sembradas antes de este
+    // campo existir), así que se quedarían sin aparecer en vez de aparecer
+    // como pendientes.
+    @Override
+    @Transactional(readOnly = true)
+    public List<UsuarioResponse> listarPendientesIdentidad() {
+        return usuarioRepository.findAll().stream()
+                .filter(u -> !Boolean.TRUE.equals(u.getIdentidadVerificada()))
+                .map(this::mapToResponse)
+                .toList();
+    }
+
     @Override
     @Transactional
     public UsuarioResponse verificarIdentidad(Long id) {
@@ -437,6 +451,31 @@ public class UsuarioServiceImpl implements UsuarioService {
         usuarioRepository.delete(usuario);
 
         emailService.enviarRechazoIdentidad(correo, nombre);
+    }
+
+    // Distinto de rechazarIdentidad: esto es una baja administrativa normal
+    // (sin correo de aviso por falsificación), para cuentas que ya no
+    // corresponden que existan. Activo/inactivo sigue siendo la forma de
+    // suspender sin perder el historial; esto lo borra todo sin vuelta atrás.
+    @Override
+    @Transactional
+    public void eliminar(Long id) {
+        Usuario usuario = buscarUsuario(id);
+        if (usuario.getRol() == RolUsuario.ADMIN) {
+            validarNoDejaSistemaSinAdmin(usuario);
+        }
+        if (evaluacionRepository.existsByEvaluadorId(id)) {
+            throw new BusinessException("No se puede eliminar: este usuario ya registró evaluaciones. Desactívalo en vez de eliminarlo.");
+        }
+
+        List<Postulacion> postulaciones = postulacionRepository.findByUsuarioId(id);
+        for (Postulacion p : postulaciones) {
+            evaluacionRepository.findByPostulacionId(p.getId()).ifPresent(evaluacionRepository::delete);
+            respuestaPostulacionRepository.deleteAll(respuestaPostulacionRepository.findByPostulacionId(p.getId()));
+            documentoRepository.deleteAll(documentoRepository.findByPostulacionId(p.getId()));
+        }
+        postulacionRepository.deleteAll(postulaciones);
+        usuarioRepository.delete(usuario);
     }
 
     /**

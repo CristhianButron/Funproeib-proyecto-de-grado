@@ -690,4 +690,64 @@ class UsuarioServiceImplTest {
         verify(usuarioRepository).delete(usuario);
         verify(emailService).enviarRechazoIdentidad("ana@correo.com", "Ana");
     }
+
+    @Test
+    @DisplayName("listarPendientesIdentidad devuelve solo las cuentas sin identidad verificada")
+    void listarPendientesIdentidad_filtraSoloNoVerificados() {
+        Usuario verificado = Usuario.builder().id(1L).identidadVerificada(true).build();
+        Usuario pendiente = Usuario.builder().id(2L).identidadVerificada(false).build();
+        Usuario legacySinDato = Usuario.builder().id(3L).identidadVerificada(null).build();
+        when(usuarioRepository.findAll()).thenReturn(List.of(verificado, pendiente, legacySinDato));
+
+        List<UsuarioResponse> res = service.listarPendientesIdentidad();
+
+        assertThat(res).extracting(UsuarioResponse::getId).containsExactlyInAnyOrder(2L, 3L);
+    }
+
+    // No es rechazarIdentidad: esta es una baja administrativa normal (sin
+    // correo de aviso), para cuentas que ya no corresponde que existan.
+    @Test
+    @DisplayName("eliminar borra la cuenta y sus postulaciones, sin enviar correo")
+    void eliminar_postulante_eliminaCuentaYPostulaciones() {
+        Usuario usuario = Usuario.builder().id(8L).rol(RolUsuario.POSTULANTE).build();
+        Postulacion postulacion = Postulacion.builder().id(60L).usuario(usuario).build();
+        when(usuarioRepository.findById(8L)).thenReturn(Optional.of(usuario));
+        when(evaluacionRepository.existsByEvaluadorId(8L)).thenReturn(false);
+        when(postulacionRepository.findByUsuarioId(8L)).thenReturn(List.of(postulacion));
+        when(evaluacionRepository.findByPostulacionId(60L)).thenReturn(Optional.empty());
+        when(respuestaPostulacionRepository.findByPostulacionId(60L)).thenReturn(List.of());
+        when(documentoRepository.findByPostulacionId(60L)).thenReturn(List.of());
+
+        service.eliminar(8L);
+
+        verify(postulacionRepository).deleteAll(List.of(postulacion));
+        verify(usuarioRepository).delete(usuario);
+        verify(emailService, never()).enviarRechazoIdentidad(any(), any());
+    }
+
+    @Test
+    @DisplayName("eliminar rechaza si el usuario ya registró evaluaciones como evaluador")
+    void eliminar_evaluadorConEvaluaciones_lanzaExcepcion() {
+        Usuario evaluador = Usuario.builder().id(9L).rol(RolUsuario.EVALUADOR).build();
+        when(usuarioRepository.findById(9L)).thenReturn(Optional.of(evaluador));
+        when(evaluacionRepository.existsByEvaluadorId(9L)).thenReturn(true);
+
+        assertThatThrownBy(() -> service.eliminar(9L))
+                .isInstanceOf(BusinessException.class)
+                .hasMessageContaining("Desactíva");
+        verify(usuarioRepository, never()).delete(any());
+    }
+
+    @Test
+    @DisplayName("eliminar rechaza borrar al último administrador activo")
+    void eliminar_ultimoAdminActivo_lanzaExcepcion() {
+        Usuario admin = Usuario.builder().id(1L).rol(RolUsuario.ADMIN).activo(true).build();
+        when(usuarioRepository.findById(1L)).thenReturn(Optional.of(admin));
+        when(usuarioRepository.countByRolAndActivoTrue(RolUsuario.ADMIN)).thenReturn(1L);
+
+        assertThatThrownBy(() -> service.eliminar(1L))
+                .isInstanceOf(BusinessException.class)
+                .hasMessageContaining("administrador");
+        verify(usuarioRepository, never()).delete(any());
+    }
 }

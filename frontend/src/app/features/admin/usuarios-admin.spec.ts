@@ -17,6 +17,7 @@ describe('UsuariosAdminComponent', () => {
   let component: UsuariosAdminComponent;
   let usuarioServiceFake: any;
   let authFake: any;
+  let routeFake: any;
   const listaInicial = [
     usuarioFake({ id: 1, nombre: 'Ana', nombreCompleto: 'Ana Quispe', correo: 'ana@correo.com', ci: '1111', rol: 'POSTULANTE' }),
     usuarioFake({ id: 2, nombre: 'Beto', nombreCompleto: 'Beto Mamani', correo: 'beto@correo.com', ci: '2222', rol: 'EVALUADOR' }),
@@ -31,9 +32,11 @@ describe('UsuariosAdminComponent', () => {
       obtenerCarnet: vi.fn(() => of(new Blob(['x']))),
       verificarIdentidad: vi.fn(),
       rechazarIdentidad: vi.fn(),
+      eliminar: vi.fn(),
     };
     authFake = { usuario: () => usuarioFake({ id: 3 }) };
-    component = new UsuariosAdminComponent(usuarioServiceFake, authFake);
+    routeFake = { snapshot: { queryParamMap: { get: (_: string) => null } } };
+    component = new UsuariosAdminComponent(usuarioServiceFake, authFake, routeFake);
     component.ngOnInit();
 
     vi.stubGlobal('URL', { createObjectURL: vi.fn(() => 'blob:fake'), revokeObjectURL: vi.fn() });
@@ -149,6 +152,54 @@ describe('UsuariosAdminComponent', () => {
 
     expect(usuarioServiceFake.rechazarIdentidad).toHaveBeenCalledWith(1);
     expect(component.usuarios().find(u => u.id === 1)).toBeUndefined();
+    expect(component.usuarioRevision()).toBeNull();
+  });
+
+  it('eliminar no hace nada si no se confirma', () => {
+    vi.spyOn(window, 'confirm').mockReturnValue(false);
+
+    component.eliminar(listaInicial[0]);
+
+    expect(usuarioServiceFake.eliminar).not.toHaveBeenCalled();
+  });
+
+  it('eliminar quita al usuario de la lista si se confirma', () => {
+    vi.spyOn(window, 'confirm').mockReturnValue(true);
+    usuarioServiceFake.eliminar.mockReturnValue(of(undefined));
+
+    component.eliminar(listaInicial[0]);
+
+    expect(usuarioServiceFake.eliminar).toHaveBeenCalledWith(1);
+    expect(component.usuarios().find(u => u.id === 1)).toBeUndefined();
+  });
+
+  it('eliminar muestra el mensaje de error del backend si falla', () => {
+    vi.spyOn(window, 'confirm').mockReturnValue(true);
+    usuarioServiceFake.eliminar.mockReturnValue(throwError(() => ({ error: { mensaje: 'No se puede eliminar: este usuario ya registró evaluaciones' } })));
+
+    component.eliminar(listaInicial[1]);
+
+    expect(component.mensaje()).toBe('No se puede eliminar: este usuario ya registró evaluaciones');
+    expect(component.mensajeError()).toBe(true);
+    expect(component.usuarios().find(u => u.id === 2)).toBeDefined();
+  });
+
+  it('al cargar, si la URL trae ?revisar=<id> abre la revisión de esa cuenta automáticamente', () => {
+    routeFake.snapshot.queryParamMap.get = (key: string) => key === 'revisar' ? '1' : null;
+
+    component.cargar();
+
+    expect(component.usuarioRevision()).toEqual(expect.objectContaining({ id: 1 }));
+  });
+
+  it('no abre la revisión automática si la cuenta de la URL ya está verificada', () => {
+    usuarioServiceFake.listarTodos.mockReturnValue(of([
+      usuarioFake({ id: 1, identidadVerificada: true }),
+    ]));
+    routeFake.snapshot.queryParamMap.get = (key: string) => key === 'revisar' ? '1' : null;
+
+    component.cargar();
+
     expect(component.usuarioRevision()).toBeNull();
   });
 });

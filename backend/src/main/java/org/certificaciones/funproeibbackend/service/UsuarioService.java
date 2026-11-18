@@ -26,6 +26,8 @@ public interface UsuarioService {
     UsuarioResponse cambiarRol(Long id, RolUsuario nuevoRol);
     UsuarioResponse cambiarActivo(Long id, boolean activo);
     ArchivoDescargable obtenerCarnet(Long id, boolean anverso);
+    List<UsuarioResponse> listarPendientesIdentidad();
     UsuarioResponse verificarIdentidad(Long id);
     void rechazarIdentidad(Long id);
+    void eliminar(Long id);
 }
