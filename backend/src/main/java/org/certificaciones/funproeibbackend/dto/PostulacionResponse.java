@@ -17,4 +17,5 @@ public class PostulacionResponse {
     private LocalDate fechaPostulacion;
     private EstadoPostulacion estado;
     private EstadoAprovechamiento estadoAprovechamiento;
+    private Boolean identidadVerificada;
 }

@@ -3,17 +3,24 @@ package org.certificaciones.funproeibbackend.service;
 import org.certificaciones.funproeibbackend.dto.PostulacionRequest;
 import org.certificaciones.funproeibbackend.dto.PostulacionResponse;
 import org.certificaciones.funproeibbackend.exception.BusinessException;
+import org.certificaciones.funproeibbackend.model.Documento;
 import org.certificaciones.funproeibbackend.model.Postulacion;
 import org.certificaciones.funproeibbackend.model.Programa;
+import org.certificaciones.funproeibbackend.model.ReqDocumento;
 import org.certificaciones.funproeibbackend.model.Usuario;
 import org.certificaciones.funproeibbackend.model.enums.EstadoAprovechamiento;
 import org.certificaciones.funproeibbackend.model.enums.EstadoPostulacion;
 import org.certificaciones.funproeibbackend.model.enums.EstadoPrograma;
 import org.certificaciones.funproeibbackend.model.enums.TipoPrograma;
+import org.certificaciones.funproeibbackend.repository.DocumentoRepository;
+import org.certificaciones.funproeibbackend.repository.EvaluacionRepository;
 import org.certificaciones.funproeibbackend.repository.ListaNegraRepository;
 import org.certificaciones.funproeibbackend.repository.PostulacionRepository;
 import org.certificaciones.funproeibbackend.repository.ProgramaRepository;
+import org.certificaciones.funproeibbackend.repository.ReqDocumentoRepository;
+import org.certificaciones.funproeibbackend.repository.RespuestaPostulacionRepository;
 import org.certificaciones.funproeibbackend.repository.UsuarioRepository;
+import org.certificaciones.funproeibbackend.service.EmailService;
 import org.certificaciones.funproeibbackend.service.impl.PostulacionServiceImpl;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
@@ -31,6 +38,7 @@ import java.util.Optional;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.*;
 
 @ExtendWith(MockitoExtension.class)
@@ -41,6 +49,11 @@ class PostulacionServiceImplTest {
     @Mock private UsuarioRepository usuarioRepository;
     @Mock private ProgramaRepository programaRepository;
     @Mock private ListaNegraRepository listaNegraRepository;
+    @Mock private ReqDocumentoRepository reqDocumentoRepository;
+    @Mock private DocumentoRepository documentoRepository;
+    @Mock private RespuestaPostulacionRepository respuestaPostulacionRepository;
+    @Mock private EvaluacionRepository evaluacionRepository;
+    @Mock private EmailService emailService;
 
     @InjectMocks private PostulacionServiceImpl service;
 
@@ -315,5 +328,92 @@ class PostulacionServiceImplTest {
 
         assertThat(res.getEstado()).isEqualTo(EstadoPostulacion.INCOMPLETA);
         verify(postulacionRepository, never()).findByUsuarioIdAndEstadoAndProgramaTipo(any(), any(), any());
+    }
+
+    @Test
+    @DisplayName("cambiarEstado rechaza pasar a EVALUADA si la identidad no está verificada")
+    void cambiarEstado_aEvaluadaSinIdentidadVerificada_lanzaExcepcion() {
+        Postulacion pendiente = Postulacion.builder().id(5L).usuario(usuario).programa(programa)
+                .estado(EstadoPostulacion.PENDIENTE).identidadVerificada(false).build();
+        when(postulacionRepository.findById(5L)).thenReturn(Optional.of(pendiente));
+
+        assertThatThrownBy(() -> service.cambiarEstado(5L, EstadoPostulacion.EVALUADA))
+                .isInstanceOf(BusinessException.class)
+                .hasMessageContaining("identidad");
+        verify(postulacionRepository, never()).save(any());
+    }
+
+    @Test
+    @DisplayName("cambiarEstado permite pasar a EVALUADA si la identidad ya está verificada")
+    void cambiarEstado_aEvaluadaConIdentidadVerificada_permiteCambio() {
+        Postulacion pendiente = Postulacion.builder().id(5L).usuario(usuario).programa(programa)
+                .estado(EstadoPostulacion.PENDIENTE).identidadVerificada(true).build();
+        when(postulacionRepository.findById(5L)).thenReturn(Optional.of(pendiente));
+        when(postulacionRepository.save(any(Postulacion.class))).thenAnswer(inv -> inv.getArgument(0));
+
+        PostulacionResponse res = service.cambiarEstado(5L, EstadoPostulacion.EVALUADA);
+
+        assertThat(res.getEstado()).isEqualTo(EstadoPostulacion.EVALUADA);
+    }
+
+    @Test
+    @DisplayName("verificarIdentidad marca la postulación como verificada cuando los dos documentos están cargados")
+    void verificarIdentidad_documentosCompletos_marcaVerificada() {
+        ReqDocumento anverso = ReqDocumento.builder().id(10L).programa(programa).soloImagen(true).build();
+        ReqDocumento reverso = ReqDocumento.builder().id(11L).programa(programa).soloImagen(true).build();
+        Postulacion postulacion = Postulacion.builder().id(5L).usuario(usuario).programa(programa)
+                .estado(EstadoPostulacion.PENDIENTE).identidadVerificada(false).build();
+        Documento docAnverso = Documento.builder().reqDocumento(anverso).build();
+        Documento docReverso = Documento.builder().reqDocumento(reverso).build();
+
+        when(postulacionRepository.findById(5L)).thenReturn(Optional.of(postulacion));
+        when(reqDocumentoRepository.findByProgramaId(2L)).thenReturn(List.of(anverso, reverso));
+        when(documentoRepository.findByPostulacionId(5L)).thenReturn(List.of(docAnverso, docReverso));
+        when(postulacionRepository.save(any(Postulacion.class))).thenAnswer(inv -> inv.getArgument(0));
+
+        PostulacionResponse res = service.verificarIdentidad(5L);
+
+        assertThat(res.getIdentidadVerificada()).isTrue();
+    }
+
+    @Test
+    @DisplayName("verificarIdentidad rechaza si falta cargar el anverso o el reverso del carnet")
+    void verificarIdentidad_documentoFaltante_lanzaExcepcion() {
+        ReqDocumento anverso = ReqDocumento.builder().id(10L).programa(programa).soloImagen(true).build();
+        ReqDocumento reverso = ReqDocumento.builder().id(11L).programa(programa).soloImagen(true).build();
+        Postulacion postulacion = Postulacion.builder().id(5L).usuario(usuario).programa(programa)
+                .estado(EstadoPostulacion.PENDIENTE).identidadVerificada(false).build();
+        Documento docAnverso = Documento.builder().reqDocumento(anverso).build();
+
+        when(postulacionRepository.findById(5L)).thenReturn(Optional.of(postulacion));
+        when(reqDocumentoRepository.findByProgramaId(2L)).thenReturn(List.of(anverso, reverso));
+        when(documentoRepository.findByPostulacionId(5L)).thenReturn(List.of(docAnverso));
+
+        assertThatThrownBy(() -> service.verificarIdentidad(5L))
+                .isInstanceOf(BusinessException.class)
+                .hasMessageContaining("faltan cargar");
+        verify(postulacionRepository, never()).save(any());
+    }
+
+    @Test
+    @DisplayName("rechazarIdentidad elimina toda la cuenta del usuario y le avisa por correo")
+    void rechazarIdentidad_eliminaCuentaYEnviaCorreo() {
+        Usuario postulante = Usuario.builder().id(7L).nombre("Ana").correo("ana@correo.com").build();
+        Postulacion postulacion = Postulacion.builder().id(5L).usuario(postulante).programa(programa)
+                .estado(EstadoPostulacion.PENDIENTE).build();
+        Postulacion otraPostulacion = Postulacion.builder().id(6L).usuario(postulante).programa(programa)
+                .estado(EstadoPostulacion.INCOMPLETA).build();
+
+        when(postulacionRepository.findById(5L)).thenReturn(Optional.of(postulacion));
+        when(postulacionRepository.findByUsuarioId(7L)).thenReturn(List.of(postulacion, otraPostulacion));
+        when(evaluacionRepository.findByPostulacionId(any())).thenReturn(Optional.empty());
+        when(respuestaPostulacionRepository.findByPostulacionId(any())).thenReturn(List.of());
+        when(documentoRepository.findByPostulacionId(any())).thenReturn(List.of());
+
+        service.rechazarIdentidad(5L);
+
+        verify(postulacionRepository).deleteAll(List.of(postulacion, otraPostulacion));
+        verify(usuarioRepository).delete(postulante);
+        verify(emailService).enviarRechazoIdentidad(eq("ana@correo.com"), eq("Ana"));
     }
 }

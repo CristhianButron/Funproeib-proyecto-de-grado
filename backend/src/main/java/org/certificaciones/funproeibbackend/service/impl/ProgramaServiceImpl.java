@@ -5,8 +5,11 @@ import org.certificaciones.funproeibbackend.dto.ProgramaResponse;
 import org.certificaciones.funproeibbackend.exception.BusinessException;
 import org.certificaciones.funproeibbackend.exception.ResourceNotFoundException;
 import org.certificaciones.funproeibbackend.model.Programa;
+import org.certificaciones.funproeibbackend.model.ReqDocumento;
 import org.certificaciones.funproeibbackend.model.enums.EstadoPrograma;
+import org.certificaciones.funproeibbackend.model.enums.TipoDocumento;
 import org.certificaciones.funproeibbackend.repository.ProgramaRepository;
+import org.certificaciones.funproeibbackend.repository.ReqDocumentoRepository;
 import org.certificaciones.funproeibbackend.service.ProgramaService;
 import lombok.RequiredArgsConstructor;
 import org.slf4j.Logger;
@@ -24,6 +27,7 @@ public class ProgramaServiceImpl implements ProgramaService {
     private static final Logger log = LoggerFactory.getLogger(ProgramaServiceImpl.class);
 
     private final ProgramaRepository programaRepository;
+    private final ReqDocumentoRepository reqDocumentoRepository;
 
     @Override
     @Transactional
@@ -42,7 +46,35 @@ public class ProgramaServiceImpl implements ProgramaService {
                 .estado(EstadoPrograma.BORRADOR) // todo programa nace en borrador
                 .build();
 
-        return mapToResponse(programaRepository.save(programa));
+        Programa guardado = programaRepository.save(programa);
+        crearRequisitosDeIdentidad(guardado);
+
+        return mapToResponse(guardado);
+    }
+
+    // Todo programa exige verificar la identidad del postulante antes de
+    // pasar a evaluación (ver EvaluacionServiceImpl), así que estos dos
+    // requisitos de documento se crean solos -el admin no tiene que
+    // acordarse de agregarlos a mano en cada programa nuevo. Solo aceptan
+    // JPG/PNG (ver ReqDocumento.soloImagen y DocumentoServiceImpl).
+    private void crearRequisitosDeIdentidad(Programa programa) {
+        reqDocumentoRepository.saveAll(List.of(
+                ReqDocumento.builder()
+                        .programa(programa)
+                        .nombreDocumento("Carnet de identidad - anverso")
+                        .descripcion("Foto o escaneo del frente de tu carnet de identidad, en JPG o PNG")
+                        .obligatorio(true)
+                        .tipoPermitido(TipoDocumento.PDF)
+                        .soloImagen(true)
+                        .build(),
+                ReqDocumento.builder()
+                        .programa(programa)
+                        .nombreDocumento("Carnet de identidad - reverso")
+                        .descripcion("Foto o escaneo del reverso de tu carnet de identidad, en JPG o PNG")
+                        .obligatorio(true)
+                        .tipoPermitido(TipoDocumento.PDF)
+                        .soloImagen(true)
+                        .build()));
     }
 
     @Override

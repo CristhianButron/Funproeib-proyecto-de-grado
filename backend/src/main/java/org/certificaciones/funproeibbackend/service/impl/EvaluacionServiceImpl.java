@@ -55,6 +55,10 @@ public class EvaluacionServiceImpl implements EvaluacionService {
             throw new BusinessException("Solo se pueden evaluar postulaciones en estado PENDIENTE");
         }
 
+        if (!Boolean.TRUE.equals(postulacion.getIdentidadVerificada())) {
+            throw new BusinessException("No se puede evaluar sin verificar la identidad del postulante");
+        }
+
         if (evaluacionRepository.existsByPostulacionId(postulacion.getId())) {
             throw new BusinessException("Esta postulación ya tiene una evaluación registrada");
         }

@@ -51,7 +51,7 @@ class EvaluacionServiceImplTest {
         postulante = Usuario.builder().id(1L).nombre("Juan").apellidoPaterno("Mamani").build();
         evaluador = Usuario.builder().id(9L).nombre("Evaluador").apellidoPaterno("Admin").build();
         postulacion = Postulacion.builder().id(5L).programa(programa).usuario(postulante)
-                .estado(EstadoPostulacion.PENDIENTE).build();
+                .estado(EstadoPostulacion.PENDIENTE).identidadVerificada(true).build();
 
         // Los 6 criterios estandarizados fijos (ver CriterioEvaluacionDataInitializer)
         criterios = new ArrayList<>();
@@ -202,6 +202,18 @@ class EvaluacionServiceImplTest {
         assertThatThrownBy(() -> service.evaluar(request))
                 .isInstanceOf(BusinessException.class)
                 .hasMessageContaining("6 criterios");
+        verify(evaluacionRepository, never()).save(any());
+    }
+
+    @Test
+    @DisplayName("Rechaza evaluar si la identidad del postulante no fue verificada")
+    void evaluar_identidadNoVerificada_lanzaExcepcion() {
+        postulacion.setIdentidadVerificada(false);
+        when(postulacionRepository.findById(5L)).thenReturn(Optional.of(postulacion));
+
+        assertThatThrownBy(() -> service.evaluar(request))
+                .isInstanceOf(BusinessException.class)
+                .hasMessageContaining("identidad");
         verify(evaluacionRepository, never()).save(any());
     }
 

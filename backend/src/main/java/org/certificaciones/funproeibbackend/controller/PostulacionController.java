@@ -63,4 +63,17 @@ public class PostulacionController {
             @RequestParam EstadoAprovechamiento estado) {
         return ResponseEntity.ok(postulacionService.registrarAprovechamiento(id, estado));
     }
+
+    @PatchMapping("/{id}/identidad/verificar")
+    public ResponseEntity<PostulacionResponse> verificarIdentidad(@PathVariable Long id) {
+        return ResponseEntity.ok(postulacionService.verificarIdentidad(id));
+    }
+
+    // Elimina la cuenta completa del postulante (ver PostulacionServiceImpl):
+    // no hay nada que devolver, ya no existe.
+    @PatchMapping("/{id}/identidad/rechazar")
+    public ResponseEntity<Void> rechazarIdentidad(@PathVariable Long id) {
+        postulacionService.rechazarIdentidad(id);
+        return ResponseEntity.noContent().build();
+    }
 }

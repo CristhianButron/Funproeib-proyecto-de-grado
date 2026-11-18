@@ -45,6 +45,7 @@ public class DocumentoServiceImpl implements DocumentoService {
             "jpg", "image/jpeg",
             "jpeg", "image/jpeg"
     );
+    private static final java.util.Set<String> EXTENSIONES_IMAGEN = java.util.Set.of("png", "jpg", "jpeg");
     private static final long TAMANO_MAXIMO_BYTES = 10L * 1024 * 1024;
 
     private final DocumentoRepository documentoRepository;
@@ -111,6 +112,9 @@ public class DocumentoServiceImpl implements DocumentoService {
         String extension = obtenerExtension(nombreOriginal);
         if (!EXTENSIONES_PERMITIDAS.containsKey(extension)) {
             throw new BusinessException("Tipo de archivo no permitido. Formatos aceptados: PDF, DOC, DOCX, PNG, JPG");
+        }
+        if (Boolean.TRUE.equals(reqDocumento.getSoloImagen()) && !EXTENSIONES_IMAGEN.contains(extension)) {
+            throw new BusinessException("Este requisito solo acepta imágenes JPG o PNG");
         }
 
         try {

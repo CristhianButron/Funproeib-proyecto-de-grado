@@ -15,4 +15,6 @@ public interface PostulacionService {
     List<PostulacionResponse> listarPorEstado(EstadoPostulacion estado);
     PostulacionResponse cambiarEstado(Long id, EstadoPostulacion nuevoEstado);
     PostulacionResponse registrarAprovechamiento(Long id, EstadoAprovechamiento estadoAprovechamiento);
+    PostulacionResponse verificarIdentidad(Long id);
+    void rechazarIdentidad(Long id);
 }

@@ -14,6 +14,7 @@ import java.util.List;
 
 import static org.mockito.Mockito.*;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.patch;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
@@ -78,5 +79,25 @@ class PostulacionControllerTest {
         mockMvc.perform(get("/api/postulaciones/estado/PENDIENTE"))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.length()").value(1));
+    }
+
+    @Test
+    @DisplayName("PATCH /api/postulaciones/{id}/identidad/verificar marca la identidad como verificada")
+    void verificarIdentidad_devuelve200() throws Exception {
+        when(postulacionService.verificarIdentidad(1L)).thenReturn(
+                PostulacionResponse.builder().id(1L).identidadVerificada(true).build());
+
+        mockMvc.perform(patch("/api/postulaciones/1/identidad/verificar"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.identidadVerificada").value(true));
+    }
+
+    @Test
+    @DisplayName("PATCH /api/postulaciones/{id}/identidad/rechazar elimina la cuenta y responde 204")
+    void rechazarIdentidad_devuelve204() throws Exception {
+        mockMvc.perform(patch("/api/postulaciones/1/identidad/rechazar"))
+                .andExpect(status().isNoContent());
+
+        verify(postulacionService).rechazarIdentidad(1L);
     }
 }

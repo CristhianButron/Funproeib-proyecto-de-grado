@@ -52,6 +52,7 @@ class DocumentoServiceImplTest {
     private Postulacion postulacion;
     private ReqDocumento reqArchivo;
     private ReqDocumento reqEnlace;
+    private ReqDocumento reqImagen;
     private DocumentoRequest request;
 
     @BeforeEach
@@ -65,6 +66,9 @@ class DocumentoServiceImplTest {
         reqEnlace = ReqDocumento.builder().id(8L).programa(programa)
                 .nombreDocumento("Carta de recomendación").obligatorio(false)
                 .tipoPermitido(TipoDocumento.ENLACE).build();
+        reqImagen = ReqDocumento.builder().id(9L).programa(programa)
+                .nombreDocumento("Carnet de identidad - anverso").obligatorio(true)
+                .tipoPermitido(TipoDocumento.PDF).soloImagen(true).build();
 
         request = new DocumentoRequest();
         request.setIdPostulacion(5L);
@@ -140,6 +144,33 @@ class DocumentoServiceImplTest {
                 .isInstanceOf(BusinessException.class)
                 .hasMessageContaining("enlace");
         verify(documentoRepository, never()).save(any());
+    }
+
+    @Test
+    @DisplayName("Rechaza un archivo que no es imagen cuando el requisito solo acepta JPG o PNG")
+    void subirArchivo_requisitoSoloImagen_rechazaExtensionNoImagen() {
+        MockMultipartFile archivo = new MockMultipartFile("archivo", "carnet.pdf", "application/pdf", "x".getBytes());
+        when(postulacionRepository.findById(5L)).thenReturn(Optional.of(postulacion));
+        when(reqDocumentoRepository.findById(9L)).thenReturn(Optional.of(reqImagen));
+
+        assertThatThrownBy(() -> service.subirArchivo(5L, 9L, archivo))
+                .isInstanceOf(BusinessException.class)
+                .hasMessageContaining("JPG o PNG");
+        verify(documentoRepository, never()).save(any());
+    }
+
+    @Test
+    @DisplayName("Acepta un archivo JPG cuando el requisito solo acepta imágenes")
+    void subirArchivo_requisitoSoloImagen_aceptaJpg() {
+        MockMultipartFile archivo = new MockMultipartFile("archivo", "carnet.jpg", "image/jpeg", "x".getBytes());
+        when(postulacionRepository.findById(5L)).thenReturn(Optional.of(postulacion));
+        when(reqDocumentoRepository.findById(9L)).thenReturn(Optional.of(reqImagen));
+        when(documentoRepository.save(any(Documento.class))).thenAnswer(inv -> inv.getArgument(0));
+
+        DocumentoResponse res = service.subirArchivo(5L, 9L, archivo);
+
+        assertThat(res.getRutaArchivo()).endsWith("carnet.jpg");
+        verify(completitudService).revisar(5L);
     }
 
     @Test

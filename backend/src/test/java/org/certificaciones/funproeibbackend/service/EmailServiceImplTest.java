@@ -68,4 +68,32 @@ class EmailServiceImplTest {
 
         verify(mailSender).send(any(SimpleMailMessage.class));
     }
+
+    @Test
+    @DisplayName("Rechazo de identidad: con app.mail.enabled=false no intenta enviar")
+    void enviarRechazoIdentidad_mailDeshabilitado_noEnvia() {
+        EmailServiceImpl service = new EmailServiceImpl(Optional.of(mailSender), false, "no-responder@funproeib.org", "http://localhost:4200");
+
+        service.enviarRechazoIdentidad("ana@correo.com", "Ana");
+
+        verifyNoInteractions(mailSender);
+    }
+
+    @Test
+    @DisplayName("Rechazo de identidad: sin JavaMailSender configurado no falla")
+    void enviarRechazoIdentidad_sinMailSender_noFalla() {
+        EmailServiceImpl service = new EmailServiceImpl(Optional.empty(), true, "no-responder@funproeib.org", "http://localhost:4200");
+
+        service.enviarRechazoIdentidad("ana@correo.com", "Ana");
+    }
+
+    @Test
+    @DisplayName("Rechazo de identidad: con app.mail.enabled=true y JavaMailSender disponible, envía el correo")
+    void enviarRechazoIdentidad_mailHabilitado_envia() {
+        EmailServiceImpl service = new EmailServiceImpl(Optional.of(mailSender), true, "no-responder@funproeib.org", "http://localhost:4200");
+
+        service.enviarRechazoIdentidad("ana@correo.com", "Ana");
+
+        verify(mailSender).send(any(SimpleMailMessage.class));
+    }
 }

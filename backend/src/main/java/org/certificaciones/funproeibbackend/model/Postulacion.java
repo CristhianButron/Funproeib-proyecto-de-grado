@@ -48,4 +48,14 @@ public class Postulacion {
     @Column(name = "estado_aprovechamiento", nullable = false, length = 20,
             columnDefinition = "varchar(20) not null default 'PENDIENTE'")
     private String estadoAprovechamiento = "PENDIENTE";
+
+    // El Administrador la marca en true al verificar el carnet de identidad
+    // (anverso/reverso). Mientras esté en false, la postulación no puede
+    // pasar a evaluación (ver EvaluacionServiceImpl y
+    // PostulacionServiceImpl.cambiarEstado). Si el admin la rechaza en vez de
+    // verificarla, no queda un estado "rechazada" guardado acá: la cuenta
+    // completa se elimina (ver PostulacionServiceImpl.rechazarIdentidad).
+    @Column(name = "identidad_verificada")
+    @Builder.Default
+    private Boolean identidadVerificada = false;
 }

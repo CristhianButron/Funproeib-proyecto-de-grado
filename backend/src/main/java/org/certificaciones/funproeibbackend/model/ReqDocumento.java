@@ -35,4 +35,11 @@ public class ReqDocumento {
     @Enumerated(EnumType.STRING)
     @Column(name = "tipo_permitido", length = 20)
     private TipoDocumento tipoPermitido;
+
+    // Restringe la carga de archivo a solo JPG/PNG (ver DocumentoServiceImpl);
+    // se usa para los dos requisitos de carnet de identidad que se crean
+    // solos con cada programa (ver ProgramaServiceImpl).
+    @Column(name = "solo_imagen")
+    @Builder.Default
+    private Boolean soloImagen = false;
 }

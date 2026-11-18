@@ -102,4 +102,36 @@ public class EmailServiceImpl implements EmailService {
         mailSender.get().send(mensaje);
         log.info("Correo de recuperación de contraseña enviado a {}", destinatario);
     }
+
+    @Override
+    public void enviarRechazoIdentidad(String destinatario, String nombre) {
+        String asunto = "Tu cuenta fue dada de baja - Funproeib Andes";
+        String cuerpo = """
+                Hola %s,
+
+                Al revisar los documentos de identidad que cargaste en tu postulación,
+                no pudimos verificar que correspondan a un carnet de identidad válido.
+
+                Por este motivo, y por tratarse de un intento de falsificación de
+                identidad, tu cuenta y tu postulación fueron dadas de baja del sistema
+                de Funproeib Andes.
+
+                Si consideras que esto es un error, puedes contactarte con el equipo de
+                Funproeib Andes para aclararlo.
+                """.formatted(nombre);
+
+        if (!mailEnabled || mailSender.isEmpty()) {
+            log.info("[EMAIL SIMULADO - app.mail.enabled=false o SMTP no configurado] Para: {} | Asunto: {}\n{}",
+                    destinatario, asunto, cuerpo);
+            return;
+        }
+
+        SimpleMailMessage mensaje = new SimpleMailMessage();
+        mensaje.setFrom(remitente);
+        mensaje.setTo(destinatario);
+        mensaje.setSubject(asunto);
+        mensaje.setText(cuerpo);
+        mailSender.get().send(mensaje);
+        log.info("Correo de rechazo de identidad enviado a {}", destinatario);
+    }
 }
