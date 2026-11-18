@@ -28,11 +28,18 @@ describe('UsuariosAdminComponent', () => {
       listarTodos: vi.fn(() => of(listaInicial)),
       cambiarRol: vi.fn(),
       cambiarActivo: vi.fn(),
+      obtenerCarnet: vi.fn(() => of(new Blob(['x']))),
+      verificarIdentidad: vi.fn(),
+      rechazarIdentidad: vi.fn(),
     };
     authFake = { usuario: () => usuarioFake({ id: 3 }) };
     component = new UsuariosAdminComponent(usuarioServiceFake, authFake);
     component.ngOnInit();
+
+    vi.stubGlobal('URL', { createObjectURL: vi.fn(() => 'blob:fake'), revokeObjectURL: vi.fn() });
   });
+
+  afterEach(() => vi.unstubAllGlobals());
 
   it('carga la lista de usuarios al iniciar', () => {
     expect(usuarioServiceFake.listarTodos).toHaveBeenCalled();
@@ -101,5 +108,47 @@ describe('UsuariosAdminComponent', () => {
 
     expect(usuarioServiceFake.cambiarActivo).toHaveBeenCalledWith(1, false);
     expect(component.usuarios().find(u => u.id === 1)?.activo).toBe(false);
+  });
+
+  it('revisarIdentidad abre el modal y carga las dos fotos del carnet', () => {
+    component.revisarIdentidad(listaInicial[0]);
+
+    expect(component.usuarioRevision()).toBe(listaInicial[0]);
+    expect(usuarioServiceFake.obtenerCarnet).toHaveBeenCalledWith(1, 'anverso');
+    expect(usuarioServiceFake.obtenerCarnet).toHaveBeenCalledWith(1, 'reverso');
+    expect(component.imgAnverso()).toBe('blob:fake');
+    expect(component.imgReverso()).toBe('blob:fake');
+  });
+
+  it('verificarIdentidad actualiza la lista y cierra el modal', () => {
+    const actualizado = usuarioFake({ id: 1, identidadVerificada: true });
+    usuarioServiceFake.verificarIdentidad.mockReturnValue(of(actualizado));
+    component.revisarIdentidad(listaInicial[0]);
+
+    component.verificarIdentidad(listaInicial[0]);
+
+    expect(usuarioServiceFake.verificarIdentidad).toHaveBeenCalledWith(1);
+    expect(component.usuarios().find(u => u.id === 1)?.identidadVerificada).toBe(true);
+    expect(component.usuarioRevision()).toBeNull();
+  });
+
+  it('rechazarIdentidad no hace nada si no se confirma', () => {
+    vi.spyOn(window, 'confirm').mockReturnValue(false);
+
+    component.rechazarIdentidad(listaInicial[0]);
+
+    expect(usuarioServiceFake.rechazarIdentidad).not.toHaveBeenCalled();
+  });
+
+  it('rechazarIdentidad elimina al usuario de la lista si se confirma', () => {
+    vi.spyOn(window, 'confirm').mockReturnValue(true);
+    usuarioServiceFake.rechazarIdentidad.mockReturnValue(of(undefined));
+    component.revisarIdentidad(listaInicial[0]);
+
+    component.rechazarIdentidad(listaInicial[0]);
+
+    expect(usuarioServiceFake.rechazarIdentidad).toHaveBeenCalledWith(1);
+    expect(component.usuarios().find(u => u.id === 1)).toBeUndefined();
+    expect(component.usuarioRevision()).toBeNull();
   });
 });

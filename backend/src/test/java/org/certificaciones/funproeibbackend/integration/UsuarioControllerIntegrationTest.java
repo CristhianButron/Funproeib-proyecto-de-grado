@@ -9,16 +9,21 @@ import org.certificaciones.funproeibbackend.service.EmailService;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.io.TempDir;
 import org.mockito.ArgumentCaptor;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.mock.web.MockMultipartFile;
 import org.springframework.test.context.ActiveProfiles;
+import org.springframework.test.context.DynamicPropertyRegistry;
+import org.springframework.test.context.DynamicPropertySource;
 import org.springframework.test.context.bean.override.mockito.MockitoSpyBean;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.setup.MockMvcBuilders;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.context.WebApplicationContext;
 
+import java.nio.file.Path;
 import java.util.Map;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -51,9 +56,25 @@ class UsuarioControllerIntegrationTest {
     @Autowired private UsuarioRepository usuarioRepository;
     @Autowired private CiudadRepository ciudadRepository;
 
+    @TempDir
+    static Path carpetaSubidas;
+
+    @DynamicPropertySource
+    static void propiedades(DynamicPropertyRegistry registry) {
+        registry.add("app.uploads.dir", () -> carpetaSubidas.toString());
+    }
+
     @BeforeEach
     void setUp() {
         mockMvc = MockMvcBuilders.webAppContextSetup(webApplicationContext).apply(springSecurity()).build();
+    }
+
+    private MockMultipartFile datosPart(Map<String, Object> datos) throws Exception {
+        return new MockMultipartFile("datos", "datos.json", "application/json", objectMapper.writeValueAsBytes(datos));
+    }
+
+    private MockMultipartFile carnetPart(String nombreCampo) {
+        return new MockMultipartFile(nombreCampo, nombreCampo + ".jpg", "image/jpeg", "img".getBytes());
     }
 
     // Spy (no mock) sobre el bean real: deja que el envío simulado siga
@@ -88,9 +109,10 @@ class UsuarioControllerIntegrationTest {
     void registro_creaUsuarioSinVerificar_loginFallaHastaVerificar() throws Exception {
         String correo = "integracion.registro@gmail.com";
 
-        mockMvc.perform(post("/api/usuarios/registro")
-                        .contentType("application/json")
-                        .content(objectMapper.writeValueAsString(registroValido(correo, "7001001"))))
+        mockMvc.perform(multipart("/api/usuarios/registro")
+                        .file(datosPart(registroValido(correo, "7001001")))
+                        .file(carnetPart("carnetAnverso"))
+                        .file(carnetPart("carnetReverso")))
                 .andExpect(status().isCreated())
                 .andExpect(jsonPath("$.correo", is(correo)))
                 .andExpect(jsonPath("$.rol", is("POSTULANTE")));
@@ -115,9 +137,10 @@ class UsuarioControllerIntegrationTest {
     void verificarCorreo_conTokenReal_permiteLoginDespues() throws Exception {
         String correo = "integracion.verificacion@gmail.com";
 
-        mockMvc.perform(post("/api/usuarios/registro")
-                        .contentType("application/json")
-                        .content(objectMapper.writeValueAsString(registroValido(correo, "7001002"))))
+        mockMvc.perform(multipart("/api/usuarios/registro")
+                        .file(datosPart(registroValido(correo, "7001002")))
+                        .file(carnetPart("carnetAnverso"))
+                        .file(carnetPart("carnetReverso")))
                 .andExpect(status().isCreated());
 
         String token = usuarioRepository.findByCorreo(correo).orElseThrow().getTokenVerificacion();
@@ -130,6 +153,15 @@ class UsuarioControllerIntegrationTest {
                 .andExpect(status().isNoContent());
 
         assertThat(usuarioRepository.findByCorreo(correo).orElseThrow().getEmailVerificado()).isTrue();
+
+        // El correo verificado no basta: el login sigue bloqueado hasta que un
+        // administrador verifique la identidad (ver UsuarioServiceImpl.login).
+        // Se simula esa verificación directo contra el repositorio porque lo
+        // que esta prueba cubre es el flujo de correo, no el de identidad
+        // (que tiene su propia cobertura en UsuarioServiceImplTest).
+        Usuario usuario = usuarioRepository.findByCorreo(correo).orElseThrow();
+        usuario.setIdentidadVerificada(true);
+        usuarioRepository.save(usuario);
 
         mockMvc.perform(post("/api/usuarios/login")
                         .contentType("application/json")
@@ -146,14 +178,16 @@ class UsuarioControllerIntegrationTest {
         String correo = "integracion.duplicado@gmail.com";
         Map<String, Object> request = registroValido(correo, "7001003");
 
-        mockMvc.perform(post("/api/usuarios/registro")
-                        .contentType("application/json")
-                        .content(objectMapper.writeValueAsString(request)))
+        mockMvc.perform(multipart("/api/usuarios/registro")
+                        .file(datosPart(request))
+                        .file(carnetPart("carnetAnverso"))
+                        .file(carnetPart("carnetReverso")))
                 .andExpect(status().isCreated());
 
-        mockMvc.perform(post("/api/usuarios/registro")
-                        .contentType("application/json")
-                        .content(objectMapper.writeValueAsString(request)))
+        mockMvc.perform(multipart("/api/usuarios/registro")
+                        .file(datosPart(request))
+                        .file(carnetPart("carnetAnverso"))
+                        .file(carnetPart("carnetReverso")))
                 .andExpect(status().isUnprocessableEntity())
                 .andExpect(jsonPath("$.mensaje", org.hamcrest.Matchers.containsString("correo")));
     }

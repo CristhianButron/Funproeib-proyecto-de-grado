@@ -23,10 +23,11 @@ export class AuthService {
     );
   }
 
-  registrar(request: UsuarioRegistroRequest): Observable<UsuarioResponse> {
+  registrar(request: UsuarioRegistroRequest, carnetAnverso: File, carnetReverso: File): Observable<UsuarioResponse> {
     // No inicia sesión: la cuenta queda sin verificar hasta que la persona
-    // confirme su correo, y el login la rechazará hasta entonces.
-    return this.usuarioService.registrar(request);
+    // confirme su correo Y un administrador verifique su identidad con el
+    // carnet, y el login la rechazará hasta entonces.
+    return this.usuarioService.registrar(request, carnetAnverso, carnetReverso);
   }
 
   cambiarPassword(request: CambiarPasswordRequest): Observable<void> {

@@ -25,6 +25,8 @@ public interface UsuarioRepository extends JpaRepository<Usuario, Long> {
 
     List<Usuario> findByRol(RolUsuario rol);
 
+    List<Usuario> findByRolIn(List<RolUsuario> roles);
+
     long countByRolAndActivoTrue(RolUsuario rol);
 
     List<Usuario> findByGenero(Genero genero);

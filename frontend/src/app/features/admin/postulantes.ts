@@ -19,13 +19,6 @@ import { UsuarioResponse } from '../../core/models/usuario.model';
       <p class="text-on-surface-variant">Revisa las postulaciones y verifica documentos.</p>
     </div>
 
-    @if (mensaje()) {
-      <div class="fixed top-5 left-1/2 -translate-x-1/2 z-[100] max-w-md w-[90vw] p-3 rounded-lg text-sm font-semibold shadow-xl flex items-center gap-2" [class]="mensajeError() ? 'bg-error-container text-on-error-container' : 'bg-secondary-light text-on-secondary-container'">
-        <span class="material-symbols-outlined text-[20px]">{{ mensajeError() ? 'error' : 'check_circle' }}</span>
-        {{ mensaje() }}
-      </div>
-    }
-
     <div class="bg-white rounded-xl shadow-card border border-outline-variant p-4 mb-6 flex items-center gap-3">
       <span class="material-symbols-outlined text-primary">filter_alt</span>
       <select [(ngModel)]="programaSel" (ngModelChange)="cargarPostulaciones($event)" class="campo max-w-md">
@@ -131,27 +124,6 @@ import { UsuarioResponse } from '../../core/models/usuario.model';
           </section>
 
           <section class="border-t border-outline-variant pt-4">
-            <h3 class="font-bold text-primary-dark flex items-center gap-2 mb-3"><span class="material-symbols-outlined">fingerprint</span> Verificación de identidad</h3>
-            @if (ps.identidadVerificada) {
-              <span class="px-3 py-1 rounded-full text-xs font-bold bg-secondary-light text-on-secondary-container flex items-center gap-1 w-fit">
-                <span class="material-symbols-outlined text-[16px]">verified</span> Identidad verificada
-              </span>
-            } @else {
-              <p class="text-xs text-on-surface-variant mb-3">
-                Compara el carnet de identidad (anverso/reverso) cargado por el postulante con sus datos antes de dejarlo avanzar a evaluación.
-              </p>
-              <div class="flex flex-wrap gap-2">
-                <button (click)="verificarIdentidad(ps)" class="px-3 py-1.5 rounded-lg text-xs font-bold bg-primary text-white hover:bg-primary-dark transition-colors flex items-center gap-1">
-                  <span class="material-symbols-outlined text-[16px]">check_circle</span> Verificar identidad
-                </button>
-                <button (click)="rechazarIdentidad(ps)" class="px-3 py-1.5 rounded-lg text-xs font-bold bg-error text-white hover:opacity-90 transition-colors flex items-center gap-1">
-                  <span class="material-symbols-outlined text-[16px]">block</span> Rechazar y eliminar cuenta
-                </button>
-              </div>
-            }
-          </section>
-
-          <section class="border-t border-outline-variant pt-4">
             <h3 class="font-bold text-primary-dark mb-3">Cambiar estado de la postulación</h3>
             <div class="flex flex-wrap gap-2">
               @for (e of estados; track e) {
@@ -188,9 +160,6 @@ export class PostulantesComponent implements OnInit {
   postulacionSel = signal<PostulacionResponse | null>(null);
   perfil = signal<UsuarioResponse | null>(null);
   documentos = signal<DocumentoResponse[]>([]);
-
-  mensaje = signal<string | null>(null);
-  mensajeError = signal(false);
 
   estados: EstadoPostulacion[] = ['INCOMPLETA', 'PENDIENTE', 'EVALUADA', 'ACEPTADA', 'RECHAZADA', 'BLOQUEADA'];
 
@@ -231,44 +200,9 @@ export class PostulantesComponent implements OnInit {
   }
 
   cambiarEstado(po: PostulacionResponse, estado: EstadoPostulacion): void {
-    this.postulacionService.cambiarEstado(po.id, estado).subscribe({
-      next: (actualizado) => {
-        po.estado = actualizado.estado;
-        this.postulaciones.update(list => [...list]);
-      },
-      error: (err) => this.notificar(err.error?.mensaje || 'Error al cambiar el estado', true),
-    });
-  }
-
-  verificarIdentidad(po: PostulacionResponse): void {
-    this.postulacionService.verificarIdentidad(po.id).subscribe({
-      next: (actualizado) => {
-        po.identidadVerificada = actualizado.identidadVerificada;
-        this.postulacionSel.set({ ...po });
-        this.notificar('Identidad verificada.', false);
-      },
-      error: (err) => this.notificar(err.error?.mensaje || 'Error al verificar la identidad', true),
-    });
-  }
-
-  // Elimina la cuenta completa del postulante (ver PostulacionServiceImpl en el
-  // backend): por eso hay que confirmar fuerte y luego quitar la postulación
-  // de la lista, porque el registro deja de existir.
-  rechazarIdentidad(po: PostulacionResponse): void {
-    const confirmado = window.confirm(
-      `¿Rechazar la identidad de ${po.nombrePostulante}?\n\n` +
-      'Esta acción ELIMINA PERMANENTEMENTE su cuenta y todas sus postulaciones, ' +
-      'y le envía un correo informando que se detectó un posible intento de falsificación de identidad. No se puede deshacer.'
-    );
-    if (!confirmado) { return; }
-
-    this.postulacionService.rechazarIdentidad(po.id).subscribe({
-      next: () => {
-        this.postulaciones.update(list => list.filter(p => p.id !== po.id));
-        this.cerrar();
-        this.notificar('Cuenta eliminada y correo enviado al postulante.', false);
-      },
-      error: (err) => this.notificar(err.error?.mensaje || 'Error al rechazar la identidad', true),
+    this.postulacionService.cambiarEstado(po.id, estado).subscribe(actualizado => {
+      po.estado = actualizado.estado;
+      this.postulaciones.update(list => [...list]);
     });
   }
 
@@ -284,10 +218,5 @@ export class PostulantesComponent implements OnInit {
       BLOQUEADA: 'bg-error-container text-on-error-container',
     };
     return map[estado] ?? 'bg-surface-high text-on-surface-variant';
-  }
-
-  private notificar(msg: string, error: boolean): void {
-    this.mensaje.set(msg); this.mensajeError.set(error);
-    setTimeout(() => this.mensaje.set(null), 5000);
   }
 }

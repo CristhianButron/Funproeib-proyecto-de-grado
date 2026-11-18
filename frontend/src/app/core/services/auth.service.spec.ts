@@ -41,7 +41,8 @@ describe('AuthService (sesión y roles)', () => {
   });
 
   it('registro no inicia sesión (la cuenta queda pendiente de verificar)', () => {
-    auth.registrar({} as any).subscribe();
+    const archivo = new File(['x'], 'carnet.jpg', { type: 'image/jpeg' });
+    auth.registrar({} as any, archivo, archivo).subscribe();
     expect(auth.estaAutenticado()).toBe(false);
     expect(auth.esPostulante()).toBe(false);
     expect(auth.esAdmin()).toBe(false);

@@ -16,6 +16,13 @@ export class ApiService {
     return this.http.get<T>(`${this.base}${path}`);
   }
 
+  // Para archivos protegidos por JWT: un <a>/<img> normal del navegador no
+  // manda el header Authorization, así que hay que pedirlo por HttpClient
+  // (que el interceptor sí intercepta) y armar un object URL con el blob.
+  getBlob(path: string): Observable<Blob> {
+    return this.http.get(`${this.base}${path}`, { responseType: 'blob' });
+  }
+
   post<T>(path: string, body: unknown): Observable<T> {
     return this.http.post<T>(`${this.base}${path}`, body);
   }

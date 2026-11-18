@@ -21,6 +21,10 @@ describe('RegistroComponent (lógica de formulario)', () => {
     listarCiudades: vi.fn(() => of([])),
   };
 
+  function archivoFake(nombre: string): File {
+    return new File(['x'], nombre, { type: 'image/jpeg' });
+  }
+
   function llenarFormularioValido() {
     component.form.patchValue({
       nombre: 'Ana',
@@ -34,6 +38,8 @@ describe('RegistroComponent (lógica de formulario)', () => {
     });
     component.idCiudadSeleccionada.set(10);
     component.idCiudadNacimientoSeleccionada.set(20);
+    component.carnetAnverso.set(archivoFake('anverso.jpg'));
+    component.carnetReverso.set(archivoFake('reverso.jpg'));
   }
 
   beforeEach(() => {
@@ -97,6 +103,15 @@ describe('RegistroComponent (lógica de formulario)', () => {
     expect(component.form.get('ci')?.value).toBe('123');
   });
 
+  it('onArchivoSeleccionado guarda el archivo elegido en el lado correspondiente', () => {
+    const anverso = archivoFake('anverso.png');
+    const reverso = archivoFake('reverso.png');
+    component.onArchivoSeleccionado({ target: { files: [anverso] } } as unknown as Event, 'anverso');
+    component.onArchivoSeleccionado({ target: { files: [reverso] } } as unknown as Event, 'reverso');
+    expect(component.carnetAnverso()).toBe(anverso);
+    expect(component.carnetReverso()).toBe(reverso);
+  });
+
   it('registrar no hace nada si el formulario es inválido', () => {
     component.registrar();
     expect(authFake.registrar).not.toHaveBeenCalled();
@@ -110,18 +125,28 @@ describe('RegistroComponent (lógica de formulario)', () => {
     expect(component.error()).toContain('carrera');
   });
 
+  it('registrar exige las dos fotos del carnet de identidad', () => {
+    llenarFormularioValido();
+    component.carnetAnverso.set(null);
+    component.registrar();
+    expect(authFake.registrar).not.toHaveBeenCalled();
+    expect(component.error()).toContain('carnet');
+  });
+
   it('mapea la etnia "NINGUNA" a autoidentificacionEtnica undefined', () => {
     llenarFormularioValido();
     component.etniaSeleccion.setValue('NINGUNA');
     component.registrar();
-    expect(authFake.registrar).toHaveBeenCalledWith(expect.objectContaining({ autoidentificacionEtnica: undefined }));
+    expect(authFake.registrar).toHaveBeenCalledWith(
+      expect.objectContaining({ autoidentificacionEtnica: undefined }), expect.any(File), expect.any(File));
   });
 
   it('mapea una etnia concreta directamente', () => {
     llenarFormularioValido();
     component.etniaSeleccion.setValue('Quechua');
     component.registrar();
-    expect(authFake.registrar).toHaveBeenCalledWith(expect.objectContaining({ autoidentificacionEtnica: 'Quechua' }));
+    expect(authFake.registrar).toHaveBeenCalledWith(
+      expect.objectContaining({ autoidentificacionEtnica: 'Quechua' }), expect.any(File), expect.any(File));
   });
 
   it('mapea "OTRA" al texto libre recortado', () => {
@@ -129,7 +154,8 @@ describe('RegistroComponent (lógica de formulario)', () => {
     component.etniaSeleccion.setValue('OTRA');
     component.etniaOtroTexto.setValue('  Yampara  ');
     component.registrar();
-    expect(authFake.registrar).toHaveBeenCalledWith(expect.objectContaining({ autoidentificacionEtnica: 'Yampara' }));
+    expect(authFake.registrar).toHaveBeenCalledWith(
+      expect.objectContaining({ autoidentificacionEtnica: 'Yampara' }), expect.any(File), expect.any(File));
   });
 
   it('"OTRA" con texto vacío manda autoidentificacionEtnica undefined', () => {
@@ -137,7 +163,8 @@ describe('RegistroComponent (lógica de formulario)', () => {
     component.etniaSeleccion.setValue('OTRA');
     component.etniaOtroTexto.setValue('   ');
     component.registrar();
-    expect(authFake.registrar).toHaveBeenCalledWith(expect.objectContaining({ autoidentificacionEtnica: undefined }));
+    expect(authFake.registrar).toHaveBeenCalledWith(
+      expect.objectContaining({ autoidentificacionEtnica: undefined }), expect.any(File), expect.any(File));
   });
 
   it('registrar exitoso marca registroExitoso y guarda el correo', () => {

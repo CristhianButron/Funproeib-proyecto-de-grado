@@ -30,14 +30,4 @@ export class PostulacionService {
   registrarAprovechamiento(id: number, estado: EstadoAprovechamiento): Observable<PostulacionResponse> {
     return this.api.patch<PostulacionResponse>(`/postulaciones/${id}/aprovechamiento`, { estado });
   }
-
-  verificarIdentidad(id: number): Observable<PostulacionResponse> {
-    return this.api.patch<PostulacionResponse>(`/postulaciones/${id}/identidad/verificar`);
-  }
-
-  // Elimina la cuenta completa del postulante (ver PostulacionServiceImpl en el
-  // backend): la postulación deja de existir, no queda en ningún estado "rechazada".
-  rechazarIdentidad(id: number): Observable<void> {
-    return this.api.patch<void>(`/postulaciones/${id}/identidad/rechazar`);
-  }
 }

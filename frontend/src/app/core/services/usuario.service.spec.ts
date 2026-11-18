@@ -18,12 +18,18 @@ describe('UsuarioService (llamadas HTTP)', () => {
 
   afterEach(() => httpMock.verify());
 
-  it('registrar hace POST a /usuarios/registro con el body dado', () => {
+  it('registrar hace POST a /usuarios/registro con un FormData que incluye los datos y las dos fotos del carnet', () => {
     const body = { correo: 'a@b.com' } as any;
-    service.registrar(body).subscribe();
+    const anverso = new File(['a'], 'anverso.jpg', { type: 'image/jpeg' });
+    const reverso = new File(['r'], 'reverso.jpg', { type: 'image/jpeg' });
+    service.registrar(body, anverso, reverso).subscribe();
     const req = httpMock.expectOne(`${base}/usuarios/registro`);
     expect(req.request.method).toBe('POST');
-    expect(req.request.body).toBe(body);
+    expect(req.request.body).toBeInstanceOf(FormData);
+    const formData = req.request.body as FormData;
+    expect(formData.get('carnetAnverso')).toBe(anverso);
+    expect(formData.get('carnetReverso')).toBe(reverso);
+    expect(formData.get('datos')).toBeInstanceOf(Blob);
     req.flush({});
   });
 
@@ -84,5 +90,27 @@ describe('UsuarioService (llamadas HTTP)', () => {
     const req = httpMock.expectOne(`${base}/usuarios/7/activo?activo=false`);
     expect(req.request.method).toBe('PATCH');
     req.flush({});
+  });
+
+  it('verificarIdentidad hace PATCH a /usuarios/{id}/identidad/verificar', () => {
+    service.verificarIdentidad(7).subscribe();
+    const req = httpMock.expectOne(`${base}/usuarios/7/identidad/verificar`);
+    expect(req.request.method).toBe('PATCH');
+    req.flush({});
+  });
+
+  it('rechazarIdentidad hace PATCH a /usuarios/{id}/identidad/rechazar', () => {
+    service.rechazarIdentidad(7).subscribe();
+    const req = httpMock.expectOne(`${base}/usuarios/7/identidad/rechazar`);
+    expect(req.request.method).toBe('PATCH');
+    req.flush(null);
+  });
+
+  it('obtenerCarnet hace GET a /usuarios/{id}/carnet/{lado} pidiendo un blob', () => {
+    service.obtenerCarnet(7, 'anverso').subscribe();
+    const req = httpMock.expectOne(`${base}/usuarios/7/carnet/anverso`);
+    expect(req.request.method).toBe('GET');
+    expect(req.request.responseType).toBe('blob');
+    req.flush(new Blob());
   });
 });

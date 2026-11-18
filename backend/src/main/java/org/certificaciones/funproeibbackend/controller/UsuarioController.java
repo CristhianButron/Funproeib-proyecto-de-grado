@@ -1,5 +1,6 @@
 package org.certificaciones.funproeibbackend.controller;
 
+import org.certificaciones.funproeibbackend.dto.ArchivoDescargable;
 import org.certificaciones.funproeibbackend.dto.CambiarPasswordRequest;
 import org.certificaciones.funproeibbackend.dto.LoginRequest;
 import org.certificaciones.funproeibbackend.dto.OlvidePasswordRequest;
@@ -12,10 +13,14 @@ import org.certificaciones.funproeibbackend.model.enums.RolUsuario;
 import org.certificaciones.funproeibbackend.service.UsuarioService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
+import org.springframework.core.io.Resource;
+import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
+import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.multipart.MultipartFile;
 
 import java.util.List;
 
@@ -26,9 +31,12 @@ public class UsuarioController {
 
     private final UsuarioService usuarioService;
 
-    @PostMapping("/registro")
-    public ResponseEntity<UsuarioResponse> registrar(@Valid @RequestBody UsuarioRegistroRequest request) {
-        return ResponseEntity.status(HttpStatus.CREATED).body(usuarioService.registrar(request));
+    @PostMapping(value = "/registro", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
+    public ResponseEntity<UsuarioResponse> registrar(
+            @Valid @RequestPart("datos") UsuarioRegistroRequest request,
+            @RequestPart("carnetAnverso") MultipartFile carnetAnverso,
+            @RequestPart("carnetReverso") MultipartFile carnetReverso) {
+        return ResponseEntity.status(HttpStatus.CREATED).body(usuarioService.registrar(request, carnetAnverso, carnetReverso));
     }
 
     @PostMapping("/login")
@@ -98,5 +106,35 @@ public class UsuarioController {
     @PatchMapping("/{id}/activo")
     public ResponseEntity<UsuarioResponse> cambiarActivo(@PathVariable Long id, @RequestParam boolean activo) {
         return ResponseEntity.ok(usuarioService.cambiarActivo(id, activo));
+    }
+
+    @GetMapping("/{id}/carnet/anverso")
+    public ResponseEntity<Resource> carnetAnverso(@PathVariable Long id) {
+        return servirCarnet(usuarioService.obtenerCarnet(id, true));
+    }
+
+    @GetMapping("/{id}/carnet/reverso")
+    public ResponseEntity<Resource> carnetReverso(@PathVariable Long id) {
+        return servirCarnet(usuarioService.obtenerCarnet(id, false));
+    }
+
+    private ResponseEntity<Resource> servirCarnet(ArchivoDescargable archivo) {
+        return ResponseEntity.ok()
+                .contentType(MediaType.parseMediaType(archivo.getContentType()))
+                .header(HttpHeaders.CONTENT_DISPOSITION, "inline; filename=\"" + archivo.getNombreArchivo() + "\"")
+                .body(archivo.getRecurso());
+    }
+
+    @PatchMapping("/{id}/identidad/verificar")
+    public ResponseEntity<UsuarioResponse> verificarIdentidad(@PathVariable Long id) {
+        return ResponseEntity.ok(usuarioService.verificarIdentidad(id));
+    }
+
+    // Elimina la cuenta completa del postulante (ver UsuarioServiceImpl): no
+    // hay nada que devolver, ya no existe.
+    @PatchMapping("/{id}/identidad/rechazar")
+    public ResponseEntity<Void> rechazarIdentidad(@PathVariable Long id) {
+        usuarioService.rechazarIdentidad(id);
+        return ResponseEntity.noContent().build();
     }
 }

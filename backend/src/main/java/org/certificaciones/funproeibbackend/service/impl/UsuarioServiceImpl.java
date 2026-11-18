@@ -1,5 +1,6 @@
 package org.certificaciones.funproeibbackend.service.impl;
 
+import org.certificaciones.funproeibbackend.dto.ArchivoDescargable;
 import org.certificaciones.funproeibbackend.dto.CambiarPasswordRequest;
 import org.certificaciones.funproeibbackend.dto.LoginRequest;
 import org.certificaciones.funproeibbackend.dto.RestablecerPasswordRequest;
@@ -9,25 +10,41 @@ import org.certificaciones.funproeibbackend.dto.UsuarioResponse;
 import org.certificaciones.funproeibbackend.exception.BusinessException;
 import org.certificaciones.funproeibbackend.exception.ResourceNotFoundException;
 import org.certificaciones.funproeibbackend.model.Ciudad;
+import org.certificaciones.funproeibbackend.model.Postulacion;
 import org.certificaciones.funproeibbackend.model.Usuario;
 import org.certificaciones.funproeibbackend.model.enums.NivelEducativo;
 import org.certificaciones.funproeibbackend.model.enums.RolUsuario;
 import org.certificaciones.funproeibbackend.repository.CiudadRepository;
+import org.certificaciones.funproeibbackend.repository.DocumentoRepository;
+import org.certificaciones.funproeibbackend.repository.EvaluacionRepository;
+import org.certificaciones.funproeibbackend.repository.PostulacionRepository;
+import org.certificaciones.funproeibbackend.repository.RespuestaPostulacionRepository;
 import org.certificaciones.funproeibbackend.repository.UsuarioRepository;
 import org.certificaciones.funproeibbackend.security.JwtService;
 import org.certificaciones.funproeibbackend.service.EmailService;
 import org.certificaciones.funproeibbackend.service.UsuarioService;
 import org.certificaciones.funproeibbackend.util.CorreoDesechableValidator;
 import lombok.RequiredArgsConstructor;
+import org.springframework.beans.factory.annotation.Value;
+import org.springframework.core.io.Resource;
+import org.springframework.core.io.UrlResource;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.util.StringUtils;
+import org.springframework.web.multipart.MultipartFile;
 
+import java.io.IOException;
+import java.io.UncheckedIOException;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.security.SecureRandom;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.Period;
 import java.util.List;
+import java.util.Map;
 import java.util.UUID;
 
 @Service
@@ -38,17 +55,33 @@ public class UsuarioServiceImpl implements UsuarioService {
     private static final int LONGITUD_PASSWORD_TEMPORAL = 10;
     private static final int HORAS_VALIDEZ_TOKEN_VERIFICACION = 24;
     private static final int HORAS_VALIDEZ_TOKEN_RECUPERACION = 1;
+    private static final Map<String, String> EXTENSIONES_IMAGEN = Map.of(
+            "png", "image/png",
+            "jpg", "image/jpeg",
+            "jpeg", "image/jpeg"
+    );
+    private static final long TAMANO_MAXIMO_CARNET_BYTES = 10L * 1024 * 1024;
 
     private final UsuarioRepository usuarioRepository;
     private final CiudadRepository ciudadRepository;
     private final PasswordEncoder passwordEncoder;
     private final EmailService emailService;
     private final JwtService jwtService;
+    private final PostulacionRepository postulacionRepository;
+    private final DocumentoRepository documentoRepository;
+    private final RespuestaPostulacionRepository respuestaPostulacionRepository;
+    private final EvaluacionRepository evaluacionRepository;
     private final SecureRandom secureRandom = new SecureRandom();
+
+    @Value("${app.uploads.dir:uploads}")
+    private String uploadsDir;
 
     @Override
     @Transactional
-    public UsuarioResponse registrar(UsuarioRegistroRequest request) {
+    public UsuarioResponse registrar(UsuarioRegistroRequest request, MultipartFile carnetAnverso, MultipartFile carnetReverso) {
+        validarImagenCarnet(carnetAnverso, "anverso");
+        validarImagenCarnet(carnetReverso, "reverso");
+
         if (usuarioRepository.existsByCorreo(request.getCorreo())) {
             throw new BusinessException("Ya existe un usuario registrado con ese correo");
         }
@@ -100,9 +133,55 @@ public class UsuarioServiceImpl implements UsuarioService {
                 .build();
 
         Usuario guardado = usuarioRepository.save(usuario);
+
+        guardado.setRutaCarnetAnverso(guardarImagenCarnet(guardado.getId(), "anverso", carnetAnverso));
+        guardado.setRutaCarnetReverso(guardarImagenCarnet(guardado.getId(), "reverso", carnetReverso));
+        guardado = usuarioRepository.save(guardado);
+
         emailService.enviarVerificacionCuenta(guardado.getCorreo(), guardado.getNombre(), guardado.getTokenVerificacion(), contrasenaTemporal);
 
         return mapToResponse(guardado);
+    }
+
+    private void validarImagenCarnet(MultipartFile archivo, String lado) {
+        if (archivo == null || archivo.isEmpty()) {
+            throw new BusinessException("Debes subir la foto del " + lado + " de tu carnet de identidad");
+        }
+        if (archivo.getSize() > TAMANO_MAXIMO_CARNET_BYTES) {
+            throw new BusinessException("La foto del " + lado + " del carnet supera el tamaño máximo permitido (10MB)");
+        }
+        String nombreOriginal = StringUtils.cleanPath(
+                archivo.getOriginalFilename() == null ? "" : archivo.getOriginalFilename());
+        String extension = obtenerExtension(nombreOriginal);
+        if (!EXTENSIONES_IMAGEN.containsKey(extension)) {
+            throw new BusinessException("La foto del " + lado + " del carnet debe ser una imagen JPG o PNG");
+        }
+    }
+
+    private String guardarImagenCarnet(Long idUsuario, String lado, MultipartFile archivo) {
+        try {
+            Path carpetaUsuario = Paths.get(uploadsDir, "usuario-" + idUsuario).toAbsolutePath().normalize();
+            Files.createDirectories(carpetaUsuario);
+
+            String extension = obtenerExtension(StringUtils.cleanPath(archivo.getOriginalFilename()));
+            String nombreGuardado = "carnet-" + lado + "." + extension;
+            Path destino = carpetaUsuario.resolve(nombreGuardado).normalize();
+            if (!destino.startsWith(carpetaUsuario)) {
+                throw new BusinessException("Nombre de archivo inválido");
+            }
+            archivo.transferTo(destino);
+
+            return "usuario-" + idUsuario + "/" + nombreGuardado;
+        } catch (IOException e) {
+            throw new UncheckedIOException("No se pudo guardar la foto del carnet", e);
+        }
+    }
+
+    private String obtenerExtension(String nombreArchivo) {
+        int punto = nombreArchivo.lastIndexOf('.');
+        return punto >= 0 && punto < nombreArchivo.length() - 1
+                ? nombreArchivo.substring(punto + 1).toLowerCase()
+                : "";
     }
 
     @Override
@@ -117,6 +196,10 @@ public class UsuarioServiceImpl implements UsuarioService {
 
         if (!Boolean.TRUE.equals(usuario.getEmailVerificado())) {
             throw new BusinessException("Debes verificar tu correo electrónico antes de iniciar sesión. Revisa tu bandeja de entrada.");
+        }
+
+        if (!Boolean.TRUE.equals(usuario.getIdentidadVerificada())) {
+            throw new BusinessException("Tu cuenta está en revisión: un administrador debe verificar la foto de tu carnet de identidad antes de que puedas iniciar sesión.");
         }
 
         if (Boolean.FALSE.equals(usuario.getActivo())) {
@@ -291,6 +374,71 @@ public class UsuarioServiceImpl implements UsuarioService {
         return mapToResponse(usuario);
     }
 
+    @Override
+    @Transactional(readOnly = true)
+    public ArchivoDescargable obtenerCarnet(Long id, boolean anverso) {
+        Usuario usuario = buscarUsuario(id);
+        String ruta = anverso ? usuario.getRutaCarnetAnverso() : usuario.getRutaCarnetReverso();
+        if (ruta == null) {
+            throw new ResourceNotFoundException("Este usuario no tiene foto de carnet (" + (anverso ? "anverso" : "reverso") + ") cargada");
+        }
+
+        try {
+            Path raiz = Paths.get(uploadsDir).toAbsolutePath().normalize();
+            Path destino = raiz.resolve(ruta).normalize();
+            if (!destino.startsWith(raiz) || !Files.exists(destino)) {
+                throw new ResourceNotFoundException("La foto del carnet ya no está disponible en el servidor");
+            }
+
+            String contentType = Files.probeContentType(destino);
+            Resource recurso = new UrlResource(destino.toUri());
+
+            return ArchivoDescargable.builder()
+                    .recurso(recurso)
+                    .contentType(contentType != null ? contentType : "application/octet-stream")
+                    .nombreArchivo(destino.getFileName().toString())
+                    .build();
+        } catch (IOException e) {
+            throw new UncheckedIOException("No se pudo leer la foto del carnet", e);
+        }
+    }
+
+    @Override
+    @Transactional
+    public UsuarioResponse verificarIdentidad(Long id) {
+        Usuario usuario = buscarUsuario(id);
+        if (usuario.getRutaCarnetAnverso() == null || usuario.getRutaCarnetReverso() == null) {
+            throw new BusinessException("No se puede verificar la identidad: faltan las fotos del carnet");
+        }
+        usuario.setIdentidadVerificada(true);
+        return mapToResponse(usuarioRepository.save(usuario));
+    }
+
+    // Rechazar la identidad no deja un estado "rechazada" guardado: se
+    // considera un intento de falsificación de identidad, así que se da de
+    // baja la cuenta completa (y todas sus postulaciones, documentos,
+    // respuestas y evaluaciones) y se le avisa por correo. Es una acción
+    // irreversible a propósito -no hay vuelta atrás una vez confirmada desde
+    // el panel de administración.
+    @Override
+    @Transactional
+    public void rechazarIdentidad(Long id) {
+        Usuario usuario = buscarUsuario(id);
+        String correo = usuario.getCorreo();
+        String nombre = usuario.getNombre();
+
+        List<Postulacion> postulaciones = postulacionRepository.findByUsuarioId(id);
+        for (Postulacion p : postulaciones) {
+            evaluacionRepository.findByPostulacionId(p.getId()).ifPresent(evaluacionRepository::delete);
+            respuestaPostulacionRepository.deleteAll(respuestaPostulacionRepository.findByPostulacionId(p.getId()));
+            documentoRepository.deleteAll(documentoRepository.findByPostulacionId(p.getId()));
+        }
+        postulacionRepository.deleteAll(postulaciones);
+        usuarioRepository.delete(usuario);
+
+        emailService.enviarRechazoIdentidad(correo, nombre);
+    }
+
     /**
      * Evita que se degrade o desactive al último administrador activo del
      * sistema, lo que dejaría el panel de administración inaccesible para
@@ -335,6 +483,7 @@ public class UsuarioServiceImpl implements UsuarioService {
                 .fechaRegistro(usuario.getFechaRegistro())
                 .activo(usuario.getActivo())
                 .emailVerificado(usuario.getEmailVerificado())
+                .identidadVerificada(usuario.getIdentidadVerificada())
                 .debeCambiarPassword(usuario.getDebeCambiarPassword())
                 .genero(usuario.getGenero())
                 .fechaNacimiento(usuario.getFechaNacimiento())

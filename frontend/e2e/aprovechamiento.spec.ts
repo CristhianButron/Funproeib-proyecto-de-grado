@@ -10,13 +10,20 @@ const API = 'http://localhost:8080/api';
  * verificación (ver e2e/README.md).
  */
 async function crearPostulante(request: APIRequestContext, idCiudad: number, sufijoNumerico: string, etiqueta: string) {
+  const datos = {
+    nombre: 'Beneficiario', apellidoPaterno: 'E2E',
+    correo: `e2e.aprovechamiento.${etiqueta}@gmail.com`,
+    ci: `80${sufijoNumerico}`,
+    genero: 'FEMENINO', fechaNacimiento: '1995-05-05', nivelEducativo: 'LICENCIATURA',
+    idCiudad, idCiudadNacimiento: idCiudad, estadoCivil: 'SOLTERO', carreras: ['Pedagogía'],
+  };
+  // El registro ahora exige las dos fotos del carnet (multipart/form-data);
+  // el contenido no importa para esta prueba, solo que sean imágenes válidas.
   const res = await request.post(`${API}/usuarios/registro`, {
-    data: {
-      nombre: 'Beneficiario', apellidoPaterno: 'E2E',
-      correo: `e2e.aprovechamiento.${etiqueta}@gmail.com`,
-      ci: `80${sufijoNumerico}`,
-      genero: 'FEMENINO', fechaNacimiento: '1995-05-05', nivelEducativo: 'LICENCIATURA',
-      idCiudad, idCiudadNacimiento: idCiudad, estadoCivil: 'SOLTERO', carreras: ['Pedagogía'],
+    multipart: {
+      datos: { name: 'datos.json', mimeType: 'application/json', buffer: Buffer.from(JSON.stringify(datos)) },
+      carnetAnverso: { name: 'anverso.jpg', mimeType: 'image/jpeg', buffer: Buffer.from('e2e-fake-anverso') },
+      carnetReverso: { name: 'reverso.jpg', mimeType: 'image/jpeg', buffer: Buffer.from('e2e-fake-reverso') },
     },
   });
   if (!res.ok()) throw new Error(`registro falló (${res.status()}): ${await res.text()}`);

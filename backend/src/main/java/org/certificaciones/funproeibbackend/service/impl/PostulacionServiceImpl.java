@@ -6,21 +6,15 @@ import org.certificaciones.funproeibbackend.exception.BusinessException;
 import org.certificaciones.funproeibbackend.exception.ResourceNotFoundException;
 import org.certificaciones.funproeibbackend.model.Postulacion;
 import org.certificaciones.funproeibbackend.model.Programa;
-import org.certificaciones.funproeibbackend.model.ReqDocumento;
 import org.certificaciones.funproeibbackend.model.Usuario;
 import org.certificaciones.funproeibbackend.model.enums.EstadoAprovechamiento;
 import org.certificaciones.funproeibbackend.model.enums.EstadoPostulacion;
 import org.certificaciones.funproeibbackend.model.enums.EstadoPrograma;
 import org.certificaciones.funproeibbackend.model.enums.TipoPrograma;
-import org.certificaciones.funproeibbackend.repository.DocumentoRepository;
-import org.certificaciones.funproeibbackend.repository.EvaluacionRepository;
 import org.certificaciones.funproeibbackend.repository.ListaNegraRepository;
 import org.certificaciones.funproeibbackend.repository.PostulacionRepository;
 import org.certificaciones.funproeibbackend.repository.ProgramaRepository;
-import org.certificaciones.funproeibbackend.repository.ReqDocumentoRepository;
-import org.certificaciones.funproeibbackend.repository.RespuestaPostulacionRepository;
 import org.certificaciones.funproeibbackend.repository.UsuarioRepository;
-import org.certificaciones.funproeibbackend.service.EmailService;
 import org.certificaciones.funproeibbackend.service.PostulacionService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Value;
@@ -38,11 +32,6 @@ public class PostulacionServiceImpl implements PostulacionService {
     private final UsuarioRepository usuarioRepository;
     private final ProgramaRepository programaRepository;
     private final ListaNegraRepository listaNegraRepository;
-    private final ReqDocumentoRepository reqDocumentoRepository;
-    private final DocumentoRepository documentoRepository;
-    private final RespuestaPostulacionRepository respuestaPostulacionRepository;
-    private final EvaluacionRepository evaluacionRepository;
-    private final EmailService emailService;
 
     @Value("${app.contacto.telefono}")
     private String telefonoContacto;
@@ -125,9 +114,6 @@ public class PostulacionServiceImpl implements PostulacionService {
     @Transactional
     public PostulacionResponse cambiarEstado(Long id, EstadoPostulacion nuevoEstado) {
         Postulacion postulacion = buscarPostulacion(id);
-        if (nuevoEstado == EstadoPostulacion.EVALUADA && !Boolean.TRUE.equals(postulacion.getIdentidadVerificada())) {
-            throw new BusinessException("No se puede pasar a evaluación sin verificar la identidad del postulante");
-        }
         postulacion.setEstado(nuevoEstado);
         return mapToResponse(postulacionRepository.save(postulacion));
     }
@@ -152,51 +138,6 @@ public class PostulacionServiceImpl implements PostulacionService {
 
         postulacion.setEstadoAprovechamiento(estadoAprovechamiento.name());
         return mapToResponse(postulacionRepository.save(postulacion));
-    }
-
-    @Override
-    @Transactional
-    public PostulacionResponse verificarIdentidad(Long id) {
-        Postulacion postulacion = buscarPostulacion(id);
-
-        List<ReqDocumento> requisitosIdentidad = reqDocumentoRepository.findByProgramaId(postulacion.getPrograma().getId())
-                .stream().filter(r -> Boolean.TRUE.equals(r.getSoloImagen())).toList();
-        List<Long> idsCargados = documentoRepository.findByPostulacionId(id).stream()
-                .map(d -> d.getReqDocumento().getId())
-                .toList();
-        boolean faltaAlguno = requisitosIdentidad.stream().anyMatch(r -> !idsCargados.contains(r.getId()));
-        if (faltaAlguno) {
-            throw new BusinessException("No se puede verificar la identidad: faltan cargar el anverso y/o el reverso del carnet");
-        }
-
-        postulacion.setIdentidadVerificada(true);
-        return mapToResponse(postulacionRepository.save(postulacion));
-    }
-
-    // Rechazar la identidad no deja un estado "rechazado" guardado: se
-    // considera un intento de falsificación de identidad, así que se da de
-    // baja la cuenta completa (todas sus postulaciones, documentos,
-    // respuestas y evaluaciones) y se le avisa por correo. Es una acción
-    // irreversible a propósito -no hay vuelta atrás una vez confirmada desde
-    // el panel de administración.
-    @Override
-    @Transactional
-    public void rechazarIdentidad(Long id) {
-        Postulacion postulacion = buscarPostulacion(id);
-        Usuario usuario = postulacion.getUsuario();
-        String correo = usuario.getCorreo();
-        String nombre = usuario.getNombre();
-
-        List<Postulacion> postulaciones = postulacionRepository.findByUsuarioId(usuario.getId());
-        for (Postulacion p : postulaciones) {
-            evaluacionRepository.findByPostulacionId(p.getId()).ifPresent(evaluacionRepository::delete);
-            respuestaPostulacionRepository.deleteAll(respuestaPostulacionRepository.findByPostulacionId(p.getId()));
-            documentoRepository.deleteAll(documentoRepository.findByPostulacionId(p.getId()));
-        }
-        postulacionRepository.deleteAll(postulaciones);
-        usuarioRepository.delete(usuario);
-
-        emailService.enviarRechazoIdentidad(correo, nombre);
     }
 
     private void validarSinDiplomadoPrevio(Usuario usuario) {
@@ -244,7 +185,6 @@ public class PostulacionServiceImpl implements PostulacionService {
                 .fechaPostulacion(p.getFechaPostulacion())
                 .estado(p.getEstado())
                 .estadoAprovechamiento(EstadoAprovechamiento.valueOf(p.getEstadoAprovechamiento()))
-                .identidadVerificada(p.getIdentidadVerificada())
                 .build();
     }
 }

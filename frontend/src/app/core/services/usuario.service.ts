@@ -7,8 +7,12 @@ import { CambiarPasswordRequest, LoginRequest, OlvidePasswordRequest, ReenviarVe
 export class UsuarioService {
   constructor(private api: ApiService) {}
 
-  registrar(request: UsuarioRegistroRequest): Observable<UsuarioResponse> {
-    return this.api.post<UsuarioResponse>('/usuarios/registro', request);
+  registrar(request: UsuarioRegistroRequest, carnetAnverso: File, carnetReverso: File): Observable<UsuarioResponse> {
+    const formData = new FormData();
+    formData.append('datos', new Blob([JSON.stringify(request)], { type: 'application/json' }));
+    formData.append('carnetAnverso', carnetAnverso);
+    formData.append('carnetReverso', carnetReverso);
+    return this.api.post<UsuarioResponse>('/usuarios/registro', formData);
   }
 
   login(request: LoginRequest): Observable<UsuarioResponse> {
@@ -53,5 +57,19 @@ export class UsuarioService {
 
   cambiarActivo(id: number, activo: boolean): Observable<UsuarioResponse> {
     return this.api.patch<UsuarioResponse>(`/usuarios/${id}/activo`, { activo: String(activo) });
+  }
+
+  verificarIdentidad(id: number): Observable<UsuarioResponse> {
+    return this.api.patch<UsuarioResponse>(`/usuarios/${id}/identidad/verificar`);
+  }
+
+  // Elimina la cuenta completa del postulante (ver UsuarioServiceImpl en el
+  // backend): la cuenta deja de existir, no queda en ningún estado "rechazada".
+  rechazarIdentidad(id: number): Observable<void> {
+    return this.api.patch<void>(`/usuarios/${id}/identidad/rechazar`);
+  }
+
+  obtenerCarnet(id: number, lado: 'anverso' | 'reverso'): Observable<Blob> {
+    return this.api.getBlob(`/usuarios/${id}/carnet/${lado}`);
   }
 }

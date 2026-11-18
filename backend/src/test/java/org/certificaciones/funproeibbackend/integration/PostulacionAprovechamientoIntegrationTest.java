@@ -9,14 +9,19 @@ import org.certificaciones.funproeibbackend.security.JwtService;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.io.TempDir;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.mock.web.MockMultipartFile;
 import org.springframework.test.context.ActiveProfiles;
+import org.springframework.test.context.DynamicPropertyRegistry;
+import org.springframework.test.context.DynamicPropertySource;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.setup.MockMvcBuilders;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.context.WebApplicationContext;
 
+import java.nio.file.Path;
 import java.time.LocalDate;
 import java.util.List;
 import java.util.Map;
@@ -60,6 +65,14 @@ class PostulacionAprovechamientoIntegrationTest {
 
     private String tokenAdmin;
 
+    @TempDir
+    static Path carpetaSubidas;
+
+    @DynamicPropertySource
+    static void propiedades(DynamicPropertyRegistry registry) {
+        registry.add("app.uploads.dir", () -> carpetaSubidas.toString());
+    }
+
     @BeforeEach
     void setUp() {
         mockMvc = MockMvcBuilders.webAppContextSetup(webApplicationContext).apply(springSecurity()).build();
@@ -88,9 +101,15 @@ class PostulacionAprovechamientoIntegrationTest {
                 Map.entry("estadoCivil", "SOLTERO"),
                 Map.entry("carreras", List.of("Pedagogía"))
         );
-        String body = mockMvc.perform(post("/api/usuarios/registro")
-                        .contentType("application/json")
-                        .content(objectMapper.writeValueAsString(request)))
+        // El registro ahora exige las dos fotos del carnet (multipart/form-data);
+        // esta prueba no inicia sesión como el postulante, solo lo crea.
+        MockMultipartFile datos = new MockMultipartFile("datos", "datos.json", "application/json",
+                objectMapper.writeValueAsBytes(request));
+        MockMultipartFile carnetAnverso = new MockMultipartFile("carnetAnverso", "anverso.jpg", "image/jpeg", "img".getBytes());
+        MockMultipartFile carnetReverso = new MockMultipartFile("carnetReverso", "reverso.jpg", "image/jpeg", "img".getBytes());
+
+        String body = mockMvc.perform(multipart("/api/usuarios/registro")
+                        .file(datos).file(carnetAnverso).file(carnetReverso))
                 .andExpect(status().isCreated())
                 .andReturn().getResponse().getContentAsString();
         return ((Number) objectMapper.readValue(body, Map.class).get("id")).longValue();

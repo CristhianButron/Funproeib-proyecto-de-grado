@@ -1,13 +1,9 @@
 package org.certificaciones.funproeibbackend.service;
 
-import org.certificaciones.funproeibbackend.dto.ProgramaRequest;
 import org.certificaciones.funproeibbackend.model.Programa;
-import org.certificaciones.funproeibbackend.model.ReqDocumento;
 import org.certificaciones.funproeibbackend.model.enums.EstadoPrograma;
-import org.certificaciones.funproeibbackend.model.enums.TipoDocumento;
 import org.certificaciones.funproeibbackend.model.enums.TipoPrograma;
 import org.certificaciones.funproeibbackend.repository.ProgramaRepository;
-import org.certificaciones.funproeibbackend.repository.ReqDocumentoRepository;
 import org.certificaciones.funproeibbackend.service.impl.ProgramaServiceImpl;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
@@ -31,7 +27,6 @@ import static org.mockito.Mockito.*;
 class ProgramaServiceImplTest {
 
     @Mock private ProgramaRepository programaRepository;
-    @Mock private ReqDocumentoRepository reqDocumentoRepository;
 
     @InjectMocks private ProgramaServiceImpl service;
 
@@ -84,39 +79,5 @@ class ProgramaServiceImplTest {
 
         assertThat(cerrados).isZero();
         verify(programaRepository).saveAll(List.of());
-    }
-
-    @Test
-    @DisplayName("al crear un programa, genera automáticamente los 2 requisitos de carnet de identidad (solo imagen)")
-    void crear_generaRequisitosDeIdentidadAutomaticamente() {
-        ProgramaRequest request = new ProgramaRequest();
-        request.setNombre("Diplomado C");
-        request.setTipo(TipoPrograma.DIPLOMADO);
-        request.setFechaInicio(LocalDate.now());
-        request.setFechaFin(LocalDate.now().plusMonths(3));
-        request.setCuposDisponibles(30);
-
-        Programa guardado = Programa.builder()
-                .id(10L).nombre("Diplomado C").tipo(TipoPrograma.DIPLOMADO)
-                .fechaInicio(request.getFechaInicio()).fechaFin(request.getFechaFin())
-                .cuposDisponibles(30).estado(EstadoPrograma.BORRADOR)
-                .build();
-        when(programaRepository.save(any(Programa.class))).thenReturn(guardado);
-
-        service.crear(request);
-
-        ArgumentCaptor<List<ReqDocumento>> captor = ArgumentCaptor.forClass(List.class);
-        verify(reqDocumentoRepository).saveAll(captor.capture());
-        List<ReqDocumento> requisitos = captor.getValue();
-
-        assertThat(requisitos).hasSize(2);
-        assertThat(requisitos).extracting(ReqDocumento::getNombreDocumento)
-                .containsExactlyInAnyOrder("Carnet de identidad - anverso", "Carnet de identidad - reverso");
-        assertThat(requisitos).allSatisfy(r -> {
-            assertThat(r.getObligatorio()).isTrue();
-            assertThat(r.getSoloImagen()).isTrue();
-            assertThat(r.getTipoPermitido()).isEqualTo(TipoDocumento.PDF);
-            assertThat(r.getPrograma()).isEqualTo(guardado);
-        });
     }
 }

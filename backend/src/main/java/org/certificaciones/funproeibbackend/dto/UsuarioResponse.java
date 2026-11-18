@@ -24,6 +24,7 @@ public class UsuarioResponse {
     private LocalDate fechaRegistro;
     private Boolean activo;
     private Boolean emailVerificado;
+    private Boolean identidadVerificada;
     private Boolean debeCambiarPassword;
 
     // Solo viene con valor en la respuesta de login; en el resto de los

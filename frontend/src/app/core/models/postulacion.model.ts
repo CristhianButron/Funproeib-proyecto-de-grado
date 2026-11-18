@@ -15,5 +15,4 @@ export interface PostulacionResponse {
   fechaPostulacion: string;
   estado: EstadoPostulacion;
   estadoAprovechamiento: EstadoAprovechamiento;
-  identidadVerificada: boolean;
 }

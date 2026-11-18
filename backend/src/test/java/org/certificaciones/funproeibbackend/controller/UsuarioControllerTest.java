@@ -8,6 +8,7 @@ import org.certificaciones.funproeibbackend.service.UsuarioService;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
+import org.springframework.core.io.ByteArrayResource;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.setup.MockMvcBuilders;
 
@@ -165,5 +166,53 @@ class UsuarioControllerTest {
         mockMvc.perform(patch("/api/usuarios/1/activo").param("activo", "false"))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.activo").value(false));
+    }
+
+    @Test
+    @DisplayName("GET /api/usuarios/{id}/carnet/anverso devuelve la foto")
+    void carnetAnverso_devuelve200() throws Exception {
+        ArchivoDescargable archivo = ArchivoDescargable.builder()
+                .recurso(new ByteArrayResource("img".getBytes()))
+                .contentType("image/jpeg")
+                .nombreArchivo("carnet-anverso.jpg")
+                .build();
+        when(usuarioService.obtenerCarnet(1L, true)).thenReturn(archivo);
+
+        mockMvc.perform(get("/api/usuarios/1/carnet/anverso"))
+                .andExpect(status().isOk());
+    }
+
+    @Test
+    @DisplayName("GET /api/usuarios/{id}/carnet/reverso devuelve la foto")
+    void carnetReverso_devuelve200() throws Exception {
+        ArchivoDescargable archivo = ArchivoDescargable.builder()
+                .recurso(new ByteArrayResource("img".getBytes()))
+                .contentType("image/png")
+                .nombreArchivo("carnet-reverso.png")
+                .build();
+        when(usuarioService.obtenerCarnet(1L, false)).thenReturn(archivo);
+
+        mockMvc.perform(get("/api/usuarios/1/carnet/reverso"))
+                .andExpect(status().isOk());
+    }
+
+    @Test
+    @DisplayName("PATCH /api/usuarios/{id}/identidad/verificar marca la identidad como verificada")
+    void verificarIdentidad_devuelve200() throws Exception {
+        when(usuarioService.verificarIdentidad(1L)).thenReturn(
+                UsuarioResponse.builder().id(1L).identidadVerificada(true).build());
+
+        mockMvc.perform(patch("/api/usuarios/1/identidad/verificar"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.identidadVerificada").value(true));
+    }
+
+    @Test
+    @DisplayName("PATCH /api/usuarios/{id}/identidad/rechazar elimina la cuenta y responde 204")
+    void rechazarIdentidad_devuelve204() throws Exception {
+        mockMvc.perform(patch("/api/usuarios/1/identidad/rechazar"))
+                .andExpect(status().isNoContent());
+
+        verify(usuarioService).rechazarIdentidad(1L);
     }
 }

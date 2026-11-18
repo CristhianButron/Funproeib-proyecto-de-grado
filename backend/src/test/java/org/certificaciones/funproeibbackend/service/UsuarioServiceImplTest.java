@@ -1,5 +1,6 @@
 package org.certificaciones.funproeibbackend.service;
 
+import org.certificaciones.funproeibbackend.dto.ArchivoDescargable;
 import org.certificaciones.funproeibbackend.dto.CambiarPasswordRequest;
 import org.certificaciones.funproeibbackend.dto.LoginRequest;
 import org.certificaciones.funproeibbackend.dto.RestablecerPasswordRequest;
@@ -7,22 +8,34 @@ import org.certificaciones.funproeibbackend.dto.UsuarioActualizarRequest;
 import org.certificaciones.funproeibbackend.dto.UsuarioRegistroRequest;
 import org.certificaciones.funproeibbackend.dto.UsuarioResponse;
 import org.certificaciones.funproeibbackend.exception.BusinessException;
+import org.certificaciones.funproeibbackend.exception.ResourceNotFoundException;
 import org.certificaciones.funproeibbackend.model.Ciudad;
+import org.certificaciones.funproeibbackend.model.Postulacion;
 import org.certificaciones.funproeibbackend.model.Usuario;
 import org.certificaciones.funproeibbackend.model.enums.NivelEducativo;
 import org.certificaciones.funproeibbackend.model.enums.RolUsuario;
 import org.certificaciones.funproeibbackend.repository.CiudadRepository;
+import org.certificaciones.funproeibbackend.repository.DocumentoRepository;
+import org.certificaciones.funproeibbackend.repository.EvaluacionRepository;
+import org.certificaciones.funproeibbackend.repository.PostulacionRepository;
+import org.certificaciones.funproeibbackend.repository.RespuestaPostulacionRepository;
 import org.certificaciones.funproeibbackend.repository.UsuarioRepository;
 import org.certificaciones.funproeibbackend.security.JwtService;
 import org.certificaciones.funproeibbackend.service.impl.UsuarioServiceImpl;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
+import org.junit.jupiter.api.io.TempDir;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
+import org.springframework.mock.web.MockMultipartFile;
 import org.springframework.security.crypto.password.PasswordEncoder;
+import org.springframework.test.util.ReflectionTestUtils;
 
+import java.nio.file.Files;
+import java.nio.file.Path;
 import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Optional;
@@ -43,8 +56,25 @@ class UsuarioServiceImplTest {
     @Mock private PasswordEncoder passwordEncoder;
     @Mock private EmailService emailService;
     @Mock private JwtService jwtService;
+    @Mock private PostulacionRepository postulacionRepository;
+    @Mock private DocumentoRepository documentoRepository;
+    @Mock private RespuestaPostulacionRepository respuestaPostulacionRepository;
+    @Mock private EvaluacionRepository evaluacionRepository;
 
     @InjectMocks private UsuarioServiceImpl service;
+
+    @TempDir
+    Path carpetaSubidas;
+
+    private MockMultipartFile carnetAnverso;
+    private MockMultipartFile carnetReverso;
+
+    @BeforeEach
+    void setUp() {
+        ReflectionTestUtils.setField(service, "uploadsDir", carpetaSubidas.toString());
+        carnetAnverso = new MockMultipartFile("carnetAnverso", "anverso.jpg", "image/jpeg", "img".getBytes());
+        carnetReverso = new MockMultipartFile("carnetReverso", "reverso.png", "image/png", "img".getBytes());
+    }
 
     @Test
     @DisplayName("El registro asigna rol POSTULANTE, genera contraseña temporal y deja la cuenta sin verificar")
@@ -66,13 +96,73 @@ class UsuarioServiceImplTest {
         when(passwordEncoder.encode(anyString())).thenReturn("HASH");
         when(usuarioRepository.save(any(Usuario.class))).thenAnswer(inv -> inv.getArgument(0));
 
-        UsuarioResponse res = service.registrar(req);
+        UsuarioResponse res = service.registrar(req, carnetAnverso, carnetReverso);
 
         assertThat(res.getRol()).isEqualTo(RolUsuario.POSTULANTE);
         assertThat(res.getCorreo()).isEqualTo("ana@correo.com");
         assertThat(res.getEmailVerificado()).isFalse();
+        assertThat(res.getIdentidadVerificada()).isFalse();
         assertThat(res.getDebeCambiarPassword()).isTrue();
         verify(emailService).enviarVerificacionCuenta(eq("ana@correo.com"), eq("Ana"), anyString(), anyString());
+    }
+
+    @Test
+    @DisplayName("El registro guarda las dos fotos del carnet en disco")
+    void registrar_guardaFotosDelCarnetEnDisco() {
+        UsuarioRegistroRequest req = requestValido();
+        Ciudad ciudad = Ciudad.builder().id(1L).nombre("La Paz").build();
+
+        when(usuarioRepository.existsByCorreo("ana@correo.com")).thenReturn(false);
+        when(usuarioRepository.existsByCi("999888")).thenReturn(false);
+        when(ciudadRepository.findById(1L)).thenReturn(Optional.of(ciudad));
+        when(passwordEncoder.encode(anyString())).thenReturn("HASH");
+        when(usuarioRepository.save(any(Usuario.class))).thenAnswer(inv -> {
+            Usuario u = inv.getArgument(0);
+            if (u.getId() == null) u.setId(42L);
+            return u;
+        });
+
+        UsuarioResponse res = service.registrar(req, carnetAnverso, carnetReverso);
+
+        assertThat(res.getId()).isEqualTo(42L);
+        assertThat(carpetaSubidas.resolve("usuario-42/carnet-anverso.jpg")).exists();
+        assertThat(carpetaSubidas.resolve("usuario-42/carnet-reverso.png")).exists();
+    }
+
+    @Test
+    @DisplayName("Rechaza el registro si falta la foto del anverso")
+    void registrar_sinCarnetAnverso_lanzaExcepcion() {
+        UsuarioRegistroRequest req = requestValido();
+        MockMultipartFile vacio = new MockMultipartFile("carnetAnverso", new byte[0]);
+
+        assertThatThrownBy(() -> service.registrar(req, vacio, carnetReverso))
+                .isInstanceOf(BusinessException.class)
+                .hasMessageContaining("anverso");
+        verify(usuarioRepository, never()).save(any());
+    }
+
+    @Test
+    @DisplayName("Rechaza el registro si la foto del carnet no es una imagen JPG o PNG")
+    void registrar_carnetConExtensionNoPermitida_lanzaExcepcion() {
+        UsuarioRegistroRequest req = requestValido();
+        MockMultipartFile pdf = new MockMultipartFile("carnetAnverso", "anverso.pdf", "application/pdf", "x".getBytes());
+
+        assertThatThrownBy(() -> service.registrar(req, pdf, carnetReverso))
+                .isInstanceOf(BusinessException.class)
+                .hasMessageContaining("JPG o PNG");
+        verify(usuarioRepository, never()).save(any());
+    }
+
+    private UsuarioRegistroRequest requestValido() {
+        UsuarioRegistroRequest req = new UsuarioRegistroRequest();
+        req.setNombre("Ana");
+        req.setApellidoPaterno("Quispe");
+        req.setCorreo("ana@correo.com");
+        req.setCi("999888");
+        req.setIdCiudad(1L);
+        req.setIdCiudadNacimiento(1L);
+        req.setNivelEducativo(NivelEducativo.SECUNDARIA);
+        return req;
     }
 
     @Test
@@ -82,7 +172,7 @@ class UsuarioServiceImplTest {
         req.setCorreo("ana@correo.com");
         when(usuarioRepository.existsByCorreo("ana@correo.com")).thenReturn(true);
 
-        assertThatThrownBy(() -> service.registrar(req))
+        assertThatThrownBy(() -> service.registrar(req, carnetAnverso, carnetReverso))
                 .isInstanceOf(BusinessException.class)
                 .hasMessageContaining("correo");
     }
@@ -94,7 +184,7 @@ class UsuarioServiceImplTest {
         req.setCorreo("ana@mailinator.com");
         when(usuarioRepository.existsByCorreo("ana@mailinator.com")).thenReturn(false);
 
-        assertThatThrownBy(() -> service.registrar(req))
+        assertThatThrownBy(() -> service.registrar(req, carnetAnverso, carnetReverso))
                 .isInstanceOf(BusinessException.class)
                 .hasMessageContaining("buzón temporal");
 
@@ -113,7 +203,7 @@ class UsuarioServiceImplTest {
         when(usuarioRepository.existsByCorreo("ana@correo.com")).thenReturn(false);
         when(usuarioRepository.existsByCi("999888")).thenReturn(false);
 
-        assertThatThrownBy(() -> service.registrar(req))
+        assertThatThrownBy(() -> service.registrar(req, carnetAnverso, carnetReverso))
                 .isInstanceOf(BusinessException.class)
                 .hasMessageContaining("carrera");
     }
@@ -139,7 +229,7 @@ class UsuarioServiceImplTest {
         when(passwordEncoder.encode(anyString())).thenReturn("HASH");
         when(usuarioRepository.save(any(Usuario.class))).thenAnswer(inv -> inv.getArgument(0));
 
-        UsuarioResponse res = service.registrar(req);
+        UsuarioResponse res = service.registrar(req, carnetAnverso, carnetReverso);
 
         assertThat(res.getCarreras()).containsExactly("Licenciatura en Educación");
     }
@@ -226,7 +316,7 @@ class UsuarioServiceImplTest {
     void login_credencialesCorrectas_devuelveUsuario() {
         Usuario usuario = Usuario.builder().id(1L).correo("admin@funproeib.org")
                 .contrasenaHash("HASH").rol(RolUsuario.ADMIN).activo(true).emailVerificado(true)
-                .nombre("Admin").build();
+                .identidadVerificada(true).nombre("Admin").build();
         LoginRequest req = new LoginRequest();
         req.setCorreo("admin@funproeib.org");
         req.setContrasena("admin12345");
@@ -273,6 +363,24 @@ class UsuarioServiceImplTest {
         assertThatThrownBy(() -> service.login(req))
                 .isInstanceOf(BusinessException.class)
                 .hasMessageContaining("verificar");
+    }
+
+    @Test
+    @DisplayName("Login falla si el correo está verificado pero la identidad todavía no")
+    void login_identidadNoVerificada_lanzaExcepcion() {
+        Usuario usuario = Usuario.builder().id(1L).correo("nueva@correo.com")
+                .contrasenaHash("HASH").activo(true).emailVerificado(true).identidadVerificada(false).build();
+        LoginRequest req = new LoginRequest();
+        req.setCorreo("nueva@correo.com");
+        req.setContrasena("clave1234");
+
+        when(usuarioRepository.findByCorreo("nueva@correo.com")).thenReturn(Optional.of(usuario));
+        when(passwordEncoder.matches("clave1234", "HASH")).thenReturn(true);
+
+        assertThatThrownBy(() -> service.login(req))
+                .isInstanceOf(BusinessException.class)
+                .hasMessageContaining("revisión");
+        verify(jwtService, never()).generarToken(any(), any());
     }
 
     @Test
@@ -508,5 +616,78 @@ class UsuarioServiceImplTest {
 
         assertThat(res.getActivo()).isTrue();
         verify(usuarioRepository, never()).countByRolAndActivoTrue(any());
+    }
+
+    @Test
+    @DisplayName("obtenerCarnet devuelve el archivo cuando existe en disco")
+    void obtenerCarnet_archivoExiste_devuelveRecurso() throws Exception {
+        Path carpeta = carpetaSubidas.resolve("usuario-7");
+        Files.createDirectories(carpeta);
+        Files.writeString(carpeta.resolve("carnet-anverso.jpg"), "contenido");
+        Usuario usuario = Usuario.builder().id(7L).rutaCarnetAnverso("usuario-7/carnet-anverso.jpg").build();
+        when(usuarioRepository.findById(7L)).thenReturn(Optional.of(usuario));
+
+        ArchivoDescargable archivo = service.obtenerCarnet(7L, true);
+
+        assertThat(archivo.getNombreArchivo()).isEqualTo("carnet-anverso.jpg");
+    }
+
+    @Test
+    @DisplayName("obtenerCarnet lanza excepción si el usuario no tiene esa foto cargada")
+    void obtenerCarnet_sinRuta_lanzaExcepcion() {
+        Usuario usuario = Usuario.builder().id(7L).build();
+        when(usuarioRepository.findById(7L)).thenReturn(Optional.of(usuario));
+
+        assertThatThrownBy(() -> service.obtenerCarnet(7L, true))
+                .isInstanceOf(ResourceNotFoundException.class);
+    }
+
+    @Test
+    @DisplayName("verificarIdentidad marca la cuenta como verificada cuando tiene las dos fotos")
+    void verificarIdentidad_conFotos_marcaVerificada() {
+        Usuario usuario = Usuario.builder().id(7L)
+                .rutaCarnetAnverso("usuario-7/carnet-anverso.jpg")
+                .rutaCarnetReverso("usuario-7/carnet-reverso.jpg")
+                .identidadVerificada(false).build();
+        when(usuarioRepository.findById(7L)).thenReturn(Optional.of(usuario));
+        when(usuarioRepository.save(any(Usuario.class))).thenAnswer(inv -> inv.getArgument(0));
+
+        UsuarioResponse res = service.verificarIdentidad(7L);
+
+        assertThat(res.getIdentidadVerificada()).isTrue();
+    }
+
+    @Test
+    @DisplayName("verificarIdentidad lanza excepción si faltan las fotos del carnet")
+    void verificarIdentidad_sinFotos_lanzaExcepcion() {
+        Usuario usuario = Usuario.builder().id(7L).build();
+        when(usuarioRepository.findById(7L)).thenReturn(Optional.of(usuario));
+
+        assertThatThrownBy(() -> service.verificarIdentidad(7L))
+                .isInstanceOf(BusinessException.class)
+                .hasMessageContaining("faltan");
+        verify(usuarioRepository, never()).save(any());
+    }
+
+    // Rechazar la identidad no deja un estado "rechazada" guardado: se
+    // considera un intento de falsificación, así que se da de baja la cuenta
+    // completa (y todas sus postulaciones, documentos, respuestas y
+    // evaluaciones) y se le avisa por correo.
+    @Test
+    @DisplayName("rechazarIdentidad elimina la cuenta, sus postulaciones y envía el correo")
+    void rechazarIdentidad_eliminaCuentaYEnviaCorreo() {
+        Usuario usuario = Usuario.builder().id(7L).correo("ana@correo.com").nombre("Ana").build();
+        Postulacion postulacion = Postulacion.builder().id(50L).usuario(usuario).build();
+        when(usuarioRepository.findById(7L)).thenReturn(Optional.of(usuario));
+        when(postulacionRepository.findByUsuarioId(7L)).thenReturn(List.of(postulacion));
+        when(evaluacionRepository.findByPostulacionId(50L)).thenReturn(Optional.empty());
+        when(respuestaPostulacionRepository.findByPostulacionId(50L)).thenReturn(List.of());
+        when(documentoRepository.findByPostulacionId(50L)).thenReturn(List.of());
+
+        service.rechazarIdentidad(7L);
+
+        verify(postulacionRepository).deleteAll(List.of(postulacion));
+        verify(usuarioRepository).delete(usuario);
+        verify(emailService).enviarRechazoIdentidad("ana@correo.com", "Ana");
     }
 }

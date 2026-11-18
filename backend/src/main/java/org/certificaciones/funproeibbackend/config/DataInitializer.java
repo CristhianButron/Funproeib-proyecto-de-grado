@@ -13,6 +13,7 @@ import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Component;
 
 import java.time.LocalDate;
+import java.util.List;
 
 /**
  * Siembra un usuario administrador por defecto al iniciar la aplicación,
@@ -43,6 +44,7 @@ public class DataInitializer implements CommandLineRunner {
                     .fechaRegistro(LocalDate.now())
                     .activo(true)
                     .emailVerificado(true)
+                    .identidadVerificada(true) // cuenta sembrada por el sistema, no por autoregistro: no necesita carnet
                     .debeCambiarPassword(false)
                     .genero(Genero.PREFIERO_NO_INDICAR)
                     .fechaNacimiento(LocalDate.of(1990, 1, 1))
@@ -53,5 +55,15 @@ public class DataInitializer implements CommandLineRunner {
             usuarioRepository.save(admin);
             System.out.println(">>> Usuario ADMIN creado: admin@funproeib.org / admin12345");
         }
+
+        // Backfill para bases de datos que ya tenían usuarios ADMIN/EVALUADOR
+        // antes de agregar la verificación de identidad: esas cuentas de staff
+        // no se autoregistraron con carnet, así que no tiene sentido pedirles
+        // esa verificación -de lo contrario quedarían bloqueadas para siempre
+        // en el login (ver UsuarioServiceImpl.login).
+        var staffSinVerificar = usuarioRepository.findByRolIn(List.of(RolUsuario.ADMIN, RolUsuario.EVALUADOR))
+                .stream().filter(u -> !Boolean.TRUE.equals(u.getIdentidadVerificada())).toList();
+        staffSinVerificar.forEach(u -> u.setIdentidadVerificada(true));
+        usuarioRepository.saveAll(staffSinVerificar);
     }
 }

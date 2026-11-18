@@ -72,7 +72,9 @@ public class SecurityConfig {
 
                         // Solo administrador: gestión de usuarios, catálogos y reportes.
                         .requestMatchers(HttpMethod.GET, "/api/usuarios").hasRole("ADMIN")
-                        .requestMatchers(HttpMethod.PATCH, "/api/usuarios/*/rol", "/api/usuarios/*/activo").hasRole("ADMIN")
+                        .requestMatchers(HttpMethod.PATCH, "/api/usuarios/*/rol", "/api/usuarios/*/activo",
+                                "/api/usuarios/*/identidad/**").hasRole("ADMIN")
+                        .requestMatchers(HttpMethod.GET, "/api/usuarios/*/carnet/**").hasRole("ADMIN")
                         .requestMatchers(HttpMethod.POST, "/api/programas", "/api/preguntas", "/api/req-documentos")
                         .hasRole("ADMIN")
                         .requestMatchers(HttpMethod.PUT, "/api/programas/**").hasRole("ADMIN")
@@ -85,7 +87,6 @@ public class SecurityConfig {
                         .requestMatchers(HttpMethod.PATCH, "/api/documentos/*/verificar",
                                 "/api/documentos/postulacion/*/verificar-todos").hasRole("ADMIN")
                         .requestMatchers(HttpMethod.GET, "/api/postulaciones/estado/**").hasRole("ADMIN")
-                        .requestMatchers(HttpMethod.PATCH, "/api/postulaciones/*/identidad/**").hasRole("ADMIN")
                         .requestMatchers("/api/reportes/**").hasRole("ADMIN")
 
                         // Administrador o evaluador: revisión/evaluación de postulaciones, y

@@ -81,6 +81,24 @@ public class Usuario {
     @Column(name = "token_recuperacion_expira")
     private LocalDateTime tokenRecuperacionExpira;
 
+    // --- Verificación de identidad (carnet) ---
+    // Toda cuenta POSTULANTE se registra con el anverso/reverso de su carnet
+    // (ver UsuarioServiceImpl.registrar). Hasta que un Administrador la
+    // verifique, la cuenta queda "en revisión": no puede iniciar sesión (ver
+    // UsuarioServiceImpl.login), así que tampoco puede postular. Si el
+    // Administrador la rechaza, no queda un estado "rechazada" guardado acá:
+    // la cuenta se elimina por completo (ver UsuarioServiceImpl.rechazarIdentidad).
+
+    @Column(name = "identidad_verificada")
+    @Builder.Default
+    private Boolean identidadVerificada = false;
+
+    @Column(name = "ruta_carnet_anverso", length = 255)
+    private String rutaCarnetAnverso;
+
+    @Column(name = "ruta_carnet_reverso", length = 255)
+    private String rutaCarnetReverso;
+
     // --- Campos de perfil del postulante ---
 
     @Enumerated(EnumType.STRING)

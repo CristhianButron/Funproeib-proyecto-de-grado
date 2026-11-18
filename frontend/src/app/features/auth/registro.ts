@@ -34,8 +34,8 @@ import { CARRERAS } from '../../core/constants/carreras';
           <h2 class="text-xl font-extrabold text-primary-dark mt-4">¡Registro recibido!</h2>
           <p class="text-on-surface-variant mt-2 max-w-md mx-auto">
             Te enviamos un correo a <b>{{ correoRegistrado() }}</b> con un enlace de verificación y una
-            contraseña temporal. Verifica tu cuenta y luego inicia sesión; el sistema te pedirá
-            cambiar esa contraseña en tu primer ingreso.
+            contraseña temporal. Verifica tu correo y espera a que un administrador revise la foto de tu
+            carnet: hasta entonces no podrás iniciar sesión.
           </p>
           <a routerLink="/login" class="inline-block mt-6 px-6 py-3 rounded-lg font-bold bg-primary text-white hover:bg-primary-dark transition-colors">
             Ir a iniciar sesión
@@ -224,8 +224,28 @@ import { CARRERAS } from '../../core/constants/carreras';
           </div>
         </div>
 
+        <div>
+          <h2 class="text-sm font-bold text-primary uppercase tracking-wide border-b border-outline-variant pb-2 mb-4">Verificación de identidad</h2>
+          <p class="text-xs text-on-surface-variant mb-4 flex items-center gap-1">
+            <span class="material-symbols-outlined text-[16px]">info</span>
+            Sube una foto o escaneo de tu carnet de identidad (JPG o PNG). Un administrador la revisará antes de habilitar tu cuenta.
+          </p>
+          <div class="grid sm:grid-cols-2 gap-4">
+            <div>
+              <label class="block text-sm font-semibold mb-1">Carnet de identidad - anverso *</label>
+              <input type="file" accept="image/png,image/jpeg" (change)="onArchivoSeleccionado($event, 'anverso')" class="campo" />
+              @if (carnetAnverso()) { <p class="text-xs text-secondary mt-1">{{ carnetAnverso()!.name }}</p> }
+            </div>
+            <div>
+              <label class="block text-sm font-semibold mb-1">Carnet de identidad - reverso *</label>
+              <input type="file" accept="image/png,image/jpeg" (change)="onArchivoSeleccionado($event, 'reverso')" class="campo" />
+              @if (carnetReverso()) { <p class="text-xs text-secondary mt-1">{{ carnetReverso()!.name }}</p> }
+            </div>
+          </div>
+        </div>
+
         <div class="flex items-center gap-3 pt-2">
-          <button type="submit" [disabled]="form.invalid || !idCiudadSeleccionada() || !idCiudadNacimientoSeleccionada() || cargando()"
+          <button type="submit" [disabled]="form.invalid || !idCiudadSeleccionada() || !idCiudadNacimientoSeleccionada() || !carnetAnverso() || !carnetReverso() || cargando()"
             class="px-6 py-3 rounded-lg font-bold bg-primary text-white hover:bg-primary-dark transition-colors disabled:opacity-50 flex items-center gap-2">
             <span class="material-symbols-outlined">how_to_reg</span>
             {{ cargando() ? 'Registrando...' : 'Crear cuenta y postular' }}
@@ -284,6 +304,9 @@ export class RegistroComponent implements OnInit {
   carreras = signal<string[]>([]);
   carreraSeleccion = '';
   carreraOtroTexto = '';
+
+  carnetAnverso = signal<File | null>(null);
+  carnetReverso = signal<File | null>(null);
 
   constructor(
     private fb: FormBuilder,
@@ -358,6 +381,11 @@ export class RegistroComponent implements OnInit {
     this.carreras.update(l => l.filter((_, i) => i !== index));
   }
 
+  onArchivoSeleccionado(event: Event, lado: 'anverso' | 'reverso'): void {
+    const archivo = (event.target as HTMLInputElement).files?.[0] ?? null;
+    if (lado === 'anverso') this.carnetAnverso.set(archivo); else this.carnetReverso.set(archivo);
+  }
+
   soloNumeros(event: Event): void {
     const input = event.target as HTMLInputElement;
     const limpio = input.value.replace(/\D/g, '');
@@ -370,6 +398,12 @@ export class RegistroComponent implements OnInit {
     if (this.form.invalid || !this.idCiudadSeleccionada() || !this.idCiudadNacimientoSeleccionada()) return;
     if (this.nivelRequiereCarrera() && this.carreras().length === 0) {
       this.error.set('Agrega al menos una carrera o profesión.');
+      return;
+    }
+    const carnetAnverso = this.carnetAnverso();
+    const carnetReverso = this.carnetReverso();
+    if (!carnetAnverso || !carnetReverso) {
+      this.error.set('Debes subir las fotos del anverso y el reverso de tu carnet de identidad.');
       return;
     }
     this.cargando.set(true);
@@ -389,7 +423,7 @@ export class RegistroComponent implements OnInit {
       carreras: this.carreras(),
       autoidentificacionEtnica,
     };
-    this.auth.registrar(request).subscribe({
+    this.auth.registrar(request, carnetAnverso, carnetReverso).subscribe({
       next: (usuario) => {
         this.cargando.set(false);
         this.correoRegistrado.set(usuario.correo);

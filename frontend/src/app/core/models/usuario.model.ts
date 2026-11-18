@@ -60,6 +60,7 @@ export interface UsuarioResponse {
   fechaRegistro: string;
   activo: boolean;
   emailVerificado?: boolean;
+  identidadVerificada?: boolean;
   debeCambiarPassword?: boolean;
   genero: Genero;
   fechaNacimiento: string;
