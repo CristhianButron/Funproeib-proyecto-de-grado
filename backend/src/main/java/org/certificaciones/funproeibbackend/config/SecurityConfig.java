@@ -28,13 +28,15 @@ import java.util.List;
  * "suenan" de administrador en realidad también las usa el rol EVALUADOR
  * (ver evaluaciones.ts en el frontend), y al revés.
  *
- * Lo que esta configuración NO cubre: que un usuario solo pueda ver/editar
- * SUS PROPIOS recursos anidados (sus documentos, sus respuestas). Eso se
- * resolvió para los casos más sensibles con @PreAuthorize directamente en
- * UsuarioController y PostulacionController (ver esas clases); para
- * documentos/respuestas/evaluaciones no se implementó -cualquier usuario
- * autenticado puede leer/escribir por id si lo adivina- y queda señalado
- * como una limitación conocida, no un descuido.
+ * Que un usuario solo pueda ver/editar SUS PROPIOS recursos (su perfil, sus
+ * postulaciones, y sus documentos/respuestas que cuelgan de ellas) está
+ * resuelto con @PreAuthorize directamente en cada controlador, no acá: en
+ * UsuarioController/PostulacionController comparando el id de la ruta contra
+ * authentication.name, y en DocumentoController/RespuestaController contra
+ * el dueño real de la postulación (ver RecursoAuthService/@recursoAuth,
+ * porque ahí el id de la ruta es el del documento o la postulación, no el
+ * del usuario). Evaluaciones queda fuera a propósito: son del dominio de
+ * ADMIN/EVALUADOR, el postulante nunca accede a ellas directamente.
  */
 @Configuration
 @EnableMethodSecurity

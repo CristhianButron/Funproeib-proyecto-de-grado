@@ -42,7 +42,12 @@ public class PostulacionServiceImpl implements PostulacionService {
         Usuario usuario = usuarioRepository.findById(request.getIdUsuario())
                 .orElseThrow(() -> new ResourceNotFoundException("Usuario no encontrado con id: " + request.getIdUsuario()));
 
-        Programa programa = programaRepository.findById(request.getIdPrograma())
+        // Bloquea la fila del programa (SELECT ... FOR UPDATE) durante toda
+        // esta transacción: si dos postulaciones al mismo programa llegan al
+        // mismo tiempo, la segunda espera a que la primera termine (commit o
+        // rollback) antes de poder contar cupos, en vez de contar con el
+        // mismo número "viejo" y dejar pasar a ambas aunque ya no quede cupo.
+        Programa programa = programaRepository.findByIdParaActualizar(request.getIdPrograma())
                 .orElseThrow(() -> new ResourceNotFoundException("Programa no encontrado con id: " + request.getIdPrograma()));
 
         if (listaNegraRepository.existsByCiPostulanteAndActivoTrue(usuario.getCi())) {

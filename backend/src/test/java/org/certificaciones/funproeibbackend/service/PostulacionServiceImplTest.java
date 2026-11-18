@@ -65,7 +65,7 @@ class PostulacionServiceImplTest {
     @DisplayName("Crea la postulación en estado INCOMPLETA cuando todo es válido")
     void crear_exito_estadoIncompleta() {
         when(usuarioRepository.findById(1L)).thenReturn(Optional.of(usuario));
-        when(programaRepository.findById(2L)).thenReturn(Optional.of(programa));
+        when(programaRepository.findByIdParaActualizar(2L)).thenReturn(Optional.of(programa));
         when(listaNegraRepository.existsByCiPostulanteAndActivoTrue("123456")).thenReturn(false);
         when(postulacionRepository.existsByUsuarioIdAndProgramaId(1L, 2L)).thenReturn(false);
         when(postulacionRepository.save(any(Postulacion.class))).thenAnswer(inv -> inv.getArgument(0));
@@ -81,7 +81,7 @@ class PostulacionServiceImplTest {
     @DisplayName("Rechaza si el postulante está en lista negra")
     void crear_listaNegra_lanzaExcepcion() {
         when(usuarioRepository.findById(1L)).thenReturn(Optional.of(usuario));
-        when(programaRepository.findById(2L)).thenReturn(Optional.of(programa));
+        when(programaRepository.findByIdParaActualizar(2L)).thenReturn(Optional.of(programa));
         when(listaNegraRepository.existsByCiPostulanteAndActivoTrue("123456")).thenReturn(true);
 
         assertThatThrownBy(() -> service.crear(request))
@@ -96,7 +96,7 @@ class PostulacionServiceImplTest {
         programa.setEstado(EstadoPrograma.BORRADOR);
         programa.setFechaInicio(LocalDate.now().plusMonths(1));
         when(usuarioRepository.findById(1L)).thenReturn(Optional.of(usuario));
-        when(programaRepository.findById(2L)).thenReturn(Optional.of(programa));
+        when(programaRepository.findByIdParaActualizar(2L)).thenReturn(Optional.of(programa));
         when(listaNegraRepository.existsByCiPostulanteAndActivoTrue("123456")).thenReturn(false);
 
         assertThatThrownBy(() -> service.crear(request))
@@ -111,7 +111,7 @@ class PostulacionServiceImplTest {
         programa.setEstado(EstadoPrograma.ACTIVO);
         programa.setFechaInicio(LocalDate.now().minusDays(3));
         when(usuarioRepository.findById(1L)).thenReturn(Optional.of(usuario));
-        when(programaRepository.findById(2L)).thenReturn(Optional.of(programa));
+        when(programaRepository.findByIdParaActualizar(2L)).thenReturn(Optional.of(programa));
         when(listaNegraRepository.existsByCiPostulanteAndActivoTrue("123456")).thenReturn(false);
 
         assertThatThrownBy(() -> service.crear(request))
@@ -125,7 +125,7 @@ class PostulacionServiceImplTest {
     void crear_sinCupos_lanzaExcepcion() {
         programa.setCuposDisponibles(0);
         when(usuarioRepository.findById(1L)).thenReturn(Optional.of(usuario));
-        when(programaRepository.findById(2L)).thenReturn(Optional.of(programa));
+        when(programaRepository.findByIdParaActualizar(2L)).thenReturn(Optional.of(programa));
         when(listaNegraRepository.existsByCiPostulanteAndActivoTrue("123456")).thenReturn(false);
 
         assertThatThrownBy(() -> service.crear(request))
@@ -139,7 +139,7 @@ class PostulacionServiceImplTest {
     void crear_cuposLlenosPorPostulacionesActivas_lanzaExcepcion() {
         programa.setCuposDisponibles(5);
         when(usuarioRepository.findById(1L)).thenReturn(Optional.of(usuario));
-        when(programaRepository.findById(2L)).thenReturn(Optional.of(programa));
+        when(programaRepository.findByIdParaActualizar(2L)).thenReturn(Optional.of(programa));
         when(listaNegraRepository.existsByCiPostulanteAndActivoTrue("123456")).thenReturn(false);
         when(postulacionRepository.countByProgramaIdAndEstadoNotIn(2L,
                 List.of(EstadoPostulacion.RECHAZADA, EstadoPostulacion.BLOQUEADA))).thenReturn(5L);
@@ -156,7 +156,7 @@ class PostulacionServiceImplTest {
     void crear_consultaCuposExcluyeRechazadasYBloqueadas() {
         programa.setCuposDisponibles(5);
         when(usuarioRepository.findById(1L)).thenReturn(Optional.of(usuario));
-        when(programaRepository.findById(2L)).thenReturn(Optional.of(programa));
+        when(programaRepository.findByIdParaActualizar(2L)).thenReturn(Optional.of(programa));
         when(listaNegraRepository.existsByCiPostulanteAndActivoTrue("123456")).thenReturn(false);
         when(postulacionRepository.countByProgramaIdAndEstadoNotIn(2L,
                 List.of(EstadoPostulacion.RECHAZADA, EstadoPostulacion.BLOQUEADA))).thenReturn(4L);
@@ -174,7 +174,7 @@ class PostulacionServiceImplTest {
     @DisplayName("Rechaza si el usuario ya postuló al mismo programa")
     void crear_duplicado_lanzaExcepcion() {
         when(usuarioRepository.findById(1L)).thenReturn(Optional.of(usuario));
-        when(programaRepository.findById(2L)).thenReturn(Optional.of(programa));
+        when(programaRepository.findByIdParaActualizar(2L)).thenReturn(Optional.of(programa));
         when(listaNegraRepository.existsByCiPostulanteAndActivoTrue("123456")).thenReturn(false);
         when(postulacionRepository.existsByUsuarioIdAndProgramaId(1L, 2L)).thenReturn(true);
 
@@ -193,7 +193,7 @@ class PostulacionServiceImplTest {
                 .estado(EstadoPostulacion.ACEPTADA).build();
 
         when(usuarioRepository.findById(1L)).thenReturn(Optional.of(usuario));
-        when(programaRepository.findById(2L)).thenReturn(Optional.of(programa));
+        when(programaRepository.findByIdParaActualizar(2L)).thenReturn(Optional.of(programa));
         when(listaNegraRepository.existsByCiPostulanteAndActivoTrue("123456")).thenReturn(false);
         when(postulacionRepository.existsByUsuarioIdAndProgramaId(1L, 2L)).thenReturn(false);
         when(postulacionRepository.findByUsuarioIdAndEstadoAndProgramaTipo(1L, EstadoPostulacion.ACEPTADA, TipoPrograma.DIPLOMADO))
@@ -216,7 +216,7 @@ class PostulacionServiceImplTest {
                 .estado(EstadoPostulacion.ACEPTADA).build();
 
         when(usuarioRepository.findById(1L)).thenReturn(Optional.of(usuario));
-        when(programaRepository.findById(2L)).thenReturn(Optional.of(programa));
+        when(programaRepository.findByIdParaActualizar(2L)).thenReturn(Optional.of(programa));
         when(listaNegraRepository.existsByCiPostulanteAndActivoTrue("123456")).thenReturn(false);
         when(postulacionRepository.existsByUsuarioIdAndProgramaId(1L, 2L)).thenReturn(false);
         when(postulacionRepository.findByUsuarioIdAndEstadoAndProgramaTipo(1L, EstadoPostulacion.ACEPTADA, TipoPrograma.DIPLOMADO))
@@ -234,7 +234,7 @@ class PostulacionServiceImplTest {
     void crear_diplomadoSinPrevios_permiteCrear() {
         programa.setTipo(TipoPrograma.DIPLOMADO);
         when(usuarioRepository.findById(1L)).thenReturn(Optional.of(usuario));
-        when(programaRepository.findById(2L)).thenReturn(Optional.of(programa));
+        when(programaRepository.findByIdParaActualizar(2L)).thenReturn(Optional.of(programa));
         when(listaNegraRepository.existsByCiPostulanteAndActivoTrue("123456")).thenReturn(false);
         when(postulacionRepository.existsByUsuarioIdAndProgramaId(1L, 2L)).thenReturn(false);
         when(postulacionRepository.findByUsuarioIdAndEstadoAndProgramaTipo(1L, EstadoPostulacion.ACEPTADA, TipoPrograma.DIPLOMADO))
@@ -306,7 +306,7 @@ class PostulacionServiceImplTest {
     void crear_taller_noValidaDiplomadoPrevio() {
         programa.setTipo(TipoPrograma.TALLER);
         when(usuarioRepository.findById(1L)).thenReturn(Optional.of(usuario));
-        when(programaRepository.findById(2L)).thenReturn(Optional.of(programa));
+        when(programaRepository.findByIdParaActualizar(2L)).thenReturn(Optional.of(programa));
         when(listaNegraRepository.existsByCiPostulanteAndActivoTrue("123456")).thenReturn(false);
         when(postulacionRepository.existsByUsuarioIdAndProgramaId(1L, 2L)).thenReturn(false);
         when(postulacionRepository.save(any(Postulacion.class))).thenAnswer(inv -> inv.getArgument(0));
