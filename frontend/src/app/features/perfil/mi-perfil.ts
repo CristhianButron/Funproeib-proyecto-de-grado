@@ -227,15 +227,30 @@ const OPCIONES_ETNIA = [
       <div class="grid sm:grid-cols-3 gap-4">
         <div>
           <label class="block text-sm font-semibold mb-1">Contraseña actual *</label>
-          <input type="password" formControlName="contrasenaActual" class="campo" />
+          <div class="relative">
+            <input [type]="mostrarActual() ? 'text' : 'password'" formControlName="contrasenaActual" class="campo campo-password" />
+            <button type="button" (click)="mostrarActual.set(!mostrarActual())" class="toggle-password" [attr.aria-label]="mostrarActual() ? 'Ocultar contraseña' : 'Mostrar contraseña'">
+              <span class="material-symbols-outlined text-[20px]">{{ mostrarActual() ? 'visibility_off' : 'visibility' }}</span>
+            </button>
+          </div>
         </div>
         <div>
           <label class="block text-sm font-semibold mb-1">Nueva contraseña *</label>
-          <input type="password" formControlName="contrasenaNueva" class="campo" />
+          <div class="relative">
+            <input [type]="mostrarNueva() ? 'text' : 'password'" formControlName="contrasenaNueva" class="campo campo-password" />
+            <button type="button" (click)="mostrarNueva.set(!mostrarNueva())" class="toggle-password" [attr.aria-label]="mostrarNueva() ? 'Ocultar contraseña' : 'Mostrar contraseña'">
+              <span class="material-symbols-outlined text-[20px]">{{ mostrarNueva() ? 'visibility_off' : 'visibility' }}</span>
+            </button>
+          </div>
         </div>
         <div>
           <label class="block text-sm font-semibold mb-1">Confirmar nueva contraseña *</label>
-          <input type="password" formControlName="confirmar" class="campo" />
+          <div class="relative">
+            <input [type]="mostrarConfirmar() ? 'text' : 'password'" formControlName="confirmar" class="campo campo-password" />
+            <button type="button" (click)="mostrarConfirmar.set(!mostrarConfirmar())" class="toggle-password" [attr.aria-label]="mostrarConfirmar() ? 'Ocultar contraseña' : 'Mostrar contraseña'">
+              <span class="material-symbols-outlined text-[20px]">{{ mostrarConfirmar() ? 'visibility_off' : 'visibility' }}</span>
+            </button>
+          </div>
         </div>
       </div>
       <p class="text-xs text-on-surface-variant">Mínimo 8 caracteres.</p>
@@ -259,6 +274,9 @@ const OPCIONES_ETNIA = [
     }
     .campo:focus { border-color: #1e3a8a; box-shadow: 0 0 0 2px rgba(30,58,138,.2); }
     .campo:disabled { background: #f2f2f5; color: #9ca3af; }
+    .campo-password { padding-right: 2.75rem; }
+    .toggle-password { position:absolute; right:.75rem; top:50%; transform:translateY(-50%); color:#6b7280; }
+    .toggle-password:hover { color:#1e3a8a; }
   `],
 })
 export class MiPerfilComponent implements OnInit {
@@ -272,6 +290,9 @@ export class MiPerfilComponent implements OnInit {
   cambiandoPassword = signal(false);
   mensajePassword = signal<string | null>(null);
   mensajePasswordError = signal(false);
+  mostrarActual = signal(false);
+  mostrarNueva = signal(false);
+  mostrarConfirmar = signal(false);
 
   opcionesEtnia = OPCIONES_ETNIA;
   etniaSeleccion = new FormControl('NINGUNA', { nonNullable: true });

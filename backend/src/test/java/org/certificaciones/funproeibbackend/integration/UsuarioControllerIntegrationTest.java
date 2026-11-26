@@ -73,8 +73,12 @@ class UsuarioControllerIntegrationTest {
         return new MockMultipartFile("datos", "datos.json", "application/json", objectMapper.writeValueAsBytes(datos));
     }
 
+    // Bytes reales de cabecera JPEG: el servicio ahora valida el contenido
+    // real del archivo, no solo su extensión (ver TipoArchivoValidator).
+    private static final byte[] JPEG_VALIDO = {(byte) 0xFF, (byte) 0xD8, (byte) 0xFF, 0x00, 0x01, 0x02};
+
     private MockMultipartFile carnetPart(String nombreCampo) {
-        return new MockMultipartFile(nombreCampo, nombreCampo + ".jpg", "image/jpeg", "img".getBytes());
+        return new MockMultipartFile(nombreCampo, nombreCampo + ".jpg", "image/jpeg", JPEG_VALIDO);
     }
 
     // Spy (no mock) sobre el bean real: deja que el envío simulado siga

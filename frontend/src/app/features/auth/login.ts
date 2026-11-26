@@ -59,9 +59,16 @@ import { rutaInicialPorRol } from '../../core/utils/rol-ruta';
               <label class="block text-sm font-semibold text-on-surface">Contraseña</label>
               <a routerLink="/olvide-password" class="text-xs font-semibold text-primary hover:underline">¿Olvidaste tu contraseña?</a>
             </div>
-            <input type="password" formControlName="contrasena"
-              class="w-full px-4 py-3 rounded-lg border border-outline-variant focus:ring-2 focus:ring-primary focus:border-primary outline-none transition"
-              placeholder="••••••••" />
+            <div class="relative">
+              <input [type]="mostrarPassword() ? 'text' : 'password'" formControlName="contrasena"
+                class="w-full px-4 py-3 pr-11 rounded-lg border border-outline-variant focus:ring-2 focus:ring-primary focus:border-primary outline-none transition"
+                placeholder="••••••••" />
+              <button type="button" (click)="mostrarPassword.set(!mostrarPassword())"
+                class="absolute right-3 top-1/2 -translate-y-1/2 text-on-surface-variant hover:text-primary"
+                [attr.aria-label]="mostrarPassword() ? 'Ocultar contraseña' : 'Mostrar contraseña'">
+                <span class="material-symbols-outlined text-[20px]">{{ mostrarPassword() ? 'visibility_off' : 'visibility' }}</span>
+              </button>
+            </div>
           </div>
 
           <button type="submit" [disabled]="form.invalid || cargando()"
@@ -86,6 +93,7 @@ import { rutaInicialPorRol } from '../../core/utils/rol-ruta';
 export class LoginComponent {
   form: FormGroup;
   cargando = signal(false);
+  mostrarPassword = signal(false);
   error = signal<string | null>(null);
   mostrarReenviar = signal(false);
   reenviando = signal(false);

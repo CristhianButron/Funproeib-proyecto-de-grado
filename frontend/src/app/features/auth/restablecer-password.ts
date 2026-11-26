@@ -46,11 +46,21 @@ import { UsuarioService } from '../../core/services/usuario.service';
           <form [formGroup]="form" (ngSubmit)="guardar()" class="space-y-4">
             <div>
               <label class="block text-sm font-semibold mb-1">Nueva contraseña *</label>
-              <input type="password" formControlName="contrasenaNueva" class="campo" placeholder="Mínimo 8 caracteres" />
+              <div class="relative">
+                <input [type]="mostrarNueva() ? 'text' : 'password'" formControlName="contrasenaNueva" class="campo campo-password" placeholder="Mínimo 8 caracteres" />
+                <button type="button" (click)="mostrarNueva.set(!mostrarNueva())" class="toggle-password" [attr.aria-label]="mostrarNueva() ? 'Ocultar contraseña' : 'Mostrar contraseña'">
+                  <span class="material-symbols-outlined text-[20px]">{{ mostrarNueva() ? 'visibility_off' : 'visibility' }}</span>
+                </button>
+              </div>
             </div>
             <div>
               <label class="block text-sm font-semibold mb-1">Confirmar nueva contraseña *</label>
-              <input type="password" formControlName="confirmarContrasena" class="campo" placeholder="Repite la nueva contraseña" />
+              <div class="relative">
+                <input [type]="mostrarConfirmar() ? 'text' : 'password'" formControlName="confirmarContrasena" class="campo campo-password" placeholder="Repite la nueva contraseña" />
+                <button type="button" (click)="mostrarConfirmar.set(!mostrarConfirmar())" class="toggle-password" [attr.aria-label]="mostrarConfirmar() ? 'Ocultar contraseña' : 'Mostrar contraseña'">
+                  <span class="material-symbols-outlined text-[20px]">{{ mostrarConfirmar() ? 'visibility_off' : 'visibility' }}</span>
+                </button>
+              </div>
             </div>
 
             <button type="submit" [disabled]="form.invalid || guardando()"
@@ -67,12 +77,17 @@ import { UsuarioService } from '../../core/services/usuario.service';
   styles: [`
     .campo { width:100%; padding:.6rem .8rem; border:1px solid #c5c5d3; border-radius:.5rem; outline:none; transition: all .15s; }
     .campo:focus { border-color:#1e3a8a; box-shadow:0 0 0 2px rgba(30,58,138,.2); }
+    .campo-password { padding-right: 2.75rem; }
+    .toggle-password { position:absolute; right:.75rem; top:50%; transform:translateY(-50%); color:#6b7280; }
+    .toggle-password:hover { color:#1e3a8a; }
   `],
 })
 export class RestablecerPasswordComponent implements OnInit {
   estado = signal<'sinToken' | 'formulario' | 'exito'>('formulario');
   guardando = signal(false);
   error = signal<string | null>(null);
+  mostrarNueva = signal(false);
+  mostrarConfirmar = signal(false);
   form: FormGroup;
   private token = '';
 

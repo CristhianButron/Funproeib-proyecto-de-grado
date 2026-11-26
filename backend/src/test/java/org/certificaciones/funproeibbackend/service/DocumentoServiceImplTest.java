@@ -38,6 +38,8 @@ import static org.mockito.Mockito.*;
 @DisplayName("DocumentoService - carga de documentos")
 class DocumentoServiceImplTest {
 
+    private static final byte[] PDF_VALIDO = "%PDF-1.4\ncontenido".getBytes();
+
     @Mock private DocumentoRepository documentoRepository;
     @Mock private PostulacionRepository postulacionRepository;
     @Mock private ReqDocumentoRepository reqDocumentoRepository;
@@ -104,7 +106,7 @@ class DocumentoServiceImplTest {
     @Test
     @DisplayName("Sube un archivo válido, lo guarda en disco y dispara la revisión de completitud")
     void subirArchivo_valido_guardaEnDiscoYRevisaCompletitud() {
-        MockMultipartFile archivo = new MockMultipartFile("archivo", "hoja-vida.pdf", "application/pdf", "contenido".getBytes());
+        MockMultipartFile archivo = new MockMultipartFile("archivo", "hoja-vida.pdf", "application/pdf", PDF_VALIDO);
         when(postulacionRepository.findById(5L)).thenReturn(Optional.of(postulacion));
         when(reqDocumentoRepository.findById(7L)).thenReturn(Optional.of(reqArchivo));
         when(documentoRepository.save(any(Documento.class))).thenAnswer(inv -> inv.getArgument(0));
@@ -145,7 +147,7 @@ class DocumentoServiceImplTest {
     @Test
     @DisplayName("Descarga un archivo previamente subido")
     void descargar_archivoExistente_devuelveRecurso() {
-        MockMultipartFile archivo = new MockMultipartFile("archivo", "hoja-vida.pdf", "application/pdf", "contenido".getBytes());
+        MockMultipartFile archivo = new MockMultipartFile("archivo", "hoja-vida.pdf", "application/pdf", PDF_VALIDO);
         when(postulacionRepository.findById(5L)).thenReturn(Optional.of(postulacion));
         when(reqDocumentoRepository.findById(7L)).thenReturn(Optional.of(reqArchivo));
 

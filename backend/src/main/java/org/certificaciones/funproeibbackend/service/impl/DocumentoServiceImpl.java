@@ -14,6 +14,7 @@ import org.certificaciones.funproeibbackend.repository.PostulacionRepository;
 import org.certificaciones.funproeibbackend.repository.ReqDocumentoRepository;
 import org.certificaciones.funproeibbackend.service.DocumentoService;
 import org.certificaciones.funproeibbackend.service.PostulacionCompletitudService;
+import org.certificaciones.funproeibbackend.util.TipoArchivoValidator;
 import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.core.io.Resource;
@@ -114,6 +115,17 @@ public class DocumentoServiceImpl implements DocumentoService {
         }
 
         try {
+            // No alcanza con confiar en la extensión del nombre de archivo:
+            // cualquiera puede renombrar un video pesado a "foto.jpg" para
+            // saltarse el filtro de arriba. Esto compara los primeros bytes
+            // reales del archivo contra la firma que ese formato debería
+            // tener (ver TipoArchivoValidator).
+            byte[] cabecera = archivo.getBytes();
+            if (!TipoArchivoValidator.contenidoCoincideConExtension(cabecera, extension)) {
+                throw new BusinessException("El contenido del archivo no corresponde a un " + extension.toUpperCase()
+                        + " válido (¿se renombró un archivo de otro tipo?)");
+            }
+
             Path carpetaPostulacion = Paths.get(uploadsDir, "postulacion-" + idPostulacion).toAbsolutePath().normalize();
             Files.createDirectories(carpetaPostulacion);
 

@@ -24,6 +24,7 @@ import org.certificaciones.funproeibbackend.security.JwtService;
 import org.certificaciones.funproeibbackend.service.EmailService;
 import org.certificaciones.funproeibbackend.service.UsuarioService;
 import org.certificaciones.funproeibbackend.util.CorreoDesechableValidator;
+import org.certificaciones.funproeibbackend.util.TipoArchivoValidator;
 import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.core.io.Resource;
@@ -155,6 +156,18 @@ public class UsuarioServiceImpl implements UsuarioService {
         String extension = obtenerExtension(nombreOriginal);
         if (!EXTENSIONES_IMAGEN.containsKey(extension)) {
             throw new BusinessException("La foto del " + lado + " del carnet debe ser una imagen JPG o PNG");
+        }
+
+        // No alcanza con confiar en la extensión del nombre de archivo:
+        // cualquiera puede renombrar un video pesado a "foto.jpg" para
+        // saltarse el filtro de arriba (ver TipoArchivoValidator).
+        try {
+            if (!TipoArchivoValidator.contenidoCoincideConExtension(archivo.getBytes(), extension)) {
+                throw new BusinessException("La foto del " + lado + " del carnet no es una imagen JPG o PNG válida "
+                        + "(¿se renombró un archivo de otro tipo?)");
+            }
+        } catch (IOException e) {
+            throw new UncheckedIOException("No se pudo leer la foto del " + lado + " del carnet", e);
         }
     }
 

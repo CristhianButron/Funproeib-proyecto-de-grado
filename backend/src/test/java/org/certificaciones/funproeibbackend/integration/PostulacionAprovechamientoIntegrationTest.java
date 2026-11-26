@@ -105,8 +105,11 @@ class PostulacionAprovechamientoIntegrationTest {
         // esta prueba no inicia sesión como el postulante, solo lo crea.
         MockMultipartFile datos = new MockMultipartFile("datos", "datos.json", "application/json",
                 objectMapper.writeValueAsBytes(request));
-        MockMultipartFile carnetAnverso = new MockMultipartFile("carnetAnverso", "anverso.jpg", "image/jpeg", "img".getBytes());
-        MockMultipartFile carnetReverso = new MockMultipartFile("carnetReverso", "reverso.jpg", "image/jpeg", "img".getBytes());
+        // Bytes reales de cabecera JPEG: el servicio ahora valida el
+        // contenido real del archivo, no solo su extensión.
+        byte[] jpegValido = {(byte) 0xFF, (byte) 0xD8, (byte) 0xFF, 0x00, 0x01, 0x02};
+        MockMultipartFile carnetAnverso = new MockMultipartFile("carnetAnverso", "anverso.jpg", "image/jpeg", jpegValido);
+        MockMultipartFile carnetReverso = new MockMultipartFile("carnetReverso", "reverso.jpg", "image/jpeg", jpegValido);
 
         String body = mockMvc.perform(multipart("/api/usuarios/registro")
                         .file(datos).file(carnetAnverso).file(carnetReverso))

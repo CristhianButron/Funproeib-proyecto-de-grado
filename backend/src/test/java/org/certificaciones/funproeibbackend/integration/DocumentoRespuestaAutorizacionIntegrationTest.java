@@ -138,7 +138,9 @@ class DocumentoRespuestaAutorizacionIntegrationTest {
                 .andReturn().getResponse().getContentAsString();
         idPostulacionA = ((Number) objectMapper.readValue(bodyPostulacion, Map.class).get("id")).longValue();
 
-        MockMultipartFile archivo = new MockMultipartFile("archivo", "cv-a.pdf", "application/pdf", "contenido".getBytes());
+        // Bytes reales de cabecera PDF: el servicio ahora valida el
+        // contenido real del archivo, no solo su extensión.
+        MockMultipartFile archivo = new MockMultipartFile("archivo", "cv-a.pdf", "application/pdf", "%PDF-1.4\ncontenido".getBytes());
         String bodyDocumento = mockMvc.perform(multipart("/api/documentos/subir").file(archivo)
                         .header("Authorization", tokenA)
                         .param("idPostulacion", idPostulacionA.toString())

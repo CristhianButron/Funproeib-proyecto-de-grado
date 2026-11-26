@@ -69,11 +69,17 @@ class UsuarioServiceImplTest {
     private MockMultipartFile carnetAnverso;
     private MockMultipartFile carnetReverso;
 
+    // Magic bytes reales: desde que UsuarioServiceImpl valida el contenido
+    // real del archivo (no solo la extensión, ver TipoArchivoValidator), un
+    // MockMultipartFile con contenido arbitrario ya no pasa la validación.
+    private static final byte[] JPEG_VALIDO = {(byte) 0xFF, (byte) 0xD8, (byte) 0xFF, 0x00, 0x01, 0x02};
+    private static final byte[] PNG_VALIDO = {(byte) 0x89, 0x50, 0x4E, 0x47, 0x0D, 0x0A, 0x1A, 0x0A, 0x00};
+
     @BeforeEach
     void setUp() {
         ReflectionTestUtils.setField(service, "uploadsDir", carpetaSubidas.toString());
-        carnetAnverso = new MockMultipartFile("carnetAnverso", "anverso.jpg", "image/jpeg", "img".getBytes());
-        carnetReverso = new MockMultipartFile("carnetReverso", "reverso.png", "image/png", "img".getBytes());
+        carnetAnverso = new MockMultipartFile("carnetAnverso", "anverso.jpg", "image/jpeg", JPEG_VALIDO);
+        carnetReverso = new MockMultipartFile("carnetReverso", "reverso.png", "image/png", PNG_VALIDO);
     }
 
     @Test
