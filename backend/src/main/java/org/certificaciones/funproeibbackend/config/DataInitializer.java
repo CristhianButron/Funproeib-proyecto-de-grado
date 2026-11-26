@@ -16,10 +16,14 @@ import java.time.LocalDate;
 import java.util.List;
 
 /**
- * Siembra un usuario administrador por defecto al iniciar la aplicación,
- * para poder ingresar al panel de administración sin tener que crearlo a mano.
+ * Siembra cuentas de prueba por defecto al iniciar la aplicación, para poder
+ * entrar al sistema con cada rol sin tener que crearlas a mano (ni pasar por
+ * el registro + verificación de identidad, en el caso del postulante).
  *
- * Credenciales: admin@funproeib.org / admin12345
+ * Credenciales:
+ *   admin@funproeib.org      / admin12345       (ADMIN)
+ *   evaluador@funproeib.org  / evaluador12345   (EVALUADOR)
+ *   postulante@funproeib.org / postulante12345  (POSTULANTE)
  */
 @Component
 @Order(2)
@@ -54,6 +58,57 @@ public class DataInitializer implements CommandLineRunner {
                     .build();
             usuarioRepository.save(admin);
             System.out.println(">>> Usuario ADMIN creado: admin@funproeib.org / admin12345");
+        }
+
+        if (!usuarioRepository.existsByCorreo("evaluador@funproeib.org")) {
+            var ciudadLaPaz = ciudadRepository.findFirstByNombreIgnoreCaseAndPaisNombreIgnoreCase("La Paz", "Bolivia").orElse(null);
+            Usuario evaluador = Usuario.builder()
+                    .nombre("Evaluador").apellidoPaterno("De Prueba")
+                    .correo("evaluador@funproeib.org")
+                    .contrasenaHash(passwordEncoder.encode("evaluador12345"))
+                    .ci("0000001")
+                    .rol(RolUsuario.EVALUADOR)
+                    .fechaRegistro(LocalDate.now())
+                    .activo(true)
+                    .emailVerificado(true)
+                    .identidadVerificada(true) // cuenta sembrada por el sistema, no por autoregistro: no necesita carnet
+                    .debeCambiarPassword(false)
+                    .genero(Genero.PREFIERO_NO_INDICAR)
+                    .fechaNacimiento(LocalDate.of(1990, 1, 1))
+                    .nivelEducativo(NivelEducativo.MAESTRIA)
+                    .ciudad(ciudadLaPaz)
+                    .ciudadNacimiento(ciudadLaPaz)
+                    .build();
+            usuarioRepository.save(evaluador);
+            System.out.println(">>> Usuario EVALUADOR creado: evaluador@funproeib.org / evaluador12345");
+        }
+
+        if (!usuarioRepository.existsByCorreo("postulante@funproeib.org")) {
+            var ciudadLaPaz = ciudadRepository.findFirstByNombreIgnoreCaseAndPaisNombreIgnoreCase("La Paz", "Bolivia").orElse(null);
+            Usuario postulante = Usuario.builder()
+                    .nombre("Postulante").apellidoPaterno("De Prueba")
+                    .correo("postulante@funproeib.org")
+                    .contrasenaHash(passwordEncoder.encode("postulante12345"))
+                    .ci("0000002")
+                    .rol(RolUsuario.POSTULANTE)
+                    .fechaRegistro(LocalDate.now())
+                    .activo(true)
+                    .emailVerificado(true)
+                    // No se autoregistró con carnet (no tiene rutaCarnetAnverso/Reverso),
+                    // pero igual se marca verificada a propósito: es una cuenta de
+                    // prueba sembrada por el sistema para poder postular de una, no
+                    // una cuenta real esperando revisión del Administrador.
+                    .identidadVerificada(true)
+                    .debeCambiarPassword(false)
+                    .genero(Genero.PREFIERO_NO_INDICAR)
+                    .fechaNacimiento(LocalDate.of(1998, 6, 15))
+                    .nivelEducativo(NivelEducativo.LICENCIATURA)
+                    .carreras(List.of("Ciencias de la Educación"))
+                    .ciudad(ciudadLaPaz)
+                    .ciudadNacimiento(ciudadLaPaz)
+                    .build();
+            usuarioRepository.save(postulante);
+            System.out.println(">>> Usuario POSTULANTE creado: postulante@funproeib.org / postulante12345");
         }
 
         // Backfill para bases de datos que ya tenían usuarios ADMIN/EVALUADOR
