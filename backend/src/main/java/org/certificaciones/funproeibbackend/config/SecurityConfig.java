@@ -90,15 +90,17 @@ public class SecurityConfig {
                         .requestMatchers(HttpMethod.PATCH, "/api/documentos/*/verificar",
                                 "/api/documentos/postulacion/*/verificar-todos").hasRole("ADMIN")
                         .requestMatchers(HttpMethod.GET, "/api/postulaciones/estado/**").hasRole("ADMIN")
-                        .requestMatchers("/api/reportes/**").hasRole("ADMIN")
 
-                        // Administrador o evaluador: revisión/evaluación de postulaciones, y
-                        // registrar el estado final (aprovechamiento) de los beneficiarios.
+                        // Administrador o evaluador: revisión/evaluación de postulaciones,
+                        // registrar el estado final (aprovechamiento) de los beneficiarios, y
+                        // consultar reportes (el evaluador también tiene esa pantalla, ver
+                        // app.routes.ts del frontend: ruta /evaluador/reportes).
                         .requestMatchers(HttpMethod.PATCH, "/api/postulaciones/*/estado").hasAnyRole("ADMIN", "EVALUADOR")
                         .requestMatchers(HttpMethod.PATCH, "/api/postulaciones/*/aprovechamiento").hasAnyRole("ADMIN", "EVALUADOR")
                         .requestMatchers(HttpMethod.GET, "/api/postulaciones/programa/**").hasAnyRole("ADMIN", "EVALUADOR")
                         .requestMatchers("/api/evaluaciones/**").hasAnyRole("ADMIN", "EVALUADOR")
                         .requestMatchers(HttpMethod.GET, "/api/criterios/activos").hasAnyRole("ADMIN", "EVALUADOR")
+                        .requestMatchers("/api/reportes/**").hasAnyRole("ADMIN", "EVALUADOR")
 
                         // Cualquier usuario logueado: su propio uso del portal (postular,
                         // subir documentos, responder preguntas). El dueño exacto del

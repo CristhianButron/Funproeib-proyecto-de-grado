@@ -44,9 +44,10 @@ public class UsuarioController {
         return ResponseEntity.ok(usuarioService.login(request));
     }
 
-    // Cualquiera puede ver/editar su propio perfil; un admin puede ver/editar
-    // el de cualquiera (por ejemplo, la ficha del postulante en el panel).
-    @PreAuthorize("hasRole('ADMIN') or #id.toString() == authentication.name")
+    // Cualquiera puede ver su propio perfil; admin o evaluador pueden ver el
+    // de cualquiera (ficha del postulante/beneficiario en Postulantes y
+    // Beneficiarios, que usan ambos roles -ver app.routes.ts del frontend).
+    @PreAuthorize("hasAnyRole('ADMIN','EVALUADOR') or #id.toString() == authentication.name")
     @GetMapping("/{id}")
     public ResponseEntity<UsuarioResponse> obtenerPorId(@PathVariable Long id) {
         return ResponseEntity.ok(usuarioService.obtenerPorId(id));
