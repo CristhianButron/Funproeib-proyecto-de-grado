@@ -71,9 +71,9 @@ import { EvaluacionResponse } from '../../core/models/evaluacion.model';
                             <span class="material-symbols-outlined text-[16px]">{{ doc.verificado ? 'verified' : 'schedule' }}</span>
                             {{ doc.verificado ? 'Verificado' : 'Cargado' }}
                           </span>
-                          <a [href]="verUrl(doc)" target="_blank" rel="noopener" class="text-xs font-semibold text-primary hover:underline flex items-center gap-1">
+                          <button type="button" (click)="verDocumento(doc)" class="text-xs font-semibold text-primary hover:underline flex items-center gap-1">
                             <span class="material-symbols-outlined text-[16px]">visibility</span> Ver
-                          </a>
+                          </button>
                         </div>
                       } @else if (esEditable(po)) {
                         @if (req.tipoPermitido === 'PDF') {
@@ -267,8 +267,22 @@ export class PortalMisPostulacionesComponent implements OnInit {
     });
   }
 
-  verUrl(doc: DocumentoResponse): string {
-    return doc.tipo === 'ENLACE' ? doc.rutaArchivo : this.documentoService.urlArchivo(doc.id);
+  // El endpoint para ver el archivo exige el JWT de quien lo pide (ver
+  // DocumentoController): un <a href> normal no manda ese header, así que
+  // hay que pedirlo por HttpClient y abrir el blob resultante.
+  verDocumento(doc: DocumentoResponse): void {
+    if (doc.tipo === 'ENLACE') {
+      window.open(doc.rutaArchivo, '_blank', 'noopener');
+      return;
+    }
+    this.documentoService.obtenerArchivo(doc.id).subscribe({
+      next: (blob) => {
+        const url = URL.createObjectURL(blob);
+        window.open(url, '_blank', 'noopener');
+        setTimeout(() => URL.revokeObjectURL(url), 60000);
+      },
+      error: () => this.notificar('No se pudo abrir el archivo.', true),
+    });
   }
 
   labelTipo(tipo: string): string {

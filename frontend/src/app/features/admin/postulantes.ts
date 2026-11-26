@@ -105,9 +105,9 @@ import { UsuarioResponse } from '../../core/models/usuario.model';
                     <p class="text-xs text-on-surface-variant">{{ d.tipo === 'ENLACE' ? 'Enlace' : 'Archivo' }} · {{ d.fechaCarga }}</p>
                   </div>
                   <div class="flex items-center gap-2">
-                    <a [href]="verUrl(d)" target="_blank" rel="noopener" class="text-xs font-semibold text-primary hover:underline flex items-center gap-1">
+                    <button type="button" (click)="verDocumento(d)" class="text-xs font-semibold text-primary hover:underline flex items-center gap-1">
                       <span class="material-symbols-outlined text-[16px]">visibility</span> Ver
-                    </a>
+                    </button>
                     @if (d.verificado) {
                       <span class="px-3 py-1 rounded-full text-xs font-bold bg-secondary-light text-on-secondary-container flex items-center gap-1">
                         <span class="material-symbols-outlined text-[16px]">verified</span> Verificado
@@ -195,8 +195,22 @@ export class PostulantesComponent implements OnInit {
     this.documentoService.verificar(d.id).subscribe(actualizado => d.verificado = actualizado.verificado);
   }
 
-  verUrl(d: DocumentoResponse): string {
-    return d.tipo === 'ENLACE' ? d.rutaArchivo : this.documentoService.urlArchivo(d.id);
+  // El endpoint para ver el archivo exige el JWT de quien lo pide (ver
+  // DocumentoController): un <a href> normal no manda ese header, así que
+  // hay que pedirlo por HttpClient y abrir el blob resultante.
+  verDocumento(d: DocumentoResponse): void {
+    if (d.tipo === 'ENLACE') {
+      window.open(d.rutaArchivo, '_blank', 'noopener');
+      return;
+    }
+    this.documentoService.obtenerArchivo(d.id).subscribe({
+      next: (blob) => {
+        const url = URL.createObjectURL(blob);
+        window.open(url, '_blank', 'noopener');
+        setTimeout(() => URL.revokeObjectURL(url), 60000);
+      },
+      error: () => window.alert('No se pudo abrir el archivo.'),
+    });
   }
 
   cambiarEstado(po: PostulacionResponse, estado: EstadoPostulacion): void {

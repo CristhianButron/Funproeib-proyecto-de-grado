@@ -28,9 +28,12 @@ export class DocumentoService {
     return this.http.post<DocumentoResponse>(`${this.api.base}/documentos/subir`, formData);
   }
 
-  /** URL para ver/descargar el archivo de un documento cargado. */
-  urlArchivo(idDocumento: number): string {
-    return `${this.api.base}/documentos/${idDocumento}/archivo`;
+  // Este endpoint exige el JWT de quien pide el archivo (ver DocumentoController
+  // y RecursoAuthService en el backend); un <a href> normal del navegador no
+  // manda ese header, así que hay que pedirlo por HttpClient (que el
+  // interceptor sí intercepta) y abrir el blob resultante.
+  obtenerArchivo(idDocumento: number): Observable<Blob> {
+    return this.api.getBlob(`/documentos/${idDocumento}/archivo`);
   }
 
   verificar(idDocumento: number): Observable<DocumentoResponse> {
