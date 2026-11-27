@@ -84,6 +84,7 @@ import { UsuarioResponse } from '../../core/models/usuario.model';
       @if (cargando()) {
         <p class="p-6 text-on-surface-variant">Cargando...</p>
       } @else {
+        <div class="overflow-x-auto">
         <table class="w-full text-left">
           <thead class="bg-surface-low">
             <tr>
@@ -108,6 +109,7 @@ import { UsuarioResponse } from '../../core/models/usuario.model';
             }
           </tbody>
         </table>
+        </div>
       }
     </div>
   </div>

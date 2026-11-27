@@ -36,7 +36,7 @@ import { rutaInicialPorRol } from '../../core/utils/rol-ruta';
         <div>
           <label class="block text-sm font-semibold mb-1">Nueva contraseña *</label>
           <div class="relative">
-            <input [type]="mostrarNueva() ? 'text' : 'password'" formControlName="contrasenaNueva" class="campo campo-password" placeholder="Mínimo 8 caracteres" />
+            <input [type]="mostrarNueva() ? 'text' : 'password'" formControlName="contrasenaNueva" class="campo campo-password" placeholder="Mínimo 8 caracteres, con letras y números" />
             <button type="button" (click)="mostrarNueva.set(!mostrarNueva())" class="toggle-password" [attr.aria-label]="mostrarNueva() ? 'Ocultar contraseña' : 'Mostrar contraseña'">
               <span class="material-symbols-outlined text-[20px]">{{ mostrarNueva() ? 'visibility_off' : 'visibility' }}</span>
             </button>
@@ -63,10 +63,10 @@ import { rutaInicialPorRol } from '../../core/utils/rol-ruta';
   `,
   styles: [`
     .campo { width:100%; padding:.6rem .8rem; border:1px solid #c5c5d3; border-radius:.5rem; outline:none; transition: all .15s; }
-    .campo:focus { border-color:#1e3a8a; box-shadow:0 0 0 2px rgba(30,58,138,.2); }
+    .campo:focus { border-color:#9a4a2e; box-shadow:0 0 0 2px rgba(154,74,46,.2); }
     .campo-password { padding-right: 2.75rem; }
     .toggle-password { position:absolute; right:.75rem; top:50%; transform:translateY(-50%); color:#6b7280; }
-    .toggle-password:hover { color:#1e3a8a; }
+    .toggle-password:hover { color:#9a4a2e; }
   `],
 })
 export class CambiarPasswordObligatorioComponent {
@@ -80,7 +80,7 @@ export class CambiarPasswordObligatorioComponent {
   constructor(private fb: FormBuilder, private auth: AuthService, private router: Router) {
     this.form = this.fb.group({
       contrasenaActual: ['', Validators.required],
-      contrasenaNueva: ['', [Validators.required, Validators.minLength(8)]],
+      contrasenaNueva: ['', [Validators.required, Validators.minLength(8), Validators.pattern(/^(?=.*[A-Za-z])(?=.*\d).+$/)]],
       confirmarContrasena: ['', Validators.required],
     });
   }

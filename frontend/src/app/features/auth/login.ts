@@ -1,6 +1,6 @@
-import { Component, signal } from '@angular/core';
+import { Component, OnInit, signal } from '@angular/core';
 import { FormBuilder, FormGroup, Validators, ReactiveFormsModule } from '@angular/forms';
-import { Router, RouterLink } from '@angular/router';
+import { ActivatedRoute, Router, RouterLink } from '@angular/router';
 import { AuthService } from '../../core/services/auth.service';
 import { UsuarioService } from '../../core/services/usuario.service';
 import { rutaInicialPorRol } from '../../core/utils/rol-ruta';
@@ -90,7 +90,7 @@ import { rutaInicialPorRol } from '../../core/utils/rol-ruta';
   </div>
   `,
 })
-export class LoginComponent {
+export class LoginComponent implements OnInit {
   form: FormGroup;
   cargando = signal(false);
   mostrarPassword = signal(false);
@@ -104,11 +104,21 @@ export class LoginComponent {
     private auth: AuthService,
     private usuarioService: UsuarioService,
     private router: Router,
+    private route: ActivatedRoute,
   ) {
     this.form = this.fb.group({
       correo: ['', [Validators.required, Validators.email]],
       contrasena: ['', Validators.required],
     });
+  }
+
+  // Llega acá cuando sesionExpiradaInterceptor cierra la sesión por un 401
+  // (token vencido) y redirige con este aviso en vez de dejar al usuario
+  // sin explicación de por qué volvió a la pantalla de inicio de sesión.
+  ngOnInit(): void {
+    if (this.route.snapshot.queryParamMap.get('sesionExpirada')) {
+      this.error.set('Tu sesión expiró. Vuelve a iniciar sesión.');
+    }
   }
 
   ingresar(): void {

@@ -7,6 +7,7 @@ import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
@@ -38,6 +39,9 @@ public class ProgramaController {
         return ResponseEntity.ok(programaService.actualizar(id, request));
     }
 
+    // Sin esto, cualquier usuario autenticado (incluido un postulante) podía
+    // abrir o cerrar un programa.
+    @PreAuthorize("hasRole('ADMIN')")
     @PatchMapping("/{id}/estado")
     public ResponseEntity<ProgramaResponse> cambiarEstado(@PathVariable Long id, @RequestParam String estado) {
         return ResponseEntity.ok(programaService.cambiarEstado(id, estado));

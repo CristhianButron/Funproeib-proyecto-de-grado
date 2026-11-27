@@ -19,6 +19,13 @@ import { UsuarioResponse } from '../../core/models/usuario.model';
       <p class="text-on-surface-variant">Revisa las postulaciones y verifica documentos.</p>
     </div>
 
+    @if (mensaje()) {
+      <div class="fixed top-5 left-1/2 -translate-x-1/2 z-[100] max-w-md w-[90vw] p-3 rounded-lg text-sm font-semibold shadow-xl flex items-center gap-2" [class]="mensajeError() ? 'bg-error-container text-on-error-container' : 'bg-secondary-light text-on-secondary-container'">
+        <span class="material-symbols-outlined text-[20px]">{{ mensajeError() ? 'error' : 'check_circle' }}</span>
+        {{ mensaje() }}
+      </div>
+    }
+
     <div class="bg-white rounded-xl shadow-card border border-outline-variant p-4 mb-6 flex items-center gap-3">
       <span class="material-symbols-outlined text-primary">filter_alt</span>
       <select [(ngModel)]="programaSel" (ngModelChange)="cargarPostulaciones($event)" class="campo max-w-md">
@@ -32,6 +39,7 @@ import { UsuarioResponse } from '../../core/models/usuario.model';
         @if (cargando()) {
           <p class="p-6 text-on-surface-variant">Cargando...</p>
         } @else {
+          <div class="overflow-x-auto">
           <table class="w-full text-left">
             <thead class="bg-surface-low">
               <tr>
@@ -58,6 +66,7 @@ import { UsuarioResponse } from '../../core/models/usuario.model';
               }
             </tbody>
           </table>
+          </div>
         }
       </div>
     }
@@ -69,7 +78,7 @@ import { UsuarioResponse } from '../../core/models/usuario.model';
       <div class="bg-white w-full max-w-2xl rounded-2xl shadow-xl overflow-hidden max-h-[90vh] flex flex-col" (click)="$event.stopPropagation()">
         <div class="bg-primary text-white px-6 py-4 flex items-center justify-between">
           <h2 class="font-bold text-lg flex items-center gap-2"><span class="material-symbols-outlined">badge</span> Ficha del postulante</h2>
-          <button (click)="cerrar()"><span class="material-symbols-outlined">close</span></button>
+          <button (click)="cerrar()" aria-label="Cerrar"><span class="material-symbols-outlined">close</span></button>
         </div>
         <div class="p-6 overflow-y-auto custom-scrollbar space-y-6">
           @if (perfil(); as u) {
@@ -148,7 +157,7 @@ import { UsuarioResponse } from '../../core/models/usuario.model';
   `,
   styles: [`
     .campo { width:100%; padding:.5rem .7rem; border:1px solid #c5c5d3; border-radius:.5rem; outline:none; font-size:.875rem; }
-    .campo:focus { border-color:#1e3a8a; box-shadow:0 0 0 2px rgba(30,58,138,.2); }
+    .campo:focus { border-color:#9a4a2e; box-shadow:0 0 0 2px rgba(154,74,46,.2); }
   `],
 })
 export class PostulantesComponent implements OnInit {
@@ -160,6 +169,9 @@ export class PostulantesComponent implements OnInit {
   postulacionSel = signal<PostulacionResponse | null>(null);
   perfil = signal<UsuarioResponse | null>(null);
   documentos = signal<DocumentoResponse[]>([]);
+
+  mensaje = signal<string | null>(null);
+  mensajeError = signal(false);
 
   estados: EstadoPostulacion[] = ['INCOMPLETA', 'PENDIENTE', 'EVALUADA', 'ACEPTADA', 'RECHAZADA', 'BLOQUEADA'];
 
@@ -209,7 +221,7 @@ export class PostulantesComponent implements OnInit {
         window.open(url, '_blank', 'noopener');
         setTimeout(() => URL.revokeObjectURL(url), 60000);
       },
-      error: () => window.alert('No se pudo abrir el archivo.'),
+      error: () => this.notificar('No se pudo abrir el archivo.', true),
     });
   }
 
@@ -232,5 +244,10 @@ export class PostulantesComponent implements OnInit {
       BLOQUEADA: 'bg-error-container text-on-error-container',
     };
     return map[estado] ?? 'bg-surface-high text-on-surface-variant';
+  }
+
+  private notificar(msg: string, error: boolean): void {
+    this.mensaje.set(msg); this.mensajeError.set(error);
+    setTimeout(() => this.mensaje.set(null), 4000);
   }
 }

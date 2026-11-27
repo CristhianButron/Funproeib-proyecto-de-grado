@@ -1,6 +1,6 @@
 import { Component, OnInit, computed, signal } from '@angular/core';
 import { FormsModule } from '@angular/forms';
-import { Workbook, Fill, Borders } from 'exceljs';
+import type { Workbook, Fill, Borders } from 'exceljs';
 import { ReporteService } from '../../core/services/reporte.service';
 import { ProgramaService } from '../../core/services/programa.service';
 import { UbicacionService } from '../../core/services/ubicacion.service';
@@ -10,7 +10,7 @@ import { Genero, NivelEducativo } from '../../core/models/usuario.model';
 import { EstadoAprovechamiento } from '../../core/models/postulacion.model';
 import { CiudadResponse, PaisResponse } from '../../core/models/ubicacion.model';
 
-const AZUL_OSCURO = 'FF1E3A8A';
+const TERRACOTA_OSCURO = 'FF9A4A2E';
 const BLANCO = 'FFFFFFFF';
 const GRIS_FILA = 'FFF3F4F6';
 const GRIS_BORDE = 'FFD1D5DB';
@@ -226,7 +226,7 @@ const COLOR_APROVECHAMIENTO: Record<EstadoAprovechamiento, string> = {
   `,
   styles: [`
     .campo { width:100%; padding:.5rem .7rem; border:1px solid #c5c5d3; border-radius:.5rem; outline:none; font-size:.875rem; }
-    .campo:focus { border-color:#1e3a8a; box-shadow:0 0 0 2px rgba(30,58,138,.2); }
+    .campo:focus { border-color:#9a4a2e; box-shadow:0 0 0 2px rgba(154,74,46,.2); }
     .etiqueta { display:block; font-size:.7rem; font-weight:700; text-transform:uppercase; color:#6b7280; margin-bottom:.3rem; }
   `],
 })
@@ -332,6 +332,9 @@ export class ReportesComponent implements OnInit {
     this.exportando.set(true);
 
     try {
+      // Carga diferida: exceljs pesa ~960KB y solo hace falta en el momento
+      // real de exportar, no cada vez que se abre la pantalla de Reportes.
+      const { Workbook } = await import('exceljs');
       const wb = new Workbook();
       wb.creator = 'Funproeib Andes';
       wb.created = new Date();
@@ -382,7 +385,7 @@ export class ReportesComponent implements OnInit {
     titulo.value = 'REPORTE DE BENEFICIARIOS — FUNPROEIB ANDES';
     titulo.font = { bold: true, size: 14, color: { argb: BLANCO } };
     titulo.alignment = { horizontal: 'center', vertical: 'middle' };
-    titulo.fill = fillSolido(AZUL_OSCURO);
+    titulo.fill = fillSolido(TERRACOTA_OSCURO);
     hoja.getRow(1).height = 26;
 
     hoja.mergeCells(2, 1, 2, totalCols);
@@ -400,7 +403,7 @@ export class ReportesComponent implements OnInit {
       celda.value = col.header;
       celda.font = { bold: true, color: { argb: BLANCO }, size: 11 };
       celda.alignment = { horizontal: 'center', vertical: 'middle', wrapText: true };
-      celda.fill = fillSolido(AZUL_OSCURO);
+      celda.fill = fillSolido(TERRACOTA_OSCURO);
       celda.border = bordeCompleto('FF9CA3AF');
     });
     filaEncabezado.height = 24;
@@ -418,7 +421,7 @@ export class ReportesComponent implements OnInit {
         celda.alignment = { vertical: 'middle', horizontal: colNumero === 6 ? 'center' : 'left' };
         celda.fill = fillSolido(colNumero === 5 ? COLOR_GENERO[b.genero] : colNumero === 14 ? COLOR_APROVECHAMIENTO[b.estadoAprovechamiento] : fondoFila);
       });
-      fila.getCell(1).font = { bold: true, color: { argb: AZUL_OSCURO } };
+      fila.getCell(1).font = { bold: true, color: { argb: TERRACOTA_OSCURO } };
     });
   }
 
@@ -432,7 +435,7 @@ export class ReportesComponent implements OnInit {
     titulo.value = 'RESUMEN DEL REPORTE';
     titulo.font = { bold: true, size: 13, color: { argb: BLANCO } };
     titulo.alignment = { horizontal: 'center', vertical: 'middle' };
-    titulo.fill = fillSolido(AZUL_OSCURO);
+    titulo.fill = fillSolido(TERRACOTA_OSCURO);
     hoja.getRow(1).height = 24;
 
     let fila = 3;
@@ -446,7 +449,7 @@ export class ReportesComponent implements OnInit {
     encabezadoGenero.getCell(1).value = 'Por género';
     encabezadoGenero.getCell(1).font = { bold: true, color: { argb: BLANCO } };
     encabezadoGenero.getCell(2).font = { bold: true, color: { argb: BLANCO } };
-    [1, 2].forEach(c => { encabezadoGenero.getCell(c).fill = fillSolido(AZUL_OSCURO); });
+    [1, 2].forEach(c => { encabezadoGenero.getCell(c).fill = fillSolido(TERRACOTA_OSCURO); });
 
     for (const g of this.generos) {
       const r = hoja.getRow(fila++);
@@ -460,7 +463,7 @@ export class ReportesComponent implements OnInit {
     encabezadoTipo.getCell(1).value = 'Por tipo de programa';
     encabezadoTipo.getCell(1).font = { bold: true, color: { argb: BLANCO } };
     encabezadoTipo.getCell(2).font = { bold: true, color: { argb: BLANCO } };
-    [1, 2].forEach(c => { encabezadoTipo.getCell(c).fill = fillSolido(AZUL_OSCURO); });
+    [1, 2].forEach(c => { encabezadoTipo.getCell(c).fill = fillSolido(TERRACOTA_OSCURO); });
 
     for (const t of this.tipos) {
       const cantidad = datos.filter(b => b.tipoPrograma === t).length;
@@ -475,7 +478,7 @@ export class ReportesComponent implements OnInit {
     encabezadoAprovechamiento.getCell(1).value = 'Por estado final de aprovechamiento';
     encabezadoAprovechamiento.getCell(1).font = { bold: true, color: { argb: BLANCO } };
     encabezadoAprovechamiento.getCell(2).font = { bold: true, color: { argb: BLANCO } };
-    [1, 2].forEach(c => { encabezadoAprovechamiento.getCell(c).fill = fillSolido(AZUL_OSCURO); });
+    [1, 2].forEach(c => { encabezadoAprovechamiento.getCell(c).fill = fillSolido(TERRACOTA_OSCURO); });
 
     for (const e of this.estadosAprovechamiento) {
       const cantidad = datos.filter(b => b.estadoAprovechamiento === e).length;

@@ -32,6 +32,10 @@ import java.util.Map;
  *
  * Corre antes que DataInitializer (que crea el usuario admin referenciando
  * una ciudad).
+ *
+ * A diferencia de DataInitializer, este SÍ debe correr en todos los
+ * entornos (no tiene @Profile): no siembra credenciales, sino catálogo que
+ * necesita el selector de ubicación del registro en producción también.
  */
 @Component
 @Order(1)

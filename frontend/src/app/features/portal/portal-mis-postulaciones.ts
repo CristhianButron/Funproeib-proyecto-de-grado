@@ -151,7 +151,7 @@ import { EvaluacionResponse } from '../../core/models/evaluacion.model';
   `,
   styles: [`
     .campo { padding:.4rem .6rem; border:1px solid #c5c5d3; border-radius:.5rem; outline:none; font-size:.85rem; }
-    .campo:focus { border-color:#1e3a8a; box-shadow:0 0 0 2px rgba(30,58,138,.2); }
+    .campo:focus { border-color:#9a4a2e; box-shadow:0 0 0 2px rgba(154,74,46,.2); }
   `],
 })
 export class PortalMisPostulacionesComponent implements OnInit {

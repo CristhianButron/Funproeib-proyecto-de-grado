@@ -22,7 +22,8 @@ describe('LoginComponent', () => {
 
   function crearComponente() {
     navigate = vi.fn();
-    component = new LoginComponent(new FormBuilder(), authFake, usuarioServiceFake, { navigate } as any);
+    const routeFake = { snapshot: { queryParamMap: { get: (_: string) => null } } };
+    component = new LoginComponent(new FormBuilder(), authFake, usuarioServiceFake, { navigate } as any, routeFake as any);
     component.form.patchValue({ correo: 'ana@correo.com', contrasena: 'clave1234' });
   }
 

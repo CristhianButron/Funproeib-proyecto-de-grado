@@ -272,7 +272,7 @@ import { CARRERAS } from '../../core/constants/carreras';
       outline: none;
       transition: all .15s;
     }
-    .campo:focus { border-color: #1e3a8a; box-shadow: 0 0 0 2px rgba(30,58,138,.2); }
+    .campo:focus { border-color: #9a4a2e; box-shadow: 0 0 0 2px rgba(154,74,46,.2); }
     .campo:disabled { background: #f2f2f5; color: #9ca3af; }
   `],
 })

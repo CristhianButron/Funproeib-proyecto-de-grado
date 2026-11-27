@@ -4,16 +4,21 @@ module.exports = {
   theme: {
     extend: {
       colors: {
-        primary: "#1e3a8a",
-        "primary-dark": "#00236f",
-        "primary-light": "#90a8ff",
-        "primary-fixed": "#dce1ff",
-        secondary: "#006c49",
-        "secondary-light": "#6cf8bb",
-        "on-secondary-container": "#00714d",
-        tertiary: "#232a36",
-        "tertiary-container": "#39404d",
-        "on-tertiary-container": "#a5acbb",
+        // Paleta reconstruida sobre los tonos cálidos del logo de Funproeib
+        // (pueblos andinos: tierra, terracota, oliva) en vez del azul/gris
+        // genérico de dashboard que tenía antes. Todos los componentes usan
+        // estos nombres semánticos (primary/secondary/tertiary/...), nunca un
+        // color de Tailwind literal, así que el cambio se propaga solo.
+        primary: "#9a4a2e",
+        "primary-dark": "#6b2c1c",
+        "primary-light": "#e8c9ae",
+        "primary-fixed": "#f3e2d8",
+        secondary: "#45633f",
+        "secondary-light": "#dde8d7",
+        "on-secondary-container": "#2f4a2a",
+        tertiary: "#3d2420",
+        "tertiary-container": "#54342c",
+        "on-tertiary-container": "#cbb49f",
         surface: "#f8f9fb",
         "surface-card": "#ffffff",
         "surface-low": "#f3f4f6",
@@ -25,10 +30,6 @@ module.exports = {
         error: "#ba1a1a",
         "error-container": "#ffdad6",
         "on-error-container": "#93000a",
-        // Tonos del logo (identidad Funproeib)
-        "brand-brown": "#5a2820",
-        "brand-tan": "#c9a063",
-        "brand-terracotta": "#c06a4a",
       },
       fontFamily: {
         sans: ["Inter", "system-ui", "sans-serif"],

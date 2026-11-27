@@ -14,6 +14,10 @@ import java.util.List;
  * estandarizado según el documento "Criterios de evaluación de postulaciones"
  * de Funproeib Andes (grilla propuesta: cada criterio se califica de 1 a 10,
  * puntaje total sobre 60).
+ *
+ * A diferencia de DataInitializer, este SÍ debe correr en todos los
+ * entornos (no tiene @Profile): no siembra credenciales, sino catálogo que
+ * el sistema necesita para poder evaluar postulaciones en producción.
  */
 @Component
 @Order(1)

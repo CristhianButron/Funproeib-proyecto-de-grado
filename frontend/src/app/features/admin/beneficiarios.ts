@@ -30,6 +30,13 @@ const LABEL_APROVECHAMIENTO: Record<EstadoAprovechamiento, string> = {
       <p class="text-on-surface-variant">Registra el estado final de los postulantes aceptados en cada programa.</p>
     </div>
 
+    @if (mensaje()) {
+      <div class="fixed top-5 left-1/2 -translate-x-1/2 z-[100] max-w-md w-[90vw] p-3 rounded-lg text-sm font-semibold shadow-xl flex items-center gap-2" [class]="mensajeError() ? 'bg-error-container text-on-error-container' : 'bg-secondary-light text-on-secondary-container'">
+        <span class="material-symbols-outlined text-[20px]">{{ mensajeError() ? 'error' : 'check_circle' }}</span>
+        {{ mensaje() }}
+      </div>
+    }
+
     <div class="bg-white rounded-xl shadow-card border border-outline-variant p-4 mb-6 flex items-center gap-3">
       <span class="material-symbols-outlined text-primary">filter_alt</span>
       <select [(ngModel)]="programaSel" (ngModelChange)="cargarBeneficiarios($event)" class="campo max-w-md">
@@ -46,6 +53,7 @@ const LABEL_APROVECHAMIENTO: Record<EstadoAprovechamiento, string> = {
           <p class="px-6 pt-4 text-xs text-on-surface-variant">
             Abandono se puede marcar en cualquier momento. Aprobado/Reprobado solo una vez que el programa finalice{{ programaYaFinalizo() ? '' : ' (' + fechaFinProgramaSel() + ')' }}.
           </p>
+          <div class="overflow-x-auto">
           <table class="w-full text-left">
             <thead class="bg-surface-low">
               <tr>
@@ -83,6 +91,7 @@ const LABEL_APROVECHAMIENTO: Record<EstadoAprovechamiento, string> = {
               }
             </tbody>
           </table>
+          </div>
         }
       </div>
     }
@@ -94,7 +103,7 @@ const LABEL_APROVECHAMIENTO: Record<EstadoAprovechamiento, string> = {
       <div class="bg-white w-full max-w-2xl rounded-2xl shadow-xl overflow-hidden max-h-[90vh] flex flex-col" (click)="$event.stopPropagation()">
         <div class="bg-primary text-white px-6 py-4 flex items-center justify-between">
           <h2 class="font-bold text-lg flex items-center gap-2"><span class="material-symbols-outlined">badge</span> Ficha del beneficiario</h2>
-          <button (click)="cerrar()"><span class="material-symbols-outlined">close</span></button>
+          <button (click)="cerrar()" aria-label="Cerrar"><span class="material-symbols-outlined">close</span></button>
         </div>
         <div class="p-6 overflow-y-auto custom-scrollbar space-y-6">
           @if (perfil(); as u) {
@@ -166,7 +175,7 @@ const LABEL_APROVECHAMIENTO: Record<EstadoAprovechamiento, string> = {
   `,
   styles: [`
     .campo { width:100%; padding:.5rem .7rem; border:1px solid #c5c5d3; border-radius:.5rem; outline:none; font-size:.875rem; }
-    .campo:focus { border-color:#1e3a8a; box-shadow:0 0 0 2px rgba(30,58,138,.2); }
+    .campo:focus { border-color:#9a4a2e; box-shadow:0 0 0 2px rgba(154,74,46,.2); }
   `],
 })
 export class BeneficiariosComponent implements OnInit {
@@ -181,6 +190,9 @@ export class BeneficiariosComponent implements OnInit {
   beneficiarioSel = signal<PostulacionResponse | null>(null);
   perfil = signal<UsuarioResponse | null>(null);
   documentos = signal<DocumentoResponse[]>([]);
+
+  mensaje = signal<string | null>(null);
+  mensajeError = signal(false);
 
   constructor(
     private programaService: ProgramaService,
@@ -221,7 +233,7 @@ export class BeneficiariosComponent implements OnInit {
         b.estadoAprovechamiento = actualizado.estadoAprovechamiento;
         this.beneficiarios.update(list => [...list]);
       },
-      error: (err) => alert(err?.error?.mensaje ?? 'No se pudo actualizar el estado de aprovechamiento.'),
+      error: (err) => this.notificar(err?.error?.mensaje ?? 'No se pudo actualizar el estado de aprovechamiento.', true),
     });
   }
 
@@ -249,7 +261,7 @@ export class BeneficiariosComponent implements OnInit {
         window.open(url, '_blank', 'noopener');
         setTimeout(() => URL.revokeObjectURL(url), 60000);
       },
-      error: () => window.alert('No se pudo abrir el archivo.'),
+      error: () => this.notificar('No se pudo abrir el archivo.', true),
     });
   }
 
@@ -261,5 +273,10 @@ export class BeneficiariosComponent implements OnInit {
       ABANDONO: 'bg-primary-fixed text-primary',
     };
     return map[estado] ?? 'bg-surface-high text-on-surface-variant';
+  }
+
+  private notificar(msg: string, error: boolean): void {
+    this.mensaje.set(msg); this.mensajeError.set(error);
+    setTimeout(() => this.mensaje.set(null), 4000);
   }
 }

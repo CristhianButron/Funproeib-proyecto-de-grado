@@ -3,6 +3,7 @@ import { FormsModule } from '@angular/forms';
 import { ActivatedRoute } from '@angular/router';
 import { UsuarioService } from '../../core/services/usuario.service';
 import { AuthService } from '../../core/services/auth.service';
+import { ConfirmDialogService } from '../../core/services/confirm-dialog.service';
 import { RolUsuario, UsuarioResponse } from '../../core/models/usuario.model';
 
 @Component({
@@ -37,6 +38,7 @@ import { RolUsuario, UsuarioResponse } from '../../core/models/usuario.model';
       @if (cargando()) {
         <p class="p-6 text-on-surface-variant">Cargando...</p>
       } @else {
+        <div class="overflow-x-auto">
         <table class="w-full text-left">
           <thead class="bg-surface-low">
             <tr>
@@ -89,7 +91,7 @@ import { RolUsuario, UsuarioResponse } from '../../core/models/usuario.model';
                 <td class="px-6 py-4 text-right">
                   <button (click)="eliminar(u)" [disabled]="esUsuarioActual(u)"
                     class="px-2 py-1.5 rounded-lg text-error hover:bg-error-container transition-colors disabled:opacity-30 disabled:cursor-not-allowed"
-                    title="Eliminar cuenta">
+                    title="Eliminar cuenta" aria-label="Eliminar cuenta">
                     <span class="material-symbols-outlined text-[20px]">delete</span>
                   </button>
                 </td>
@@ -99,6 +101,7 @@ import { RolUsuario, UsuarioResponse } from '../../core/models/usuario.model';
             }
           </tbody>
         </table>
+        </div>
       }
     </div>
   </div>
@@ -109,7 +112,7 @@ import { RolUsuario, UsuarioResponse } from '../../core/models/usuario.model';
       <div class="bg-white w-full max-w-2xl rounded-2xl shadow-xl overflow-hidden max-h-[90vh] flex flex-col" (click)="$event.stopPropagation()">
         <div class="bg-primary text-white px-6 py-4 flex items-center justify-between">
           <h2 class="font-bold text-lg flex items-center gap-2"><span class="material-symbols-outlined">fingerprint</span> Verificación de identidad</h2>
-          <button (click)="cerrarRevision()"><span class="material-symbols-outlined">close</span></button>
+          <button (click)="cerrarRevision()" aria-label="Cerrar"><span class="material-symbols-outlined">close</span></button>
         </div>
         <div class="p-6 overflow-y-auto custom-scrollbar space-y-4">
           <div>
@@ -150,7 +153,7 @@ import { RolUsuario, UsuarioResponse } from '../../core/models/usuario.model';
   `,
   styles: [`
     .campo { width:100%; padding:.5rem .7rem; border:1px solid #c5c5d3; border-radius:.5rem; outline:none; font-size:.875rem; }
-    .campo:focus { border-color:#1e3a8a; box-shadow:0 0 0 2px rgba(30,58,138,.2); }
+    .campo:focus { border-color:#9a4a2e; box-shadow:0 0 0 2px rgba(154,74,46,.2); }
     .campo:disabled { background:#f2f2f5; color:#9ca3af; }
   `],
 })
@@ -179,7 +182,12 @@ export class UsuariosAdminComponent implements OnInit {
     });
   }
 
-  constructor(private usuarioService: UsuarioService, private auth: AuthService, private route: ActivatedRoute) {}
+  constructor(
+    private usuarioService: UsuarioService,
+    private auth: AuthService,
+    private route: ActivatedRoute,
+    private confirmDialog: ConfirmDialogService,
+  ) {}
 
   ngOnInit(): void { this.cargar(); }
 
@@ -191,7 +199,7 @@ export class UsuariosAdminComponent implements OnInit {
         this.cargando.set(false);
         this.abrirRevisionDesdeUrl();
       },
-      error: () => { this.cargando.set(false); this.notificar('Error al cargar los usuarios. Verifica que el servidor esté corriendo.', true); },
+      error: () => { this.cargando.set(false); this.notificar('No se pudo cargar la lista de usuarios. Intenta de nuevo en unos segundos.', true); },
     });
   }
 
@@ -210,8 +218,19 @@ export class UsuariosAdminComponent implements OnInit {
     return u.id === this.auth.usuario()?.id;
   }
 
-  cambiarRol(u: UsuarioResponse, nuevoRol: RolUsuario): void {
+  // A diferencia de activo/inactivo (reversible con un clic), cambiar el rol
+  // de alguien a ADMIN le da acceso total al sistema: por eso sí pide
+  // confirmación, aunque el <select> en sí no tenga fricción.
+  async cambiarRol(u: UsuarioResponse, nuevoRol: RolUsuario): Promise<void> {
     if (nuevoRol === u.rol) return;
+    const confirmado = await this.confirmDialog.confirmar({
+      titulo: 'Cambiar rol',
+      mensaje: `¿Cambiar el rol de ${u.nombreCompleto} de ${u.rol} a ${nuevoRol}?`,
+      textoConfirmar: 'Cambiar rol',
+      peligroso: nuevoRol === 'ADMIN',
+    });
+    if (!confirmado) return;
+
     this.usuarioService.cambiarRol(u.id, nuevoRol).subscribe({
       next: (actualizado) => {
         this.usuarios.update(l => l.map(x => x.id === actualizado.id ? actualizado : x));
@@ -258,12 +277,15 @@ export class UsuariosAdminComponent implements OnInit {
   // Elimina la cuenta completa (ver UsuarioServiceImpl en el backend): por
   // eso pide confirmación fuerte y luego quita al usuario de la lista,
   // porque el registro deja de existir.
-  rechazarIdentidad(u: UsuarioResponse): void {
-    const confirmado = window.confirm(
-      `¿Rechazar la identidad de ${u.nombreCompleto}?\n\n` +
-      'Esta acción ELIMINA PERMANENTEMENTE su cuenta y todas sus postulaciones, ' +
-      'y le envía un correo informando que se detectó un posible intento de falsificación de identidad. No se puede deshacer.'
-    );
+  async rechazarIdentidad(u: UsuarioResponse): Promise<void> {
+    const confirmado = await this.confirmDialog.confirmar({
+      titulo: 'Rechazar identidad',
+      mensaje: `¿Rechazar la identidad de ${u.nombreCompleto}?\n\n` +
+        'Esta acción ELIMINA PERMANENTEMENTE su cuenta y todas sus postulaciones, ' +
+        'y le envía un correo informando que se detectó un posible intento de falsificación de identidad. No se puede deshacer.',
+      textoConfirmar: 'Rechazar y eliminar cuenta',
+      peligroso: true,
+    });
     if (!confirmado) return;
 
     this.usuarioService.rechazarIdentidad(u.id).subscribe({
@@ -279,12 +301,15 @@ export class UsuariosAdminComponent implements OnInit {
   // Distinto de rechazarIdentidad: esto es una baja administrativa normal
   // (sin correo de aviso), por eso también pide confirmación fuerte. Activo
   // /inactivo sigue siendo la forma de suspender sin perder el historial.
-  eliminar(u: UsuarioResponse): void {
-    const confirmado = window.confirm(
-      `¿Eliminar la cuenta de ${u.nombreCompleto}?\n\n` +
-      'Esta acción borra PERMANENTEMENTE la cuenta y todas sus postulaciones. No se puede deshacer. ' +
-      'Si solo quieres que deje de usar el sistema sin perder su historial, usa el botón Activo/Inactivo en vez de esto.'
-    );
+  async eliminar(u: UsuarioResponse): Promise<void> {
+    const confirmado = await this.confirmDialog.confirmar({
+      titulo: 'Eliminar cuenta',
+      mensaje: `¿Eliminar la cuenta de ${u.nombreCompleto}?\n\n` +
+        'Esta acción borra PERMANENTEMENTE la cuenta y todas sus postulaciones. No se puede deshacer. ' +
+        'Si solo quieres que deje de usar el sistema sin perder su historial, usa el botón Activo/Inactivo en vez de esto.',
+      textoConfirmar: 'Eliminar cuenta',
+      peligroso: true,
+    });
     if (!confirmado) return;
 
     this.usuarioService.eliminar(u.id).subscribe({

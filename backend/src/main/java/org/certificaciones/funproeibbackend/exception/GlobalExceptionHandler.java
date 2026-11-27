@@ -1,5 +1,7 @@
 package org.certificaciones.funproeibbackend.exception;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -18,6 +20,8 @@ import java.util.stream.Collectors;
 @RestControllerAdvice
 public class GlobalExceptionHandler {
 
+    private static final Logger log = LoggerFactory.getLogger(GlobalExceptionHandler.class);
+
     @ExceptionHandler(ResourceNotFoundException.class)
     public ResponseEntity<Map<String, Object>> handleNotFound(ResourceNotFoundException ex) {
         return buildResponse(HttpStatus.NOT_FOUND, ex.getMessage());
@@ -31,6 +35,7 @@ public class GlobalExceptionHandler {
     // filtro de seguridad que normalmente la traduciría a 403.
     @ExceptionHandler(AccessDeniedException.class)
     public ResponseEntity<Map<String, Object>> handleAccessDenied(AccessDeniedException ex) {
+        log.warn("Acceso denegado: {}", ex.getMessage());
         return buildResponse(HttpStatus.FORBIDDEN, "No tienes permiso para realizar esta acción");
     }
 
@@ -49,6 +54,7 @@ public class GlobalExceptionHandler {
 
     @ExceptionHandler(DataIntegrityViolationException.class)
     public ResponseEntity<Map<String, Object>> handleDataIntegrity(DataIntegrityViolationException ex) {
+        log.warn("Violación de integridad de datos: {}", ex.getMessage());
         return buildResponse(HttpStatus.UNPROCESSABLE_ENTITY,
                 "No se pudo guardar: hay un dato que no cumple las restricciones (valor fuera de rango, duplicado o referencia inválida)");
     }
@@ -65,6 +71,7 @@ public class GlobalExceptionHandler {
 
     @ExceptionHandler(Exception.class)
     public ResponseEntity<Map<String, Object>> handleGeneral(Exception ex) {
+        log.error("Error interno no controlado", ex);
         return buildResponse(HttpStatus.INTERNAL_SERVER_ERROR, "Error interno del servidor");
     }
 

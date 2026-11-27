@@ -76,7 +76,7 @@ import { PreguntaResponse } from '../../core/models/pregunta.model';
                 <option value="CERRADO">Cerrado</option>
               </select>
               <div class="flex items-center gap-1">
-                <button (click)="abrirEditar(p)" class="p-1.5 rounded-lg text-on-surface-variant hover:bg-surface-high transition-colors" title="Editar">
+                <button (click)="abrirEditar(p)" class="p-1.5 rounded-lg text-on-surface-variant hover:bg-surface-high transition-colors" title="Editar" aria-label="Editar programa">
                   <span class="material-symbols-outlined text-[18px]">edit</span>
                 </button>
                 <button (click)="configurar(p)" class="px-3 py-1.5 rounded-lg text-primary hover:bg-primary-fixed transition-colors text-xs font-bold flex items-center gap-1">
@@ -104,7 +104,7 @@ import { PreguntaResponse } from '../../core/models/pregunta.model';
             <span class="material-symbols-outlined">{{ editandoId() ? 'edit' : 'add_circle' }}</span>
             {{ editandoId() ? 'Editar programa' : 'Nuevo programa' }}
           </h2>
-          <button (click)="modalForm.set(false)"><span class="material-symbols-outlined">close</span></button>
+          <button (click)="modalForm.set(false)" aria-label="Cerrar"><span class="material-symbols-outlined">close</span></button>
         </div>
         <div class="p-6 space-y-4">
           <div>
@@ -157,7 +157,7 @@ import { PreguntaResponse } from '../../core/models/pregunta.model';
             <h2 class="font-bold text-lg">{{ pc.nombre }}</h2>
             <p class="text-on-tertiary-container text-sm">Requisitos, preguntas y criterios</p>
           </div>
-          <button (click)="programaConfig.set(null)"><span class="material-symbols-outlined">close</span></button>
+          <button (click)="programaConfig.set(null)" aria-label="Cerrar"><span class="material-symbols-outlined">close</span></button>
         </div>
         <div class="p-6 overflow-y-auto custom-scrollbar space-y-8">
 
@@ -193,7 +193,7 @@ import { PreguntaResponse } from '../../core/models/pregunta.model';
               @for (q of preguntas(); track q.id) {
                 <div class="flex items-center justify-between bg-surface-low rounded-lg px-4 py-2">
                   <p class="font-semibold text-sm flex-1">{{ q.orden }}. {{ q.enunciado }}</p>
-                  <button (click)="eliminarPregunta(q)" class="text-error hover:bg-error-container rounded p-1" title="Eliminar"><span class="material-symbols-outlined text-[18px]">delete</span></button>
+                  <button (click)="eliminarPregunta(q)" class="text-error hover:bg-error-container rounded p-1" title="Eliminar" aria-label="Eliminar pregunta"><span class="material-symbols-outlined text-[18px]">delete</span></button>
                 </div>
               } @empty { <p class="text-sm text-on-surface-variant">Sin preguntas aún.</p> }
             </div>
@@ -254,7 +254,7 @@ import { PreguntaResponse } from '../../core/models/pregunta.model';
   `,
   styles: [`
     .campo { width:100%; padding:.5rem .7rem; border:1px solid #c5c5d3; border-radius:.5rem; outline:none; font-size:.875rem; }
-    .campo:focus { border-color:#1e3a8a; box-shadow:0 0 0 2px rgba(30,58,138,.2); }
+    .campo:focus { border-color:#9a4a2e; box-shadow:0 0 0 2px rgba(154,74,46,.2); }
   `],
 })
 export class ProgramasAdminComponent implements OnInit {

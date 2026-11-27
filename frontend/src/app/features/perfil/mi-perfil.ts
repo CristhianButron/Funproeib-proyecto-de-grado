@@ -144,7 +144,7 @@ const OPCIONES_ETNIA = [
                 @for (c of carreras(); track c; let i = $index) {
                   <li class="flex items-center justify-between bg-surface-low rounded-lg px-3 py-1.5 text-sm">
                     <span>{{ c }}</span>
-                    <button type="button" (click)="quitarCarrera(i)" class="text-error hover:opacity-70">
+                    <button type="button" (click)="quitarCarrera(i)" class="text-error hover:opacity-70" aria-label="Quitar carrera">
                       <span class="material-symbols-outlined text-[18px]">close</span>
                     </button>
                   </li>
@@ -237,7 +237,7 @@ const OPCIONES_ETNIA = [
         <div>
           <label class="block text-sm font-semibold mb-1">Nueva contraseña *</label>
           <div class="relative">
-            <input [type]="mostrarNueva() ? 'text' : 'password'" formControlName="contrasenaNueva" class="campo campo-password" />
+            <input [type]="mostrarNueva() ? 'text' : 'password'" formControlName="contrasenaNueva" class="campo campo-password" placeholder="Mínimo 8 caracteres, con letras y números" />
             <button type="button" (click)="mostrarNueva.set(!mostrarNueva())" class="toggle-password" [attr.aria-label]="mostrarNueva() ? 'Ocultar contraseña' : 'Mostrar contraseña'">
               <span class="material-symbols-outlined text-[20px]">{{ mostrarNueva() ? 'visibility_off' : 'visibility' }}</span>
             </button>
@@ -272,11 +272,11 @@ const OPCIONES_ETNIA = [
       outline: none;
       transition: all .15s;
     }
-    .campo:focus { border-color: #1e3a8a; box-shadow: 0 0 0 2px rgba(30,58,138,.2); }
+    .campo:focus { border-color: #9a4a2e; box-shadow: 0 0 0 2px rgba(154,74,46,.2); }
     .campo:disabled { background: #f2f2f5; color: #9ca3af; }
     .campo-password { padding-right: 2.75rem; }
     .toggle-password { position:absolute; right:.75rem; top:50%; transform:translateY(-50%); color:#6b7280; }
-    .toggle-password:hover { color:#1e3a8a; }
+    .toggle-password:hover { color:#9a4a2e; }
   `],
 })
 export class MiPerfilComponent implements OnInit {
@@ -335,7 +335,7 @@ export class MiPerfilComponent implements OnInit {
 
     this.formPassword = this.fb.group({
       contrasenaActual: ['', Validators.required],
-      contrasenaNueva: ['', [Validators.required, Validators.minLength(8)]],
+      contrasenaNueva: ['', [Validators.required, Validators.minLength(8), Validators.pattern(/^(?=.*[A-Za-z])(?=.*\d).+$/)]],
       confirmar: ['', Validators.required],
     });
   }

@@ -8,6 +8,7 @@ import org.certificaciones.funproeibbackend.repository.CiudadRepository;
 import org.certificaciones.funproeibbackend.repository.UsuarioRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.boot.CommandLineRunner;
+import org.springframework.context.annotation.Profile;
 import org.springframework.core.annotation.Order;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Component;
@@ -24,9 +25,17 @@ import java.util.List;
  *   admin@funproeib.org      / admin12345       (ADMIN)
  *   evaluador@funproeib.org  / evaluador12345   (EVALUADOR)
  *   postulante@funproeib.org / postulante12345  (POSTULANTE)
+ *
+ * Gateado a "local"/"integration" a propósito: son contraseñas conocidas y
+ * publicadas acá mismo, así que nunca deben sembrarse en un entorno real
+ * (producción). Para que esta protección sirva, el despliegue en producción
+ * tiene que fijar SPRING_PROFILES_ACTIVE a un valor distinto de "local"
+ * (por ejemplo "prod"); si no se fija nada, el default sigue siendo "local"
+ * (ver application.properties) y esto se seguiría sembrando.
  */
 @Component
 @Order(2)
+@Profile({"local", "integration"})
 @RequiredArgsConstructor
 public class DataInitializer implements CommandLineRunner {
 

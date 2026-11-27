@@ -29,6 +29,10 @@ public class PostulacionController {
         return ResponseEntity.status(HttpStatus.CREATED).body(postulacionService.crear(request));
     }
 
+    // Sin esto, cualquier postulante autenticado podía ver la postulación de
+    // otro cambiando el id en la URL (no hay otro dato sensible en el cuerpo,
+    // pero igual es su información personal y la de su postulación).
+    @PreAuthorize("hasAnyRole('ADMIN','EVALUADOR') or @recursoAuth.esDuenoDePostulacion(#id, authentication.name)")
     @GetMapping("/{id}")
     public ResponseEntity<PostulacionResponse> obtenerPorId(@PathVariable Long id) {
         return ResponseEntity.ok(postulacionService.obtenerPorId(id));

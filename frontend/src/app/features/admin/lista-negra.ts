@@ -45,6 +45,7 @@ import { AuthService } from '../../core/services/auth.service';
       @if (cargando()) {
         <p class="p-6 text-on-surface-variant">Cargando...</p>
       } @else {
+        <div class="overflow-x-auto">
         <table class="w-full text-left">
           <thead class="bg-surface-low">
             <tr>
@@ -71,13 +72,14 @@ import { AuthService } from '../../core/services/auth.service';
             }
           </tbody>
         </table>
+        </div>
       }
     </div>
   </div>
   `,
   styles: [`
     .campo { width:100%; padding:.5rem .7rem; border:1px solid #c5c5d3; border-radius:.5rem; outline:none; font-size:.875rem; }
-    .campo:focus { border-color:#1e3a8a; box-shadow:0 0 0 2px rgba(30,58,138,.2); }
+    .campo:focus { border-color:#9a4a2e; box-shadow:0 0 0 2px rgba(154,74,46,.2); }
   `],
 })
 export class ListaNegraComponent implements OnInit {
