@@ -56,6 +56,14 @@ const LABEL_APROVECHAMIENTO: Record<EstadoAprovechamiento, string> = {
         <p class="text-sm mt-1">Usa el filtro de arriba para elegir una convocatoria.</p>
       </div>
     } @else {
+      <div class="grid grid-cols-2 sm:grid-cols-4 gap-3 mb-6">
+        @for (e of resumenEstados(); track e.estado) {
+          <div class="bg-white p-4 rounded-xl shadow-card border-l-4" [class]="colorBorde(e.estado)">
+            <p class="text-[11px] text-on-surface-variant uppercase font-bold">{{ LABEL_APROVECHAMIENTO[e.estado] }}</p>
+            <p class="text-2xl font-extrabold" [class]="colorTexto(e.estado)">{{ e.cantidad }}</p>
+          </div>
+        }
+      </div>
       <div class="bg-white rounded-xl shadow-card border border-outline-variant overflow-hidden">
         @if (cargando()) {
           <p class="p-6 text-on-surface-variant">Cargando...</p>
@@ -136,6 +144,11 @@ export class BeneficiariosComponent implements OnInit {
     return lista.filter(b => b.nombrePostulante.toLowerCase().includes(texto));
   });
 
+  resumenEstados = computed(() => {
+    const lista = this.beneficiarios();
+    return this.estadosAprovechamiento.map(estado => ({ estado, cantidad: lista.filter(b => b.estadoAprovechamiento === estado).length }));
+  });
+
   mensaje = signal<string | null>(null);
   mensajeError = signal(false);
 
@@ -204,6 +217,26 @@ export class BeneficiariosComponent implements OnInit {
       ABANDONO: 'bg-orange-100 text-orange-800',
     };
     return map[estado] ?? 'bg-surface-high text-on-surface-variant';
+  }
+
+  colorBorde(estado: string): string {
+    const map: Record<string, string> = {
+      PENDIENTE: 'border-amber-500',
+      APROBADO: 'border-secondary',
+      REPROBADO: 'border-error',
+      ABANDONO: 'border-orange-500',
+    };
+    return map[estado] ?? 'border-outline-variant';
+  }
+
+  colorTexto(estado: string): string {
+    const map: Record<string, string> = {
+      PENDIENTE: 'text-amber-700',
+      APROBADO: 'text-secondary',
+      REPROBADO: 'text-error',
+      ABANDONO: 'text-orange-700',
+    };
+    return map[estado] ?? 'text-on-surface-variant';
   }
 
   private notificar(msg: string, error: boolean): void {

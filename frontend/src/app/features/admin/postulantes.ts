@@ -38,6 +38,14 @@ import { PostulacionResponse } from '../../core/models/postulacion.model';
         <p class="text-sm mt-1">Usa el filtro de arriba para elegir una convocatoria.</p>
       </div>
     } @else {
+      <div class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-3 mb-6">
+        @for (e of resumenEstados(); track e.estado) {
+          <div class="bg-white p-4 rounded-xl shadow-card border-l-4" [class]="colorBorde(e.estado)">
+            <p class="text-[11px] text-on-surface-variant uppercase font-bold">{{ e.estado }}</p>
+            <p class="text-2xl font-extrabold" [class]="colorTexto(e.estado)">{{ e.cantidad }}</p>
+          </div>
+        }
+      </div>
       <div class="bg-white rounded-xl shadow-card border border-outline-variant overflow-hidden">
         @if (cargando()) {
           <p class="p-6 text-on-surface-variant">Cargando...</p>
@@ -101,6 +109,12 @@ export class PostulantesComponent implements OnInit {
     return lista.filter(po => po.nombrePostulante.toLowerCase().includes(texto));
   });
 
+  resumenEstados = computed(() => {
+    const estados: string[] = ['INCOMPLETA', 'PENDIENTE', 'EVALUADA', 'ACEPTADA', 'RECHAZADA', 'BLOQUEADA'];
+    const lista = this.postulaciones();
+    return estados.map(estado => ({ estado, cantidad: lista.filter(p => p.estado === estado).length }));
+  });
+
   constructor(
     private programaService: ProgramaService,
     private postulacionService: PostulacionService,
@@ -144,5 +158,29 @@ export class PostulantesComponent implements OnInit {
       BLOQUEADA: 'bg-on-surface text-white',
     };
     return map[estado] ?? 'bg-surface-high text-on-surface-variant';
+  }
+
+  colorBorde(estado: string): string {
+    const map: Record<string, string> = {
+      INCOMPLETA: 'border-outline-variant',
+      PENDIENTE: 'border-amber-500',
+      EVALUADA: 'border-blue-500',
+      ACEPTADA: 'border-secondary',
+      RECHAZADA: 'border-error',
+      BLOQUEADA: 'border-on-surface',
+    };
+    return map[estado] ?? 'border-outline-variant';
+  }
+
+  colorTexto(estado: string): string {
+    const map: Record<string, string> = {
+      INCOMPLETA: 'text-on-surface-variant',
+      PENDIENTE: 'text-amber-700',
+      EVALUADA: 'text-blue-700',
+      ACEPTADA: 'text-secondary',
+      RECHAZADA: 'text-error',
+      BLOQUEADA: 'text-on-surface',
+    };
+    return map[estado] ?? 'text-on-surface-variant';
   }
 }

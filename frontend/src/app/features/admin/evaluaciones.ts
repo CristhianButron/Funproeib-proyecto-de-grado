@@ -8,6 +8,7 @@ import { RespuestaService } from '../../core/services/pregunta.service';
 import { DocumentoService } from '../../core/services/documento.service';
 import { ReqDocumentoService } from '../../core/services/reqdoc.service';
 import { AuthService } from '../../core/services/auth.service';
+import { SelectBuscableComponent } from '../../core/components/select-buscable.component';
 import { ProgramaResponse } from '../../core/models/programa.model';
 import { PostulacionResponse, EstadoPostulacion } from '../../core/models/postulacion.model';
 import { CriterioEvaluacionResponse, EvaluacionResponse } from '../../core/models/evaluacion.model';
@@ -16,7 +17,7 @@ import { DocumentoResponse, ReqDocumentoResponse } from '../../core/models/docum
 
 @Component({
   selector: 'app-evaluaciones',
-  imports: [FormsModule],
+  imports: [FormsModule, SelectBuscableComponent],
   template: `
   <div>
     <div class="mb-6">
@@ -26,11 +27,22 @@ import { DocumentoResponse, ReqDocumentoResponse } from '../../core/models/docum
 
     <div class="bg-white rounded-xl shadow-card border border-outline-variant p-4 mb-6 flex items-center gap-3">
       <span class="material-symbols-outlined text-primary">filter_alt</span>
-      <select [(ngModel)]="programaSel" (ngModelChange)="seleccionarPrograma($event)" class="campo max-w-md">
-        <option [ngValue]="null">Seleccione un programa...</option>
-        @for (p of programas(); track p.id) { <option [ngValue]="p.id">{{ p.nombre }}</option> }
-      </select>
+      <div class="max-w-md flex-1">
+        <app-select-buscable [opciones]="opcionesPrograma()" [valor]="programaSel" placeholder="Seleccione un programa..."
+          (cambio)="seleccionarPrograma($event)" />
+      </div>
     </div>
+
+    @if (programaSel) {
+      <div class="grid grid-cols-2 sm:grid-cols-5 gap-3 mb-6">
+        @for (e of resumenEstados(); track e.estado) {
+          <div class="bg-white p-4 rounded-xl shadow-card border-l-4" [class]="colorBordeResumen(e.estado)">
+            <p class="text-[11px] text-on-surface-variant uppercase font-bold">{{ e.estado }}</p>
+            <p class="text-2xl font-extrabold" [class]="colorTexto(e.estado)">{{ e.cantidad }}</p>
+          </div>
+        }
+      </div>
+    }
 
     @if (mensaje()) {
       <div class="fixed top-5 left-1/2 -translate-x-1/2 z-[100] max-w-md w-[90vw] p-3 rounded-lg text-sm font-semibold shadow-xl flex items-center gap-2" [class]="mensajeError() ? 'bg-error-container text-on-error-container' : 'bg-secondary-light text-on-secondary-container'">
@@ -113,6 +125,11 @@ import { DocumentoResponse, ReqDocumentoResponse } from '../../core/models/docum
                   Decisión: {{ ps.estado }}
                 </div>
               }
+            } @else if (ps.estado === 'ACEPTADA' || ps.estado === 'RECHAZADA') {
+              <div class="bg-surface-low rounded-lg p-4 text-sm text-on-surface-variant">
+                <p class="font-bold text-on-surface flex items-center gap-2"><span class="material-symbols-outlined text-[20px]">info</span> Sin evaluación registrada</p>
+                <p class="mt-1">Esta postulación quedó <b>{{ ps.estado }}</b> sin pasar por este panel de evaluación: seguramente se cambió el estado directamente desde su ficha.</p>
+              </div>
             } @else if (ps.estado !== 'PENDIENTE') {
               <div class="bg-surface-low rounded-lg p-4 text-sm text-on-surface-variant">
                 Solo se pueden evaluar postulaciones en estado <b>PENDIENTE</b> (con todos los requisitos y preguntas completados).
@@ -172,6 +189,7 @@ import { DocumentoResponse, ReqDocumentoResponse } from '../../core/models/docum
 })
 export class EvaluacionesComponent implements OnInit {
   programas = signal<ProgramaResponse[]>([]);
+  opcionesPrograma = computed(() => this.programas().map(p => ({ id: p.id, nombre: p.nombre })));
   postulaciones = signal<PostulacionResponse[]>([]);
   criterios = signal<CriterioEvaluacionResponse[]>([]);
   respuestas = signal<RespuestaResponse[]>([]);
@@ -209,6 +227,7 @@ export class EvaluacionesComponent implements OnInit {
   }
 
   seleccionarPrograma(idPrograma: number | null): void {
+    this.programaSel = idPrograma;
     this.postulacionSel.set(null);
     this.postulaciones.set([]);
     if (!idPrograma) return;
@@ -297,23 +316,27 @@ export class EvaluacionesComponent implements OnInit {
   colorBorde(estado: string): string {
     const map: Record<string, string> = {
       INCOMPLETA: 'border-outline-variant',
-      PENDIENTE: 'border-primary',
-      EVALUADA: 'border-secondary',
+      PENDIENTE: 'border-amber-500',
+      EVALUADA: 'border-blue-500',
       ACEPTADA: 'border-secondary',
       RECHAZADA: 'border-error',
-      BLOQUEADA: 'border-error',
+      BLOQUEADA: 'border-on-surface',
     };
     return map[estado] ?? 'border-outline-variant';
+  }
+
+  colorBordeResumen(estado: string): string {
+    return this.colorBorde(estado);
   }
 
   colorTexto(estado: string): string {
     const map: Record<string, string> = {
       INCOMPLETA: 'text-on-surface-variant',
-      PENDIENTE: 'text-primary',
-      EVALUADA: 'text-secondary',
+      PENDIENTE: 'text-amber-700',
+      EVALUADA: 'text-blue-700',
       ACEPTADA: 'text-secondary',
       RECHAZADA: 'text-error',
-      BLOQUEADA: 'text-error',
+      BLOQUEADA: 'text-on-surface',
     };
     return map[estado] ?? 'text-on-surface-variant';
   }
@@ -333,6 +356,12 @@ export class EvaluacionesComponent implements OnInit {
   postulacionesOrdenadas = computed(() => {
     const orden: Record<string, number> = { PENDIENTE: 0, EVALUADA: 1, INCOMPLETA: 2, ACEPTADA: 3, RECHAZADA: 4, BLOQUEADA: 5 };
     return [...this.postulaciones()].sort((a, b) => (orden[a.estado] ?? 9) - (orden[b.estado] ?? 9));
+  });
+
+  resumenEstados = computed(() => {
+    const estados: EstadoPostulacion[] = ['PENDIENTE', 'EVALUADA', 'ACEPTADA', 'RECHAZADA', 'INCOMPLETA'];
+    const lista = this.postulaciones();
+    return estados.map(estado => ({ estado, cantidad: lista.filter(p => p.estado === estado).length }));
   });
 
   porAtenderCount = computed(() =>
