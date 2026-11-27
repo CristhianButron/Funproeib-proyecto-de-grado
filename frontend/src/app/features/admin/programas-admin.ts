@@ -154,7 +154,7 @@ import { PreguntaResponse } from '../../core/models/pregunta.model';
     </div>
   }
 
-  <!-- Modal configurar -->
+  <!-- Modal configurar (en pasos) -->
   @if (programaConfig(); as pc) {
     <div class="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4" (click)="programaConfig.set(null)">
       <div class="bg-white w-full max-w-2xl rounded-2xl shadow-xl overflow-hidden max-h-[90vh] flex flex-col" (click)="$event.stopPropagation()">
@@ -165,9 +165,25 @@ import { PreguntaResponse } from '../../core/models/pregunta.model';
           </div>
           <button (click)="programaConfig.set(null)" aria-label="Cerrar"><span class="material-symbols-outlined">close</span></button>
         </div>
-        <div class="p-6 overflow-y-auto custom-scrollbar space-y-8">
 
-          <!-- Requisitos -->
+        <!-- Indicador de pasos -->
+        <div class="flex items-center px-6 pt-5 pb-2 bg-surface-low border-b border-outline-variant">
+          @for (paso of pasosConfig; track paso.titulo; let i = $index; let last = $last) {
+            <button (click)="pasoConfig.set(i)" class="flex items-center gap-2 shrink-0" [attr.aria-current]="pasoConfig() === i ? 'step' : null">
+              <span class="w-7 h-7 rounded-full flex items-center justify-center text-xs font-bold shrink-0"
+                [class]="pasoConfig() === i ? 'bg-primary text-white' : (pasoConfig() > i ? 'bg-secondary-light text-on-secondary-container' : 'bg-surface-high text-on-surface-variant')">
+                @if (pasoConfig() > i) { <span class="material-symbols-outlined text-[16px]">check</span> } @else { {{ i + 1 }} }
+              </span>
+              <span class="text-sm font-semibold hidden sm:inline" [class]="pasoConfig() === i ? 'text-primary-dark' : 'text-on-surface-variant'">{{ paso.titulo }}</span>
+            </button>
+            @if (!last) { <div class="flex-1 h-0.5 mx-2" [class]="pasoConfig() > i ? 'bg-secondary' : 'bg-outline-variant'"></div> }
+          }
+        </div>
+
+        <div class="p-6 overflow-y-auto custom-scrollbar">
+
+          <!-- Paso 1: Requisitos -->
+          @if (pasoConfig() === 0) {
           <section>
             <h3 class="font-bold text-primary-dark flex items-center gap-2 mb-3"><span class="material-symbols-outlined">description</span> Requisitos de documentos</h3>
             <div class="space-y-2 mb-4">
@@ -190,8 +206,10 @@ import { PreguntaResponse } from '../../core/models/pregunta.model';
               <button (click)="agregarReq(pc.id)" class="col-span-2 py-2 rounded-lg bg-primary text-white font-semibold hover:bg-primary-dark transition-colors text-sm">+ Agregar requisito</button>
             </div>
           </section>
+          }
 
-          <!-- Preguntas -->
+          <!-- Paso 2: Preguntas -->
+          @if (pasoConfig() === 1) {
           <section>
             <h3 class="font-bold text-primary-dark flex items-center gap-2 mb-3"><span class="material-symbols-outlined">quiz</span> Preguntas de postulación</h3>
             <p class="text-xs text-on-surface-variant mb-3">El postulante responderá estas preguntas con texto. El evaluador las leerá para calificar los criterios.</p>
@@ -208,8 +226,10 @@ import { PreguntaResponse } from '../../core/models/pregunta.model';
               <button (click)="agregarPregunta(pc.id)" class="w-full py-2 rounded-lg bg-primary text-white font-semibold hover:bg-primary-dark transition-colors text-sm">+ Agregar pregunta</button>
             </div>
           </section>
+          }
 
-          <!-- Criterios -->
+          <!-- Paso 3: Criterios -->
+          @if (pasoConfig() === 2) {
           <section>
             <h3 class="font-bold text-primary-dark flex items-center gap-2 mb-3"><span class="material-symbols-outlined">checklist</span> Criterios de evaluación</h3>
             <p class="text-xs text-on-surface-variant mb-3">
@@ -257,6 +277,23 @@ import { PreguntaResponse } from '../../core/models/pregunta.model';
               <button (click)="agregarCriterio()" [disabled]="guardandoCriterio()" class="col-span-2 py-2 rounded-lg bg-primary text-white font-semibold hover:bg-primary-dark transition-colors text-sm">+ Agregar criterio</button>
             </div>
           </section>
+          }
+        </div>
+
+        <div class="bg-surface-low px-6 py-4 flex items-center justify-between border-t border-outline-variant">
+          <button (click)="pasoConfig.set(pasoConfig() - 1)" [disabled]="pasoConfig() === 0"
+            class="px-4 py-2 rounded-lg font-semibold text-on-surface-variant hover:bg-surface-high transition-colors disabled:opacity-0 flex items-center gap-1">
+            <span class="material-symbols-outlined text-[18px]">arrow_back</span> Atrás
+          </button>
+          @if (pasoConfig() < pasosConfig.length - 1) {
+            <button (click)="pasoConfig.set(pasoConfig() + 1)" class="px-5 py-2 rounded-lg font-bold bg-primary text-white hover:bg-primary-dark transition-colors flex items-center gap-1">
+              Siguiente <span class="material-symbols-outlined text-[18px]">arrow_forward</span>
+            </button>
+          } @else {
+            <button (click)="programaConfig.set(null)" class="px-5 py-2 rounded-lg font-bold bg-secondary text-white hover:opacity-90 transition-colors flex items-center gap-1">
+              <span class="material-symbols-outlined text-[18px]">check</span> Finalizar
+            </button>
+          }
         </div>
       </div>
     </div>
@@ -286,6 +323,8 @@ export class ProgramasAdminComponent implements OnInit {
   modalForm = signal(false);
   editandoId = signal<number | null>(null);
   programaConfig = signal<ProgramaResponse | null>(null);
+  pasoConfig = signal(0);
+  pasosConfig = [{ titulo: 'Requisitos' }, { titulo: 'Preguntas' }, { titulo: 'Criterios' }];
   criterios = signal<CriterioEvaluacionResponse[]>([]);
   criteriosActivos = computed(() => this.criterios().filter(c => c.activo));
   valorPorCriterio = computed(() => {
@@ -365,6 +404,7 @@ export class ProgramasAdminComponent implements OnInit {
 
   configurar(p: ProgramaResponse): void {
     this.programaConfig.set(p);
+    this.pasoConfig.set(0);
     this.requisitos.set([]); this.preguntas.set([]);
     this.reqDocService.listarPorPrograma(p.id).subscribe(r => this.requisitos.set(r));
     this.preguntaService.listarPorPrograma(p.id).subscribe(q => this.preguntas.set(q));
