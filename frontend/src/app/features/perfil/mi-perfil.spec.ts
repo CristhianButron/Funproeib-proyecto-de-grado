@@ -56,7 +56,7 @@ describe('MiPerfilComponent (lógica de formulario)', () => {
   });
 
   it('agregarCarrera toma la carrera seleccionada del catálogo', () => {
-    component.carreraSeleccion = 'Ciencias de la Educación';
+    component.onCarreraChange(component.opcionesCarrera.find(o => o.nombre === 'Ciencias de la Educación')!.id);
     component.agregarCarrera();
     expect(component.carreras()).toEqual(['Ciencias de la Educación']);
   });

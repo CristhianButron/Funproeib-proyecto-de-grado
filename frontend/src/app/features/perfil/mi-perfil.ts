@@ -153,16 +153,16 @@ type Pestana = 'personal' | 'perfil' | 'ubicacion' | 'seguridad';
             <div class="mt-4">
               <label class="block text-sm font-semibold mb-1">Carrera o profesión *</label>
               <div class="flex gap-2">
-                <select [(ngModel)]="carreraSeleccion" [ngModelOptions]="{standalone: true}" class="campo">
-                  <option value="">Seleccione una carrera...</option>
-                  @for (c of catalogoCarreras; track c) { <option [value]="c">{{ c }}</option> }
-                </select>
+                <div class="flex-1">
+                  <app-select-buscable [opciones]="opcionesCarrera" [valor]="idCarreraSeleccionada"
+                    placeholder="Seleccione una carrera..." (cambio)="onCarreraChange($event)" />
+                </div>
                 <button type="button" (click)="agregarCarrera()"
                   class="px-4 rounded-lg bg-primary-fixed text-primary font-semibold hover:opacity-80 transition-colors shrink-0">
                   Agregar
                 </button>
               </div>
-              @if (carreraSeleccion === 'Otra') {
+              @if (carreraSeleccionEsOtra()) {
                 <input [(ngModel)]="carreraOtroTexto" [ngModelOptions]="{standalone: true}" class="campo mt-2" placeholder="Especifica la carrera o profesión" />
               }
               @if (carreras().length > 0) {
@@ -330,9 +330,9 @@ export class MiPerfilComponent implements OnInit {
   etniaSeleccion = new FormControl('NINGUNA', { nonNullable: true });
   etniaOtroTexto = new FormControl('', { nonNullable: true });
 
-  catalogoCarreras = CARRERAS;
+  opcionesCarrera = CARRERAS.map((c, i) => ({ id: i, nombre: c }));
   carreras = signal<string[]>([]);
-  carreraSeleccion = '';
+  idCarreraSeleccionada: number | null = null;
   carreraOtroTexto = '';
 
   paises = signal<PaisResponse[]>([]);
@@ -462,11 +462,20 @@ export class MiPerfilComponent implements OnInit {
     return !!nivel && nivel !== 'SECUNDARIA';
   }
 
+  onCarreraChange(id: number | null): void {
+    this.idCarreraSeleccionada = id;
+  }
+
+  carreraSeleccionEsOtra(): boolean {
+    return this.idCarreraSeleccionada !== null && this.opcionesCarrera[this.idCarreraSeleccionada]?.nombre === 'Otra';
+  }
+
   agregarCarrera(): void {
-    const valor = (this.carreraSeleccion === 'Otra' ? this.carreraOtroTexto : this.carreraSeleccion).trim();
+    const seleccionada = this.idCarreraSeleccionada !== null ? this.opcionesCarrera[this.idCarreraSeleccionada].nombre : '';
+    const valor = (seleccionada === 'Otra' ? this.carreraOtroTexto : seleccionada).trim();
     if (!valor || this.carreras().includes(valor)) return;
     this.carreras.update(l => [...l, valor]);
-    this.carreraSeleccion = '';
+    this.idCarreraSeleccionada = null;
     this.carreraOtroTexto = '';
   }
 

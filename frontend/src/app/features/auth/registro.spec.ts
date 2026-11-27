@@ -56,15 +56,19 @@ describe('RegistroComponent (lógica de formulario)', () => {
     expect(component.nivelRequiereCarrera()).toBe(true);
   });
 
+  function idDeCarrera(nombre: string): number {
+    return component.opcionesCarrera.find(o => o.nombre === nombre)!.id;
+  }
+
   it('agregarCarrera toma la carrera seleccionada del catálogo y limpia la selección', () => {
-    component.carreraSeleccion = 'Ciencias de la Educación';
+    component.onCarreraChange(idDeCarrera('Ciencias de la Educación'));
     component.agregarCarrera();
     expect(component.carreras()).toEqual(['Ciencias de la Educación']);
-    expect(component.carreraSeleccion).toBe('');
+    expect(component.idCarreraSeleccionada).toBeNull();
   });
 
   it('agregarCarrera con "Otra" usa el texto libre recortado', () => {
-    component.carreraSeleccion = 'Otra';
+    component.onCarreraChange(idDeCarrera('Otra'));
     component.carreraOtroTexto = '  Técnico en Radiocomunicación  ';
     component.agregarCarrera();
     expect(component.carreras()).toEqual(['Técnico en Radiocomunicación']);
@@ -72,13 +76,13 @@ describe('RegistroComponent (lógica de formulario)', () => {
   });
 
   it('agregarCarrera no agrega valores vacíos ni duplicados', () => {
-    component.carreraSeleccion = '';
+    component.onCarreraChange(null);
     component.agregarCarrera();
     expect(component.carreras()).toEqual([]);
 
-    component.carreraSeleccion = 'Ingeniería Civil';
+    component.onCarreraChange(idDeCarrera('Ingeniería Civil'));
     component.agregarCarrera();
-    component.carreraSeleccion = 'Ingeniería Civil';
+    component.onCarreraChange(idDeCarrera('Ingeniería Civil'));
     component.agregarCarrera();
     expect(component.carreras()).toEqual(['Ingeniería Civil']);
   });
