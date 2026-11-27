@@ -5,11 +5,14 @@ import { PostulacionService } from '../../core/services/postulacion.service';
 import { CriterioService } from '../../core/services/criterio.service';
 import { EvaluacionService } from '../../core/services/evaluacion.service';
 import { RespuestaService } from '../../core/services/pregunta.service';
+import { DocumentoService } from '../../core/services/documento.service';
+import { ReqDocumentoService } from '../../core/services/reqdoc.service';
 import { AuthService } from '../../core/services/auth.service';
 import { ProgramaResponse } from '../../core/models/programa.model';
 import { PostulacionResponse, EstadoPostulacion } from '../../core/models/postulacion.model';
 import { CriterioEvaluacionResponse, EvaluacionResponse } from '../../core/models/evaluacion.model';
 import { RespuestaResponse } from '../../core/models/pregunta.model';
+import { DocumentoResponse, ReqDocumentoResponse } from '../../core/models/documento.model';
 
 @Component({
   selector: 'app-evaluaciones',
@@ -114,6 +117,16 @@ import { RespuestaResponse } from '../../core/models/pregunta.model';
               <div class="bg-surface-low rounded-lg p-4 text-sm text-on-surface-variant">
                 Solo se pueden evaluar postulaciones en estado <b>PENDIENTE</b> (con todos los requisitos y preguntas completados).
               </div>
+            } @else if (documentosPendientesDeVerificar().length > 0) {
+              <div class="bg-primary-fixed text-primary rounded-lg p-4 text-sm">
+                <p class="font-bold flex items-center gap-2"><span class="material-symbols-outlined">pending_actions</span> Todavía no se puede evaluar</p>
+                <p class="mt-1">Un administrador tiene que verificar estos documentos primero:</p>
+                <ul class="mt-2 space-y-1 list-disc list-inside">
+                  @for (req of documentosPendientesDeVerificar(); track req.id) {
+                    <li>{{ req.nombreDocumento }}</li>
+                  }
+                </ul>
+              </div>
             } @else {
               <div class="space-y-4">
                 @for (c of criterios(); track c.id) {
@@ -162,6 +175,8 @@ export class EvaluacionesComponent implements OnInit {
   postulaciones = signal<PostulacionResponse[]>([]);
   criterios = signal<CriterioEvaluacionResponse[]>([]);
   respuestas = signal<RespuestaResponse[]>([]);
+  documentos = signal<DocumentoResponse[]>([]);
+  requisitos = signal<ReqDocumentoResponse[]>([]);
   programaSel: number | null = null;
   postulacionSel = signal<PostulacionResponse | null>(null);
   evaluacionExistente = signal<EvaluacionResponse | null>(null);
@@ -178,6 +193,8 @@ export class EvaluacionesComponent implements OnInit {
     private criterioService: CriterioService,
     private evaluacionService: EvaluacionService,
     private respuestaService: RespuestaService,
+    private documentoService: DocumentoService,
+    private reqDocService: ReqDocumentoService,
     private auth: AuthService,
   ) {}
 
@@ -202,10 +219,14 @@ export class EvaluacionesComponent implements OnInit {
     this.postulacionSel.set(po);
     this.evaluacionExistente.set(null);
     this.respuestas.set([]);
+    this.documentos.set([]);
+    this.requisitos.set([]);
     this.puntajes = {};
     this.observaciones = '';
     this.criterios().forEach(c => this.puntajes[c.id] = 5);
     this.respuestaService.listarPorPostulacion(po.id).subscribe(r => this.respuestas.set(r));
+    this.documentoService.listarPorPostulacion(po.id).subscribe(d => this.documentos.set(d));
+    this.reqDocService.listarPorPrograma(po.idPrograma).subscribe(r => this.requisitos.set(r));
     if (['EVALUADA', 'ACEPTADA', 'RECHAZADA'].includes(po.estado)) {
       this.evaluacionService.obtenerPorPostulacion(po.id).subscribe({
         next: (ev) => this.evaluacionExistente.set(ev),
@@ -213,6 +234,17 @@ export class EvaluacionesComponent implements OnInit {
       });
     }
   }
+
+  // Documentos obligatorios que todavía no están verificados (o ni
+  // siquiera cargados): si hay alguno, el backend rechaza evaluar (ver
+  // EvaluacionServiceImpl.validarDocumentosVerificados).
+  documentosPendientesDeVerificar = computed(() => {
+    const docs = this.documentos();
+    return this.requisitos().filter(req => req.obligatorio).filter(req => {
+      const doc = docs.find(d => d.idReqDocumento === req.id);
+      return !doc || !doc.verificado;
+    });
+  });
 
   puntajeTotalActual(): string {
     const n = this.criterios().length;

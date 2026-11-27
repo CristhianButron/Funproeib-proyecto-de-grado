@@ -205,6 +205,40 @@ public class DocumentoServiceImpl implements DocumentoService {
         return mapToResponse(documentoRepository.save(documento));
     }
 
+    // Para poder borrar/reemplazar un documento si la persona se equivocó al
+    // subirlo, pero no después de que un admin ya lo verificó -en ese punto
+    // ya no es "corregir un error", sino deshacer una revisión hecha-.
+    @Override
+    @Transactional
+    public void eliminar(Long idDocumento) {
+        Documento documento = documentoRepository.findById(idDocumento)
+                .orElseThrow(() -> new ResourceNotFoundException("Documento no encontrado con id: " + idDocumento));
+
+        if (Boolean.TRUE.equals(documento.getVerificado())) {
+            throw new BusinessException("No se puede eliminar un documento ya verificado");
+        }
+
+        Long idPostulacion = documento.getPostulacion().getId();
+
+        if (documento.getTipo() == TipoDocumento.PDF && documento.getRutaArchivo() != null) {
+            try {
+                Path raiz = Paths.get(uploadsDir).toAbsolutePath().normalize();
+                Path ruta = raiz.resolve(documento.getRutaArchivo()).normalize();
+                if (ruta.startsWith(raiz)) {
+                    Files.deleteIfExists(ruta);
+                }
+            } catch (IOException e) {
+                // No vale la pena fallar el borrado del registro por esto: el
+                // archivo huérfano en disco no es un problema visible para
+                // nadie, a diferencia de dejar el documento atascado en la BD.
+                throw new UncheckedIOException("No se pudo borrar el archivo del documento", e);
+            }
+        }
+
+        documentoRepository.delete(documento);
+        completitudService.revisar(idPostulacion);
+    }
+
     @Override
     @Transactional
     public void verificarTodosDePostulacion(Long idPostulacion) {

@@ -1,7 +1,7 @@
 import { Injectable, computed, signal } from '@angular/core';
 import { Observable, tap } from 'rxjs';
 import { UsuarioService } from './usuario.service';
-import { CambiarPasswordRequest, LoginRequest, UsuarioRegistroRequest, UsuarioResponse } from '../models/usuario.model';
+import { CambiarPasswordObligatorioRequest, CambiarPasswordRequest, LoginRequest, UsuarioRegistroRequest, UsuarioResponse } from '../models/usuario.model';
 
 const STORAGE_KEY = 'funproeib_usuario';
 
@@ -32,6 +32,15 @@ export class AuthService {
 
   cambiarPassword(request: CambiarPasswordRequest): Observable<void> {
     return this.usuarioService.cambiarPassword(request).pipe(
+      tap(() => {
+        const actual = this.usuarioSignal();
+        if (actual) this.guardarSesion({ ...actual, debeCambiarPassword: false });
+      })
+    );
+  }
+
+  cambiarPasswordObligatorio(request: CambiarPasswordObligatorioRequest): Observable<void> {
+    return this.usuarioService.cambiarPasswordObligatorio(request).pipe(
       tap(() => {
         const actual = this.usuarioSignal();
         if (actual) this.guardarSesion({ ...actual, debeCambiarPassword: false });

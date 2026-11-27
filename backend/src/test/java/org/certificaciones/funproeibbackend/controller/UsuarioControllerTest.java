@@ -126,7 +126,7 @@ class UsuarioControllerTest {
         CambiarPasswordRequest request = new CambiarPasswordRequest();
         request.setIdUsuario(1L);
         request.setContrasenaActual("vieja1234");
-        request.setContrasenaNueva("nueva1234");
+        request.setContrasenaNueva("Nueva@1234");
 
         mockMvc.perform(post("/api/usuarios/cambiar-password")
                         .contentType("application/json")
@@ -155,7 +155,7 @@ class UsuarioControllerTest {
     void restablecerPassword_devuelve204() throws Exception {
         RestablecerPasswordRequest request = new RestablecerPasswordRequest();
         request.setToken("token-123");
-        request.setContrasenaNueva("nuevaClave123");
+        request.setContrasenaNueva("NuevaClave@123");
 
         mockMvc.perform(post("/api/usuarios/restablecer-password")
                         .contentType("application/json")

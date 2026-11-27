@@ -1,6 +1,7 @@
 package org.certificaciones.funproeibbackend.service.impl;
 
 import org.certificaciones.funproeibbackend.dto.ArchivoDescargable;
+import org.certificaciones.funproeibbackend.dto.CambiarPasswordObligatorioRequest;
 import org.certificaciones.funproeibbackend.dto.CambiarPasswordRequest;
 import org.certificaciones.funproeibbackend.dto.LoginRequest;
 import org.certificaciones.funproeibbackend.dto.RestablecerPasswordRequest;
@@ -323,6 +324,25 @@ public class UsuarioServiceImpl implements UsuarioService {
 
         if (!passwordEncoder.matches(request.getContrasenaActual(), usuario.getContrasenaHash())) {
             throw new BusinessException("La contraseña actual no es correcta");
+        }
+
+        usuario.setContrasenaHash(passwordEncoder.encode(request.getContrasenaNueva()));
+        usuario.setDebeCambiarPassword(false);
+        usuarioRepository.save(usuario);
+    }
+
+    @Override
+    @Transactional
+    public void cambiarPasswordObligatorio(CambiarPasswordObligatorioRequest request) {
+        Usuario usuario = usuarioRepository.findById(request.getIdUsuario())
+                .orElseThrow(() -> new ResourceNotFoundException("Usuario no encontrado con id: " + request.getIdUsuario()));
+
+        // No pide la contraseña actual (ver el DTO): por eso, a diferencia de
+        // cambiarPassword, esto solo vale para quien todavía tiene pendiente
+        // el cambio obligatorio del primer ingreso. Alguien que ya lo hizo no
+        // puede usar este atajo para cambiarse la contraseña sin la actual.
+        if (!Boolean.TRUE.equals(usuario.getDebeCambiarPassword())) {
+            throw new BusinessException("Esta operación es solo para el cambio de contraseña obligatorio del primer ingreso");
         }
 
         usuario.setContrasenaHash(passwordEncoder.encode(request.getContrasenaNueva()));

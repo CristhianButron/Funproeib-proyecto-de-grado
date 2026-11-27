@@ -8,14 +8,18 @@ import org.certificaciones.funproeibbackend.exception.BusinessException;
 import org.certificaciones.funproeibbackend.exception.ResourceNotFoundException;
 import org.certificaciones.funproeibbackend.model.CriterioEvaluacion;
 import org.certificaciones.funproeibbackend.model.DetalleEvaluacion;
+import org.certificaciones.funproeibbackend.model.Documento;
 import org.certificaciones.funproeibbackend.model.Evaluacion;
 import org.certificaciones.funproeibbackend.model.Postulacion;
+import org.certificaciones.funproeibbackend.model.ReqDocumento;
 import org.certificaciones.funproeibbackend.model.Usuario;
 import org.certificaciones.funproeibbackend.model.enums.EstadoPostulacion;
 import org.certificaciones.funproeibbackend.repository.CriterioEvaluacionRepository;
 import org.certificaciones.funproeibbackend.repository.DetalleEvaluacionRepository;
+import org.certificaciones.funproeibbackend.repository.DocumentoRepository;
 import org.certificaciones.funproeibbackend.repository.EvaluacionRepository;
 import org.certificaciones.funproeibbackend.repository.PostulacionRepository;
+import org.certificaciones.funproeibbackend.repository.ReqDocumentoRepository;
 import org.certificaciones.funproeibbackend.repository.UsuarioRepository;
 import org.certificaciones.funproeibbackend.service.EvaluacionService;
 import lombok.RequiredArgsConstructor;
@@ -44,6 +48,8 @@ public class EvaluacionServiceImpl implements EvaluacionService {
     private final PostulacionRepository postulacionRepository;
     private final UsuarioRepository usuarioRepository;
     private final CriterioEvaluacionRepository criterioRepository;
+    private final ReqDocumentoRepository reqDocumentoRepository;
+    private final DocumentoRepository documentoRepository;
 
     @Override
     @Transactional
@@ -58,6 +64,8 @@ public class EvaluacionServiceImpl implements EvaluacionService {
         if (evaluacionRepository.existsByPostulacionId(postulacion.getId())) {
             throw new BusinessException("Esta postulación ya tiene una evaluación registrada");
         }
+
+        validarDocumentosVerificados(postulacion);
 
         validarCubreTodosLosCriterios(request.getDetalles());
 
@@ -108,6 +116,24 @@ public class EvaluacionServiceImpl implements EvaluacionService {
         }).toList();
 
         return detalleRepository.saveAll(detalles);
+    }
+
+    // La carga de documentos ya pasa sola la postulación a PENDIENTE (ver
+    // PostulacionCompletitudService), pero eso solo confirma que está todo
+    // cargado, no que un administrador lo revisó. Sin esto, el evaluador
+    // podía calificar en base a documentos que nadie verificó todavía.
+    private void validarDocumentosVerificados(Postulacion postulacion) {
+        List<ReqDocumento> obligatorios = reqDocumentoRepository.findByProgramaId(postulacion.getPrograma().getId())
+                .stream().filter(ReqDocumento::getObligatorio).toList();
+        List<Documento> cargados = documentoRepository.findByPostulacionId(postulacion.getId());
+
+        boolean todosVerificados = obligatorios.stream().allMatch(req ->
+                cargados.stream().anyMatch(doc -> doc.getReqDocumento().getId().equals(req.getId())
+                        && Boolean.TRUE.equals(doc.getVerificado())));
+
+        if (!todosVerificados) {
+            throw new BusinessException("No se puede evaluar: un administrador todavía no verificó todos los documentos obligatorios");
+        }
     }
 
     private void validarCubreTodosLosCriterios(List<DetalleEvaluacionRequest> detalles) {

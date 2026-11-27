@@ -35,6 +35,11 @@ class EvaluacionServiceImplTest {
     @Mock private PostulacionRepository postulacionRepository;
     @Mock private UsuarioRepository usuarioRepository;
     @Mock private CriterioEvaluacionRepository criterioRepository;
+    // Sin stubear a propósito: por default Mockito devuelve listas vacías,
+    // o sea "sin requisitos obligatorios" -> la verificación queda satisfecha
+    // vacuamente y no afecta a los tests existentes de esta clase.
+    @Mock private ReqDocumentoRepository reqDocumentoRepository;
+    @Mock private DocumentoRepository documentoRepository;
 
     @InjectMocks private EvaluacionServiceImpl service;
 

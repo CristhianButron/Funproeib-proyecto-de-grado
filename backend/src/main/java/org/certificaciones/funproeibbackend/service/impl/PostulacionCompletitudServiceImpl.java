@@ -28,7 +28,15 @@ public class PostulacionCompletitudServiceImpl implements PostulacionCompletitud
     @Transactional
     public void revisar(Long idPostulacion) {
         Postulacion postulacion = postulacionRepository.findById(idPostulacion).orElse(null);
-        if (postulacion == null || postulacion.getEstado() != EstadoPostulacion.INCOMPLETA) {
+        if (postulacion == null) {
+            return;
+        }
+        // Una vez evaluada/aceptada/rechazada/bloqueada, la decisión ya está
+        // tomada: borrar o volver a subir un documento después no debe
+        // reabrir la postulación. Solo se recalcula mientras sigue en
+        // trámite (INCOMPLETA o PENDIENTE).
+        if (postulacion.getEstado() != EstadoPostulacion.INCOMPLETA
+                && postulacion.getEstado() != EstadoPostulacion.PENDIENTE) {
             return;
         }
 
@@ -49,7 +57,14 @@ public class PostulacionCompletitudServiceImpl implements PostulacionCompletitud
                         && r.getRespuesta() != null && !r.getRespuesta().isBlank()));
 
         if (docsCompletos && preguntasRespondidas) {
-            postulacion.setEstado(EstadoPostulacion.PENDIENTE);
+            if (postulacion.getEstado() != EstadoPostulacion.PENDIENTE) {
+                postulacion.setEstado(EstadoPostulacion.PENDIENTE);
+                postulacionRepository.save(postulacion);
+            }
+        } else if (postulacion.getEstado() != EstadoPostulacion.INCOMPLETA) {
+            // Se eliminó un documento (o quedó sin respuesta) que hacía
+            // falta: vuelve a INCOMPLETA hasta que se complete de nuevo.
+            postulacion.setEstado(EstadoPostulacion.INCOMPLETA);
             postulacionRepository.save(postulacion);
         }
     }

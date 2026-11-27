@@ -13,7 +13,7 @@ public class RestablecerPasswordRequest {
 
     @NotBlank(message = "La nueva contraseña es obligatoria")
     @Size(min = 8, message = "La nueva contraseña debe tener al menos 8 caracteres")
-    @Pattern(regexp = "^(?=.*[A-Za-z])(?=.*\\d).*$",
-            message = "La nueva contraseña debe combinar letras y números")
+    @Pattern(regexp = "^(?=.*[A-Z])(?=.*\\d)(?=.*[^A-Za-z0-9\\s]).*$",
+            message = "La nueva contraseña debe combinar mayúscula, número y símbolo")
     private String contrasenaNueva;
 }

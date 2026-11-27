@@ -85,23 +85,23 @@ describe('MiPerfilComponent (lógica de formulario)', () => {
   });
 
   it('cambiarPassword rechaza si la confirmación no coincide', () => {
-    component.formPassword.patchValue({ contrasenaActual: 'actual123', contrasenaNueva: 'nueva1234', confirmar: 'otra1234' });
+    component.formPassword.patchValue({ contrasenaActual: 'actual123', contrasenaNueva: 'Nueva@1234', confirmar: 'Otra@1234' });
     component.cambiarPassword();
     expect(authFake.cambiarPassword).not.toHaveBeenCalled();
     expect(component.mensajePassword()).toContain('no coinciden');
   });
 
   it('cambiarPassword exitoso limpia el formulario y muestra confirmación', () => {
-    component.formPassword.patchValue({ contrasenaActual: 'actual123', contrasenaNueva: 'nueva1234', confirmar: 'nueva1234' });
+    component.formPassword.patchValue({ contrasenaActual: 'actual123', contrasenaNueva: 'Nueva@1234', confirmar: 'Nueva@1234' });
     component.cambiarPassword();
-    expect(authFake.cambiarPassword).toHaveBeenCalledWith({ idUsuario: 7, contrasenaActual: 'actual123', contrasenaNueva: 'nueva1234' });
+    expect(authFake.cambiarPassword).toHaveBeenCalledWith({ idUsuario: 7, contrasenaActual: 'actual123', contrasenaNueva: 'Nueva@1234' });
     expect(component.mensajePasswordError()).toBe(false);
     expect(component.formPassword.get('contrasenaActual')?.value).toBeFalsy();
   });
 
   it('cambiarPassword con error del backend lo muestra', () => {
     authFake.cambiarPassword.mockReturnValue(throwError(() => ({ error: { mensaje: 'La contraseña actual no es correcta' } })));
-    component.formPassword.patchValue({ contrasenaActual: 'mala', contrasenaNueva: 'nueva1234', confirmar: 'nueva1234' });
+    component.formPassword.patchValue({ contrasenaActual: 'mala', contrasenaNueva: 'Nueva@1234', confirmar: 'Nueva@1234' });
     component.cambiarPassword();
     expect(component.mensajePassword()).toBe('La contraseña actual no es correcta');
     expect(component.mensajePasswordError()).toBe(true);

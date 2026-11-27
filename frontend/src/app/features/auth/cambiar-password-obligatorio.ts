@@ -25,18 +25,9 @@ import { rutaInicialPorRol } from '../../core/utils/rol-ruta';
 
       <form [formGroup]="form" (ngSubmit)="guardar()" class="space-y-4">
         <div>
-          <label class="block text-sm font-semibold mb-1">Contraseña temporal (la que recibiste por correo) *</label>
-          <div class="relative">
-            <input [type]="mostrarActual() ? 'text' : 'password'" formControlName="contrasenaActual" class="campo campo-password" placeholder="••••••••" />
-            <button type="button" (click)="mostrarActual.set(!mostrarActual())" class="toggle-password" [attr.aria-label]="mostrarActual() ? 'Ocultar contraseña' : 'Mostrar contraseña'">
-              <span class="material-symbols-outlined text-[20px]">{{ mostrarActual() ? 'visibility_off' : 'visibility' }}</span>
-            </button>
-          </div>
-        </div>
-        <div>
           <label class="block text-sm font-semibold mb-1">Nueva contraseña *</label>
           <div class="relative">
-            <input [type]="mostrarNueva() ? 'text' : 'password'" formControlName="contrasenaNueva" class="campo campo-password" placeholder="Mínimo 8 caracteres, con letras y números" />
+            <input [type]="mostrarNueva() ? 'text' : 'password'" formControlName="contrasenaNueva" class="campo campo-password" placeholder="Mínimo 8 caracteres, con mayúscula, número y símbolo" />
             <button type="button" (click)="mostrarNueva.set(!mostrarNueva())" class="toggle-password" [attr.aria-label]="mostrarNueva() ? 'Ocultar contraseña' : 'Mostrar contraseña'">
               <span class="material-symbols-outlined text-[20px]">{{ mostrarNueva() ? 'visibility_off' : 'visibility' }}</span>
             </button>
@@ -73,21 +64,21 @@ export class CambiarPasswordObligatorioComponent {
   form: FormGroup;
   guardando = signal(false);
   error = signal<string | null>(null);
-  mostrarActual = signal(false);
   mostrarNueva = signal(false);
   mostrarConfirmar = signal(false);
 
   constructor(private fb: FormBuilder, private auth: AuthService, private router: Router) {
     this.form = this.fb.group({
-      contrasenaActual: ['', Validators.required],
-      contrasenaNueva: ['', [Validators.required, Validators.minLength(8), Validators.pattern(/^(?=.*[A-Za-z])(?=.*\d).+$/)]],
+      // Sin contraseña actual: la persona la escribió hace unos segundos
+      // para entrar a esta misma pantalla (ver AuthService.cambiarPasswordObligatorio).
+      contrasenaNueva: ['', [Validators.required, Validators.minLength(8), Validators.pattern(/^(?=.*[A-Z])(?=.*\d)(?=.*[^A-Za-z0-9\s]).+$/)]],
       confirmarContrasena: ['', Validators.required],
     });
   }
 
   guardar(): void {
     if (this.form.invalid) return;
-    const { contrasenaActual, contrasenaNueva, confirmarContrasena } = this.form.value;
+    const { contrasenaNueva, confirmarContrasena } = this.form.value;
     if (contrasenaNueva !== confirmarContrasena) {
       this.error.set('Las contraseñas no coinciden.');
       return;
@@ -97,7 +88,7 @@ export class CambiarPasswordObligatorioComponent {
 
     this.guardando.set(true);
     this.error.set(null);
-    this.auth.cambiarPassword({ idUsuario, contrasenaActual, contrasenaNueva }).subscribe({
+    this.auth.cambiarPasswordObligatorio({ idUsuario, contrasenaNueva }).subscribe({
       next: () => {
         this.guardando.set(false);
         const rol = this.auth.usuario()?.rol;

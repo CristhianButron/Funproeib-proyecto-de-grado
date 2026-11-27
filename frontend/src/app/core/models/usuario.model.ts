@@ -104,3 +104,8 @@ export interface CambiarPasswordRequest {
   contrasenaActual: string;
   contrasenaNueva: string;
 }
+
+export interface CambiarPasswordObligatorioRequest {
+  idUsuario: number;
+  contrasenaNueva: string;
+}

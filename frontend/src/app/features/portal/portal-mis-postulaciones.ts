@@ -2,6 +2,7 @@ import { Component, OnInit, signal } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { PostulacionService } from '../../core/services/postulacion.service';
 import { DocumentoService } from '../../core/services/documento.service';
+import { ConfirmDialogService } from '../../core/services/confirm-dialog.service';
 import { ReqDocumentoService } from '../../core/services/reqdoc.service';
 import { PreguntaService, RespuestaService } from '../../core/services/pregunta.service';
 import { EvaluacionService } from '../../core/services/evaluacion.service';
@@ -74,6 +75,11 @@ import { EvaluacionResponse } from '../../core/models/evaluacion.model';
                           <button type="button" (click)="verDocumento(doc)" class="text-xs font-semibold text-primary hover:underline flex items-center gap-1">
                             <span class="material-symbols-outlined text-[16px]">visibility</span> Ver
                           </button>
+                          @if (esEditable(po) && !doc.verificado) {
+                            <button type="button" (click)="quitarDocumento(po, doc)" class="text-xs font-semibold text-error hover:underline flex items-center gap-1">
+                              <span class="material-symbols-outlined text-[16px]">delete</span> Quitar
+                            </button>
+                          }
                         </div>
                       } @else if (esEditable(po)) {
                         @if (req.tipoPermitido === 'PDF') {
@@ -177,6 +183,7 @@ export class PortalMisPostulacionesComponent implements OnInit {
     private respuestaService: RespuestaService,
     private evaluacionService: EvaluacionService,
     private auth: AuthService,
+    private confirmDialog: ConfirmDialogService,
   ) {}
 
   ngOnInit(): void {
@@ -264,6 +271,27 @@ export class PortalMisPostulacionesComponent implements OnInit {
         delete this.subiendo[key];
         this.notificar(err.error?.mensaje || 'Error al subir el archivo', true);
       },
+    });
+  }
+
+  async quitarDocumento(po: PostulacionResponse, doc: DocumentoResponse): Promise<void> {
+    const confirmado = await this.confirmDialog.confirmar({
+      titulo: 'Quitar documento',
+      mensaje: '¿Quitar este documento? Vas a tener que volver a subirlo.',
+      textoConfirmar: 'Quitar',
+      peligroso: true,
+    });
+    if (!confirmado) return;
+
+    this.documentoService.eliminar(doc.id).subscribe({
+      next: () => {
+        this.documentosPorPostulacion.update(m => ({
+          ...m, [po.id]: (m[po.id] ?? []).filter(d => d.id !== doc.id),
+        }));
+        this.refrescarEstado(po);
+        this.notificar('Documento eliminado. Ya puedes volver a subirlo.', false);
+      },
+      error: (err) => this.notificar(err.error?.mensaje || 'No se pudo eliminar el documento', true),
     });
   }
 

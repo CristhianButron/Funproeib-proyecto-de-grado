@@ -1,6 +1,7 @@
 package org.certificaciones.funproeibbackend.service;
 
 import org.certificaciones.funproeibbackend.dto.ArchivoDescargable;
+import org.certificaciones.funproeibbackend.dto.CambiarPasswordObligatorioRequest;
 import org.certificaciones.funproeibbackend.dto.CambiarPasswordRequest;
 import org.certificaciones.funproeibbackend.dto.LoginRequest;
 import org.certificaciones.funproeibbackend.dto.RestablecerPasswordRequest;
@@ -21,6 +22,7 @@ public interface UsuarioService {
     void verificarCorreo(String token);
     void reenviarVerificacion(String correo);
     void cambiarPassword(CambiarPasswordRequest request);
+    void cambiarPasswordObligatorio(CambiarPasswordObligatorioRequest request);
     void solicitarRecuperacionPassword(String correo);
     void restablecerPassword(RestablecerPasswordRequest request);
     UsuarioResponse cambiarRol(Long id, RolUsuario nuevoRol);

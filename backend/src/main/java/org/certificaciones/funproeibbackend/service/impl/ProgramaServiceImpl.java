@@ -31,6 +31,9 @@ public class ProgramaServiceImpl implements ProgramaService {
         if (request.getFechaFin().isBefore(request.getFechaInicio())) {
             throw new BusinessException("La fecha de fin no puede ser anterior a la fecha de inicio");
         }
+        if (request.getFechaFin().isBefore(LocalDate.now())) {
+            throw new BusinessException("La fecha de fin no puede ser anterior a hoy: no tiene sentido crear un programa que ya terminó");
+        }
 
         Programa programa = Programa.builder()
                 .nombre(request.getNombre())
@@ -62,6 +65,13 @@ public class ProgramaServiceImpl implements ProgramaService {
     public ProgramaResponse actualizar(Long id, ProgramaRequest request) {
         Programa programa = buscarPrograma(id);
 
+        if (request.getFechaFin().isBefore(request.getFechaInicio())) {
+            throw new BusinessException("La fecha de fin no puede ser anterior a la fecha de inicio");
+        }
+        if (request.getFechaFin().isBefore(LocalDate.now())) {
+            throw new BusinessException("La fecha de fin no puede ser anterior a hoy");
+        }
+
         programa.setNombre(request.getNombre());
         programa.setTipo(request.getTipo());
         programa.setEdicion(request.getEdicion());
@@ -76,11 +86,20 @@ public class ProgramaServiceImpl implements ProgramaService {
     @Transactional
     public ProgramaResponse cambiarEstado(Long id, String nuevoEstado) {
         Programa programa = buscarPrograma(id);
+        EstadoPrograma estado;
         try {
-            programa.setEstado(EstadoPrograma.valueOf(nuevoEstado.toUpperCase()));
+            estado = EstadoPrograma.valueOf(nuevoEstado.toUpperCase());
         } catch (IllegalArgumentException e) {
             throw new BusinessException("Estado no válido: " + nuevoEstado);
         }
+        // Encontramos programas que quedaban ABIERTO/ACTIVO con su fecha de fin
+        // ya vencida (el cierre automático nocturno -ver ProgramaEstadoScheduler-
+        // los agarra recién al otro día). Esto lo bloquea en el momento.
+        if ((estado == EstadoPrograma.ABIERTO || estado == EstadoPrograma.ACTIVO)
+                && programa.getFechaFin().isBefore(LocalDate.now())) {
+            throw new BusinessException("No se puede abrir/activar un programa cuya fecha de fin ya pasó");
+        }
+        programa.setEstado(estado);
         return mapToResponse(programaRepository.save(programa));
     }
 

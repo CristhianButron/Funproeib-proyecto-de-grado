@@ -2,8 +2,10 @@ package org.certificaciones.funproeibbackend.integration;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.certificaciones.funproeibbackend.model.Ciudad;
+import org.certificaciones.funproeibbackend.model.Programa;
 import org.certificaciones.funproeibbackend.model.Usuario;
 import org.certificaciones.funproeibbackend.repository.CiudadRepository;
+import org.certificaciones.funproeibbackend.repository.ProgramaRepository;
 import org.certificaciones.funproeibbackend.repository.UsuarioRepository;
 import org.certificaciones.funproeibbackend.security.JwtService;
 import org.junit.jupiter.api.BeforeEach;
@@ -61,6 +63,7 @@ class PostulacionAprovechamientoIntegrationTest {
 
     @Autowired private CiudadRepository ciudadRepository;
     @Autowired private UsuarioRepository usuarioRepository;
+    @Autowired private ProgramaRepository programaRepository;
     @Autowired private JwtService jwtService;
 
     private String tokenAdmin;
@@ -118,11 +121,25 @@ class PostulacionAprovechamientoIntegrationTest {
         return ((Number) objectMapper.readValue(body, Map.class).get("id")).longValue();
     }
 
-    /** Crea un programa con las fechas dadas y lo abre (acciones de admin). Devuelve su id. */
+    /**
+     * Crea un programa con las fechas dadas y lo abre (acciones de admin).
+     * Devuelve su id.
+     *
+     * Si fechaFin ya pasó, no se puede crear/abrir así directamente (ver
+     * ProgramaServiceImpl: no deja crear ni abrir un programa ya vencido,
+     * justamente el bug que esta regla corrige). Para simular un programa
+     * "ya finalizado" en la prueba sin violar esa regla, se crea y abre con
+     * una fechaFin todavía válida y recién después se retrasa directamente
+     * en la base -como pasaría en la vida real: se abrió bien y el tiempo
+     * avanzó hasta vencerlo-.
+     */
     private Long crearProgramaAbierto(String nombre, LocalDate fechaInicio, LocalDate fechaFin) throws Exception {
+        boolean yaVencido = fechaFin.isBefore(LocalDate.now());
+        LocalDate fechaFinParaCrear = yaVencido ? LocalDate.now() : fechaFin;
+
         Map<String, Object> request = Map.of(
                 "nombre", nombre, "tipo", "TALLER", "edicion", "2026",
-                "fechaInicio", fechaInicio.toString(), "fechaFin", fechaFin.toString(),
+                "fechaInicio", fechaInicio.toString(), "fechaFin", fechaFinParaCrear.toString(),
                 "cuposDisponibles", 5
         );
         String body = mockMvc.perform(post("/api/programas")
@@ -135,6 +152,12 @@ class PostulacionAprovechamientoIntegrationTest {
 
         mockMvc.perform(patch("/api/programas/{id}/estado", id).header("Authorization", tokenAdmin).param("estado", "ABIERTO"))
                 .andExpect(status().isOk());
+
+        if (yaVencido) {
+            Programa programa = programaRepository.findById(id).orElseThrow();
+            programa.setFechaFin(fechaFin);
+            programaRepository.save(programa);
+        }
         return id;
     }
 

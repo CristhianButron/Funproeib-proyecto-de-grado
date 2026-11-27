@@ -47,7 +47,7 @@ import { UsuarioService } from '../../core/services/usuario.service';
             <div>
               <label class="block text-sm font-semibold mb-1">Nueva contraseña *</label>
               <div class="relative">
-                <input [type]="mostrarNueva() ? 'text' : 'password'" formControlName="contrasenaNueva" class="campo campo-password" placeholder="Mínimo 8 caracteres, con letras y números" />
+                <input [type]="mostrarNueva() ? 'text' : 'password'" formControlName="contrasenaNueva" class="campo campo-password" placeholder="Mínimo 8 caracteres, con mayúscula, número y símbolo" />
                 <button type="button" (click)="mostrarNueva.set(!mostrarNueva())" class="toggle-password" [attr.aria-label]="mostrarNueva() ? 'Ocultar contraseña' : 'Mostrar contraseña'">
                   <span class="material-symbols-outlined text-[20px]">{{ mostrarNueva() ? 'visibility_off' : 'visibility' }}</span>
                 </button>
@@ -98,7 +98,7 @@ export class RestablecerPasswordComponent implements OnInit {
     private usuarioService: UsuarioService,
   ) {
     this.form = this.fb.group({
-      contrasenaNueva: ['', [Validators.required, Validators.minLength(8), Validators.pattern(/^(?=.*[A-Za-z])(?=.*\d).+$/)]],
+      contrasenaNueva: ['', [Validators.required, Validators.minLength(8), Validators.pattern(/^(?=.*[A-Z])(?=.*\d)(?=.*[^A-Za-z0-9\s]).+$/)]],
       confirmarContrasena: ['', Validators.required],
     });
   }

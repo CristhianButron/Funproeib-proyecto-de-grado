@@ -1,6 +1,7 @@
 package org.certificaciones.funproeibbackend.controller;
 
 import org.certificaciones.funproeibbackend.dto.ArchivoDescargable;
+import org.certificaciones.funproeibbackend.dto.CambiarPasswordObligatorioRequest;
 import org.certificaciones.funproeibbackend.dto.CambiarPasswordRequest;
 import org.certificaciones.funproeibbackend.dto.LoginRequest;
 import org.certificaciones.funproeibbackend.dto.OlvidePasswordRequest;
@@ -101,6 +102,17 @@ public class UsuarioController {
     @PostMapping("/cambiar-password")
     public ResponseEntity<Void> cambiarPassword(@Valid @RequestBody CambiarPasswordRequest request) {
         usuarioService.cambiarPassword(request);
+        return ResponseEntity.noContent().build();
+    }
+
+    // Variante sin contraseña actual, solo para el cambio obligatorio del
+    // primer ingreso (ver CambiarPasswordObligatorioRequest y
+    // UsuarioServiceImpl: exige debeCambiarPassword=true del lado del
+    // servidor, así que no sirve como atajo general).
+    @PreAuthorize("#request.idUsuario.toString() == authentication.name")
+    @PostMapping("/cambiar-password-obligatorio")
+    public ResponseEntity<Void> cambiarPasswordObligatorio(@Valid @RequestBody CambiarPasswordObligatorioRequest request) {
+        usuarioService.cambiarPasswordObligatorio(request);
         return ResponseEntity.noContent().build();
     }
 

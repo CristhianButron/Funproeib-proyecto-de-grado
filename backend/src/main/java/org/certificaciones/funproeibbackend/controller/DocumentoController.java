@@ -73,4 +73,13 @@ public class DocumentoController {
         documentoService.verificarTodosDePostulacion(idPostulacion);
         return ResponseEntity.noContent().build();
     }
+
+    // Solo ADMIN o el dueño, no EVALUADOR (igual que verificar): borrar un
+    // documento ya verificado se rechaza del lado del servicio.
+    @PreAuthorize("hasRole('ADMIN') or @recursoAuth.esDuenoDeDocumento(#id, authentication.name)")
+    @DeleteMapping("/{id}")
+    public ResponseEntity<Void> eliminar(@PathVariable Long id) {
+        documentoService.eliminar(id);
+        return ResponseEntity.noContent().build();
+    }
 }

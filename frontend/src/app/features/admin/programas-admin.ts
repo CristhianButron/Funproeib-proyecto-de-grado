@@ -130,7 +130,7 @@ import { PreguntaResponse } from '../../core/models/pregunta.model';
             </div>
             <div>
               <label class="block text-sm font-semibold mb-1">Fecha fin *</label>
-              <input type="date" [(ngModel)]="form.fechaFin" class="campo" />
+              <input type="date" [(ngModel)]="form.fechaFin" [min]="hoy" class="campo" />
             </div>
             <div>
               <label class="block text-sm font-semibold mb-1">Cupos disponibles *</label>
@@ -259,6 +259,7 @@ import { PreguntaResponse } from '../../core/models/pregunta.model';
 })
 export class ProgramasAdminComponent implements OnInit {
   estados: EstadoPrograma[] = ['BORRADOR', 'ACTIVO', 'ABIERTO', 'CERRADO'];
+  hoy = new Date().toISOString().slice(0, 10);
 
   programas = signal<ProgramaResponse[]>([]);
   busqueda = '';

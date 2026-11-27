@@ -39,4 +39,8 @@ export class DocumentoService {
   verificar(idDocumento: number): Observable<DocumentoResponse> {
     return this.api.patch<DocumentoResponse>(`/documentos/${idDocumento}/verificar`);
   }
+
+  eliminar(idDocumento: number): Observable<void> {
+    return this.api.delete<void>(`/documentos/${idDocumento}`);
+  }
 }
