@@ -55,7 +55,9 @@ import { PreguntaResponse } from '../../core/models/pregunta.model';
     } @else {
       <div class="grid sm:grid-cols-2 lg:grid-cols-3 gap-5">
         @for (p of programasFiltrados(); track p.id) {
-          <div class="bg-white rounded-xl shadow-card hover:shadow-card-hover transition-shadow border-l-4 flex flex-col" [class]="colorBorde(p.estado)">
+          <div [routerLink]="['/admin/postulantes']" [queryParams]="{ programa: p.id }"
+            class="group bg-white rounded-xl shadow-card hover:shadow-card-hover transition-shadow border-l-4 flex flex-col cursor-pointer" [class]="colorBorde(p.estado)"
+            title="Ver postulantes de este programa">
             <div class="p-5 flex-1">
               <div class="flex items-center justify-between mb-3">
                 <span class="inline-flex items-center gap-1 text-xs font-bold uppercase text-on-surface-variant">
@@ -63,14 +65,17 @@ import { PreguntaResponse } from '../../core/models/pregunta.model';
                 </span>
                 <span class="px-3 py-1 rounded-full text-xs font-bold" [class]="badge(p.estado)">{{ p.estado }}</span>
               </div>
-              <h3 class="font-bold text-lg text-on-surface leading-tight">{{ p.nombre }}</h3>
+              <h3 class="font-bold text-lg text-on-surface leading-tight group-hover:text-primary transition-colors">{{ p.nombre }}</h3>
               @if (p.edicion) { <p class="text-xs text-on-surface-variant mt-0.5">Edición {{ p.edicion }}</p> }
               <div class="mt-4 space-y-2 text-sm text-on-surface-variant">
                 <p class="flex items-center gap-2"><span class="material-symbols-outlined text-[18px] text-primary">event</span>{{ p.fechaInicio }} → {{ p.fechaFin }}</p>
                 <p class="flex items-center gap-2"><span class="material-symbols-outlined text-[18px] text-primary">groups</span>{{ p.cuposDisponibles }} cupos</p>
               </div>
+              <p class="mt-3 text-xs font-bold text-primary opacity-0 group-hover:opacity-100 transition-opacity flex items-center gap-1">
+                Ver postulantes <span class="material-symbols-outlined text-[16px]">arrow_forward</span>
+              </p>
             </div>
-            <div class="border-t border-outline-variant px-5 py-3 flex items-center justify-between gap-2">
+            <div class="border-t border-outline-variant px-5 py-3 flex items-center justify-between gap-2" (click)="$event.stopPropagation()">
               <select [ngModel]="p.estado" (ngModelChange)="cambiarEstado(p, $event)" class="text-xs font-semibold rounded-lg px-2 py-1.5 border border-outline-variant bg-white cursor-pointer">
                 <option value="BORRADOR">Borrador</option>
                 <option value="ACTIVO">Activo</option>
@@ -78,10 +83,6 @@ import { PreguntaResponse } from '../../core/models/pregunta.model';
                 <option value="CERRADO">Cerrado</option>
               </select>
               <div class="flex items-center gap-1">
-                <a [routerLink]="['/admin/postulantes']" [queryParams]="{ programa: p.id }"
-                  class="p-1.5 rounded-lg text-on-surface-variant hover:bg-surface-high transition-colors" title="Ver postulantes" aria-label="Ver postulantes de este programa">
-                  <span class="material-symbols-outlined text-[18px]">group</span>
-                </a>
                 <button (click)="abrirEditar(p)" class="p-1.5 rounded-lg text-on-surface-variant hover:bg-surface-high transition-colors" title="Editar" aria-label="Editar programa">
                   <span class="material-symbols-outlined text-[18px]">edit</span>
                 </button>

@@ -4,29 +4,29 @@ module.exports = {
   theme: {
     extend: {
       colors: {
-        // Paleta reconstruida sobre los tonos cálidos del logo de Funproeib
-        // (pueblos andinos: tierra, terracota, oliva) en vez del azul/gris
-        // genérico de dashboard que tenía antes. Todos los componentes usan
+        // Paleta sobre los tonos cálidos del logo de Funproeib (pueblos
+        // andinos: tierra, terracota, oliva), afinada para más contraste y
+        // un acabado más sobrio/institucional. Todos los componentes usan
         // estos nombres semánticos (primary/secondary/tertiary/...), nunca un
         // color de Tailwind literal, así que el cambio se propaga solo.
-        primary: "#9a4a2e",
-        "primary-dark": "#6b2c1c",
+        primary: "#8c3f26",
+        "primary-dark": "#5c2415",
         "primary-light": "#e8c9ae",
         "primary-fixed": "#f3e2d8",
-        secondary: "#45633f",
+        secondary: "#3c5937",
         "secondary-light": "#dde8d7",
-        "on-secondary-container": "#2f4a2a",
-        tertiary: "#3d2420",
+        "on-secondary-container": "#2a4225",
+        tertiary: "#2e1a17",
         "tertiary-container": "#54342c",
         "on-tertiary-container": "#cbb49f",
-        surface: "#f8f9fb",
+        surface: "#f7f7f9",
         "surface-card": "#ffffff",
-        "surface-low": "#f3f4f6",
-        "surface-high": "#e7e8ea",
-        "on-surface": "#191c1e",
-        "on-surface-variant": "#444651",
-        outline: "#757682",
-        "outline-variant": "#c5c5d3",
+        "surface-low": "#f1f2f4",
+        "surface-high": "#e4e5e8",
+        "on-surface": "#15171a",
+        "on-surface-variant": "#43454f",
+        outline: "#70717d",
+        "outline-variant": "#c1c2cf",
         error: "#ba1a1a",
         "error-container": "#ffdad6",
         "on-error-container": "#93000a",

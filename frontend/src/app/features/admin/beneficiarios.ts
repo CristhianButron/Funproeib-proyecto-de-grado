@@ -57,7 +57,7 @@ const LABEL_APROVECHAMIENTO: Record<EstadoAprovechamiento, string> = {
                 <th class="px-6 py-3 text-xs font-bold text-on-surface-variant uppercase">Beneficiario</th>
                 <th class="px-6 py-3 text-xs font-bold text-on-surface-variant uppercase">Fecha de postulación</th>
                 <th class="px-6 py-3 text-xs font-bold text-on-surface-variant uppercase">Estado final</th>
-                <th class="px-6 py-3 text-xs font-bold text-on-surface-variant uppercase text-right">Acción</th>
+                <th class="px-6 py-3 text-xs font-bold text-on-surface-variant uppercase text-right">Acciones</th>
               </tr>
             </thead>
             <tbody class="divide-y divide-outline-variant">
@@ -78,7 +78,7 @@ const LABEL_APROVECHAMIENTO: Record<EstadoAprovechamiento, string> = {
                     </div>
                   </td>
                   <td class="px-6 py-4 text-right">
-                    <a [routerLink]="['../postulaciones', b.id]" class="px-3 py-1.5 rounded-lg text-primary hover:bg-primary-fixed text-sm font-semibold flex items-center gap-1 ml-auto w-fit">
+                    <a [routerLink]="['../beneficiarios', b.id]" class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg border border-primary text-primary hover:bg-primary hover:text-white transition-colors text-sm font-semibold">
                       <span class="material-symbols-outlined text-[18px]">badge</span> Ver ficha
                     </a>
                   </td>

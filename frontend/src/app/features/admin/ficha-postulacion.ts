@@ -16,10 +16,10 @@ const LABEL_APROVECHAMIENTO: Record<EstadoAprovechamiento, string> = {
 
 /**
  * Ficha de una postulación: página propia (ruta /admin|evaluador/postulaciones/:id),
- * no un modal flotante. La usan tanto "Postulantes" (trámite de la
- * postulación) como "Beneficiarios" (estado final una vez ACEPTADA) como
- * destino de su botón "Ver ficha", por eso cubre ambos casos acá en vez de
- * duplicar la pantalla.
+ * no un modal flotante. La usa "Postulantes" (trámite de la postulación:
+ * aceptar/rechazar, etc). Una vez ACEPTADA, el "Ver ficha" de "Beneficiarios"
+ * ya no apunta acá sino a FichaBeneficiarioComponent, que no muestra el
+ * cambio de estado de la postulación (ya no aplica).
  */
 @Component({
   selector: 'app-ficha-postulacion',

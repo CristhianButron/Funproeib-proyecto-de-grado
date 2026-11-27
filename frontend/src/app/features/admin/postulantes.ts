@@ -36,7 +36,7 @@ import { PostulacionResponse } from '../../core/models/postulacion.model';
                 <th class="px-6 py-3 text-xs font-bold text-on-surface-variant uppercase">Postulante</th>
                 <th class="px-6 py-3 text-xs font-bold text-on-surface-variant uppercase">Fecha</th>
                 <th class="px-6 py-3 text-xs font-bold text-on-surface-variant uppercase">Estado</th>
-                <th class="px-6 py-3 text-xs font-bold text-on-surface-variant uppercase text-right">Acción</th>
+                <th class="px-6 py-3 text-xs font-bold text-on-surface-variant uppercase text-right">Acciones</th>
               </tr>
             </thead>
             <tbody class="divide-y divide-outline-variant">
@@ -46,7 +46,7 @@ import { PostulacionResponse } from '../../core/models/postulacion.model';
                   <td class="px-6 py-4 text-sm">{{ po.fechaPostulacion }}</td>
                   <td class="px-6 py-4"><span class="px-3 py-1 rounded-full text-xs font-bold" [class]="badge(po.estado)">{{ po.estado }}</span></td>
                   <td class="px-6 py-4 text-right">
-                    <a [routerLink]="['../postulaciones', po.id]" class="px-3 py-1.5 rounded-lg text-primary hover:bg-primary-fixed text-sm font-semibold flex items-center gap-1 ml-auto w-fit">
+                    <a [routerLink]="['../postulaciones', po.id]" class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg border border-primary text-primary hover:bg-primary hover:text-white transition-colors text-sm font-semibold">
                       <span class="material-symbols-outlined text-[18px]">badge</span> Ver ficha
                     </a>
                   </td>
