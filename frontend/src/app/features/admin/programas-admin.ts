@@ -242,7 +242,11 @@ import { PreguntaResponse } from '../../core/models/pregunta.model';
               } @empty { <p class="text-sm text-on-surface-variant">Sin criterios aún.</p> }
             </div>
             <div class="grid grid-cols-2 gap-2 bg-surface rounded-lg p-3">
-              <input [(ngModel)]="nuevoCriterio.nombreCriterio" class="campo col-span-2" placeholder="Nombre del criterio (ej: Trabajo en equipo)" />
+              <div class="col-span-2">
+                <input [(ngModel)]="nuevoCriterio.nombreCriterio" (ngModelChange)="nombreCriterioInvalido.set(false)"
+                  class="campo w-full" [class.campo-invalido]="nombreCriterioInvalido()" placeholder="Nombre del criterio (ej: Trabajo en equipo)" />
+                @if (nombreCriterioInvalido()) { <p class="text-xs text-error mt-1">Campo requerido</p> }
+              </div>
               <input [(ngModel)]="nuevoCriterio.descripcion" class="campo col-span-2" placeholder="Descripción (opcional)" />
               <button (click)="agregarCriterio()" [disabled]="guardandoCriterio()" class="col-span-2 py-2 rounded-lg bg-primary text-white font-semibold hover:bg-primary-dark transition-colors text-sm">+ Agregar criterio</button>
             </div>
@@ -255,6 +259,7 @@ import { PreguntaResponse } from '../../core/models/pregunta.model';
   styles: [`
     .campo { width:100%; padding:.5rem .7rem; border:1px solid #c5c5d3; border-radius:.5rem; outline:none; font-size:.875rem; }
     .campo:focus { border-color:#9a4a2e; box-shadow:0 0 0 2px rgba(154,74,46,.2); }
+    .campo-invalido { border-color:#ba1a1a; }
   `],
 })
 export class ProgramasAdminComponent implements OnInit {
@@ -295,6 +300,7 @@ export class ProgramasAdminComponent implements OnInit {
   editandoCriterioId = signal<number | null>(null);
   edicionCriterio = { nombreCriterio: '', descripcion: '' };
   guardandoCriterio = signal(false);
+  nombreCriterioInvalido = signal(false);
 
   constructor(
     private programaService: ProgramaService,
@@ -382,7 +388,7 @@ export class ProgramasAdminComponent implements OnInit {
   }
 
   agregarCriterio(): void {
-    if (!this.nuevoCriterio.nombreCriterio.trim()) { this.notificar('Ingresa el nombre del criterio', true); return; }
+    if (!this.nuevoCriterio.nombreCriterio.trim()) { this.nombreCriterioInvalido.set(true); return; }
     this.guardandoCriterio.set(true);
     this.criterioService.crear({
       nombreCriterio: this.nuevoCriterio.nombreCriterio.trim(),

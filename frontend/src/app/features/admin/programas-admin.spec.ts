@@ -46,7 +46,7 @@ describe('ProgramasAdminComponent - CRUD de criterios de evaluación', () => {
     component.nuevoCriterio = { nombreCriterio: '   ', descripcion: '' };
     component.agregarCriterio();
     expect(criterioServiceFake.crear).not.toHaveBeenCalled();
-    expect(component.mensaje()).toContain('nombre');
+    expect(component.nombreCriterioInvalido()).toBe(true);
   });
 
   it('agregarCriterio exitoso agrega el criterio a la lista y recorta espacios', () => {

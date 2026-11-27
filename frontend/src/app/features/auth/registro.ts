@@ -6,10 +6,11 @@ import { UbicacionService } from '../../core/services/ubicacion.service';
 import { CiudadResponse, PaisResponse } from '../../core/models/ubicacion.model';
 import { UsuarioRegistroRequest } from '../../core/models/usuario.model';
 import { CARRERAS } from '../../core/constants/carreras';
+import { SelectBuscableComponent } from '../../core/components/select-buscable.component';
 
 @Component({
   selector: 'app-registro',
-  imports: [ReactiveFormsModule, FormsModule, RouterLink],
+  imports: [ReactiveFormsModule, FormsModule, RouterLink, SelectBuscableComponent],
   template: `
   <div class="min-h-screen bg-surface py-10 px-4">
     <div class="max-w-3xl mx-auto">
@@ -183,17 +184,15 @@ import { CARRERAS } from '../../core/constants/carreras';
           <div class="grid sm:grid-cols-2 gap-4 mb-5">
             <div>
               <label class="block text-sm font-semibold mb-1">País de nacimiento *</label>
-              <select class="campo" (change)="onPaisNacimientoChange($event)">
-                <option value="">Seleccione un país...</option>
-                @for (p of paises(); track p.id) { <option [value]="p.id">{{ p.nombre }}</option> }
-              </select>
+              <app-select-buscable [opciones]="paises()" [valor]="idPaisNacimientoSeleccionado()"
+                placeholder="Seleccione un país..." (cambio)="onPaisNacimientoChange($event)" />
             </div>
             <div>
               <label class="block text-sm font-semibold mb-1">Ciudad de nacimiento *</label>
-              <select class="campo" [disabled]="!idPaisNacimientoSeleccionado()" (change)="onCiudadNacimientoChange($event)">
-                <option value="">{{ idPaisNacimientoSeleccionado() ? 'Seleccione una ciudad...' : 'Primero elige un país' }}</option>
-                @for (c of ciudadesNacimiento(); track c.id) { <option [value]="c.id">{{ c.nombre }}</option> }
-              </select>
+              <app-select-buscable [opciones]="ciudadesNacimiento()" [valor]="idCiudadNacimientoSeleccionada()"
+                [disabled]="!idPaisNacimientoSeleccionado()"
+                [placeholder]="idPaisNacimientoSeleccionado() ? 'Seleccione una ciudad...' : 'Primero elige un país'"
+                (cambio)="onCiudadNacimientoChange($event)" />
             </div>
             <div class="sm:col-span-2">
               <label class="block text-sm font-semibold mb-1">Provincia de nacimiento</label>
@@ -205,17 +204,15 @@ import { CARRERAS } from '../../core/constants/carreras';
           <div class="grid sm:grid-cols-2 gap-4">
             <div>
               <label class="block text-sm font-semibold mb-1">País de residencia actual *</label>
-              <select class="campo" (change)="onPaisChange($event)">
-                <option value="">Seleccione un país...</option>
-                @for (p of paises(); track p.id) { <option [value]="p.id">{{ p.nombre }}</option> }
-              </select>
+              <app-select-buscable [opciones]="paises()" [valor]="idPaisSeleccionado()"
+                placeholder="Seleccione un país..." (cambio)="onPaisChange($event)" />
             </div>
             <div>
               <label class="block text-sm font-semibold mb-1">Ciudad actual de residencia *</label>
-              <select class="campo" [disabled]="!idPaisSeleccionado()" (change)="onCiudadChange($event)">
-                <option value="">{{ idPaisSeleccionado() ? 'Seleccione una ciudad...' : 'Primero elige un país' }}</option>
-                @for (c of ciudades(); track c.id) { <option [value]="c.id">{{ c.nombre }}</option> }
-              </select>
+              <app-select-buscable [opciones]="ciudades()" [valor]="idCiudadSeleccionada()"
+                [disabled]="!idPaisSeleccionado()"
+                [placeholder]="idPaisSeleccionado() ? 'Seleccione una ciudad...' : 'Primero elige un país'"
+                (cambio)="onCiudadChange($event)" />
             </div>
             <div class="sm:col-span-2">
               <label class="block text-sm font-semibold mb-1">Dirección de domicilio</label>
@@ -334,34 +331,30 @@ export class RegistroComponent implements OnInit {
     this.ubicacionService.listarPaises().subscribe(d => this.paises.set(d));
   }
 
-  onPaisChange(event: Event): void {
-    const idPais = (event.target as HTMLSelectElement).value;
+  onPaisChange(idPais: number | null): void {
     this.ciudades.set([]);
     this.idCiudadSeleccionada.set(null);
-    this.idPaisSeleccionado.set(idPais ? +idPais : null);
+    this.idPaisSeleccionado.set(idPais);
     if (idPais) {
-      this.ubicacionService.listarCiudades(+idPais).subscribe(d => this.ciudades.set(d));
+      this.ubicacionService.listarCiudades(idPais).subscribe(d => this.ciudades.set(d));
     }
   }
 
-  onCiudadChange(event: Event): void {
-    const idCiudad = (event.target as HTMLSelectElement).value;
-    this.idCiudadSeleccionada.set(idCiudad ? +idCiudad : null);
+  onCiudadChange(idCiudad: number | null): void {
+    this.idCiudadSeleccionada.set(idCiudad);
   }
 
-  onPaisNacimientoChange(event: Event): void {
-    const idPais = (event.target as HTMLSelectElement).value;
+  onPaisNacimientoChange(idPais: number | null): void {
     this.ciudadesNacimiento.set([]);
     this.idCiudadNacimientoSeleccionada.set(null);
-    this.idPaisNacimientoSeleccionado.set(idPais ? +idPais : null);
+    this.idPaisNacimientoSeleccionado.set(idPais);
     if (idPais) {
-      this.ubicacionService.listarCiudades(+idPais).subscribe(d => this.ciudadesNacimiento.set(d));
+      this.ubicacionService.listarCiudades(idPais).subscribe(d => this.ciudadesNacimiento.set(d));
     }
   }
 
-  onCiudadNacimientoChange(event: Event): void {
-    const idCiudad = (event.target as HTMLSelectElement).value;
-    this.idCiudadNacimientoSeleccionada.set(idCiudad ? +idCiudad : null);
+  onCiudadNacimientoChange(idCiudad: number | null): void {
+    this.idCiudadNacimientoSeleccionada.set(idCiudad);
   }
 
   nivelRequiereCarrera(): boolean {

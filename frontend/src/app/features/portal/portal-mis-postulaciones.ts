@@ -83,17 +83,24 @@ import { EvaluacionResponse } from '../../core/models/evaluacion.model';
                         </div>
                       } @else if (esEditable(po)) {
                         @if (req.tipoPermitido === 'PDF') {
-                          <div class="flex items-center gap-2">
-                            <input type="file" accept=".pdf,.doc,.docx,.png,.jpg,.jpeg" (change)="archivoSeleccionado($event, po, req)" class="text-xs w-48" />
-                            <button (click)="subirArchivo(po, req)" [disabled]="subiendo[po.id + '-' + req.id]"
-                              class="px-3 py-1.5 rounded-lg bg-primary text-white text-xs font-bold hover:bg-primary-dark transition-colors disabled:opacity-50">
-                              {{ subiendo[po.id + '-' + req.id] ? 'Subiendo...' : 'Subir' }}
-                            </button>
+                          <div>
+                            <div class="flex items-center gap-2">
+                              <input type="file" accept=".pdf,.doc,.docx,.png,.jpg,.jpeg" (change)="archivoSeleccionado($event, po, req)" class="text-xs w-48" />
+                              <button (click)="subirArchivo(po, req)" [disabled]="subiendo[po.id + '-' + req.id]"
+                                class="px-3 py-1.5 rounded-lg bg-primary text-white text-xs font-bold hover:bg-primary-dark transition-colors disabled:opacity-50">
+                                {{ subiendo[po.id + '-' + req.id] ? 'Subiendo...' : 'Subir' }}
+                              </button>
+                            </div>
+                            @if (erroresCampo[po.id + '-' + req.id]) { <p class="text-xs text-error mt-1">Selecciona un archivo primero</p> }
                           </div>
                         } @else {
-                          <div class="flex items-center gap-2">
-                            <input [(ngModel)]="rutas[po.id + '-' + req.id]" class="campo w-44" placeholder="https://..." />
-                            <button (click)="subirEnlace(po, req)" class="px-3 py-1.5 rounded-lg bg-primary text-white text-xs font-bold hover:bg-primary-dark transition-colors">Subir</button>
+                          <div>
+                            <div class="flex items-center gap-2">
+                              <input [(ngModel)]="rutas[po.id + '-' + req.id]" (ngModelChange)="erroresCampo[po.id + '-' + req.id] = false"
+                                class="campo w-44" [class.campo-invalido]="erroresCampo[po.id + '-' + req.id]" placeholder="https://..." />
+                              <button (click)="subirEnlace(po, req)" class="px-3 py-1.5 rounded-lg bg-primary text-white text-xs font-bold hover:bg-primary-dark transition-colors">Subir</button>
+                            </div>
+                            @if (erroresCampo[po.id + '-' + req.id]) { <p class="text-xs text-error mt-1">Campo requerido</p> }
                           </div>
                         }
                       } @else {
@@ -113,7 +120,9 @@ import { EvaluacionResponse } from '../../core/models/evaluacion.model';
                       <div class="bg-surface-low rounded-lg p-3">
                         <p class="text-sm font-semibold text-primary mb-2">{{ q.orden }}. {{ q.enunciado }}</p>
                         @if (esEditable(po)) {
-                          <textarea [(ngModel)]="respTexto[po.id + '-' + q.id]" rows="3" class="campo w-full" placeholder="Escribe tu respuesta..."></textarea>
+                          <textarea [(ngModel)]="respTexto[po.id + '-' + q.id]" (ngModelChange)="erroresCampo[po.id + '-' + q.id] = false"
+                            rows="3" class="campo w-full" [class.campo-invalido]="erroresCampo[po.id + '-' + q.id]" placeholder="Escribe tu respuesta..."></textarea>
+                          @if (erroresCampo[po.id + '-' + q.id]) { <p class="text-xs text-error mt-1">Campo requerido</p> }
                           <div class="flex justify-end mt-2">
                             <button (click)="responder(po, q)" class="px-3 py-1.5 rounded-lg bg-primary text-white text-xs font-bold hover:bg-primary-dark transition-colors">Guardar respuesta</button>
                           </div>
@@ -158,6 +167,7 @@ import { EvaluacionResponse } from '../../core/models/evaluacion.model';
   styles: [`
     .campo { padding:.4rem .6rem; border:1px solid #c5c5d3; border-radius:.5rem; outline:none; font-size:.85rem; }
     .campo:focus { border-color:#9a4a2e; box-shadow:0 0 0 2px rgba(154,74,46,.2); }
+    .campo-invalido { border-color:#ba1a1a; }
   `],
 })
 export class PortalMisPostulacionesComponent implements OnInit {
@@ -174,6 +184,7 @@ export class PortalMisPostulacionesComponent implements OnInit {
   archivos: Record<string, File> = {};
   subiendo: Record<string, boolean> = {};
   respTexto: Record<string, string> = {};
+  erroresCampo: Record<string, boolean> = {};
 
   constructor(
     private postulacionService: PostulacionService,
@@ -236,7 +247,7 @@ export class PortalMisPostulacionesComponent implements OnInit {
   subirEnlace(po: PostulacionResponse, req: ReqDocumentoResponse): void {
     const key = po.id + '-' + req.id;
     const ruta = this.rutas[key];
-    if (!ruta) { this.notificar('Ingresa el enlace del documento', true); return; }
+    if (!ruta) { this.erroresCampo[key] = true; return; }
     this.documentoService.registrar({ idPostulacion: po.id, idReqDocumento: req.id, rutaArchivo: ruta, tipo: req.tipoPermitido as TipoDocumento })
       .subscribe({
         next: (doc) => {
@@ -257,7 +268,7 @@ export class PortalMisPostulacionesComponent implements OnInit {
   subirArchivo(po: PostulacionResponse, req: ReqDocumentoResponse): void {
     const key = po.id + '-' + req.id;
     const archivo = this.archivos[key];
-    if (!archivo) { this.notificar('Selecciona un archivo primero', true); return; }
+    if (!archivo) { this.erroresCampo[key] = true; return; }
     this.subiendo[key] = true;
     this.documentoService.subirArchivo(po.id, req.id, archivo).subscribe({
       next: (doc) => {
@@ -320,7 +331,7 @@ export class PortalMisPostulacionesComponent implements OnInit {
   responder(po: PostulacionResponse, q: PreguntaResponse): void {
     const key = po.id + '-' + q.id;
     const texto = this.respTexto[key];
-    if (!texto || !texto.trim()) { this.notificar('Escribe una respuesta', true); return; }
+    if (!texto || !texto.trim()) { this.erroresCampo[key] = true; return; }
     this.respuestaService.guardar({ idPostulacion: po.id, idPregunta: q.id, respuesta: texto }).subscribe({
       next: () => { this.refrescarEstado(po); this.notificar('Respuesta guardada', false); },
       error: (err) => this.notificar(err.error?.mensaje || 'Error al guardar respuesta', true),

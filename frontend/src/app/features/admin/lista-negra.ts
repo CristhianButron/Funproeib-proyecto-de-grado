@@ -26,7 +26,9 @@ import { AuthService } from '../../core/services/auth.service';
       <div class="grid sm:grid-cols-4 gap-3 items-end">
         <div class="sm:col-span-1">
           <label class="block text-xs font-semibold mb-1">CI del postulante</label>
-          <input [(ngModel)]="nuevo.ciPostulante" class="campo" placeholder="Ej: 1234567" />
+          <input [(ngModel)]="nuevo.ciPostulante" (ngModelChange)="ciInvalido.set(false)"
+            class="campo" [class.campo-invalido]="ciInvalido()" placeholder="Ej: 1234567" />
+          @if (ciInvalido()) { <p class="text-xs text-error mt-1">Campo requerido</p> }
         </div>
         <div class="sm:col-span-2">
           <label class="block text-xs font-semibold mb-1">Motivo</label>
@@ -80,6 +82,7 @@ import { AuthService } from '../../core/services/auth.service';
   styles: [`
     .campo { width:100%; padding:.5rem .7rem; border:1px solid #c5c5d3; border-radius:.5rem; outline:none; font-size:.875rem; }
     .campo:focus { border-color:#9a4a2e; box-shadow:0 0 0 2px rgba(154,74,46,.2); }
+    .campo-invalido { border-color:#ba1a1a; }
   `],
 })
 export class ListaNegraComponent implements OnInit {
@@ -87,6 +90,7 @@ export class ListaNegraComponent implements OnInit {
   cargando = signal(true);
   mensaje = signal<string | null>(null);
   mensajeError = signal(false);
+  ciInvalido = signal(false);
 
   nuevo: { ciPostulante: string; motivo: MotivoListaNegra } = { ciPostulante: '', motivo: 'ABANDONO' };
 
@@ -98,12 +102,12 @@ export class ListaNegraComponent implements OnInit {
     this.cargando.set(true);
     this.listaNegraService.listarActivos().subscribe({
       next: (d) => { this.entradas.set(d); this.cargando.set(false); },
-      error: () => { this.cargando.set(false); this.notificar('Error al cargar la lista negra. Verifica que el servidor esté corriendo.', true); },
+      error: () => { this.cargando.set(false); this.notificar('No se pudo cargar la lista negra. Intenta de nuevo en unos segundos.', true); },
     });
   }
 
   agregar(): void {
-    if (!this.nuevo.ciPostulante.trim()) { this.notificar('Ingresa el CI', true); return; }
+    if (!this.nuevo.ciPostulante.trim()) { this.ciInvalido.set(true); return; }
     const idRegistradoPor = this.auth.usuario()?.id;
     if (!idRegistradoPor) return;
     this.listaNegraService.agregar({ ...this.nuevo, idRegistradoPor }).subscribe({
