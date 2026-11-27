@@ -31,17 +31,24 @@ import { UsuarioService } from '../../core/services/usuario.service';
         </button>
       </div>
 
-      <nav class="flex-1 px-3 space-y-1 overflow-y-auto">
-        @for (item of menu; track item.ruta) {
-          <a [routerLink]="item.ruta" routerLinkActive="bg-primary text-white"
-            [routerLinkActiveOptions]="{ exact: item.exact }" (click)="sidebarAbierto.set(false)"
-            class="flex items-center gap-3 px-4 py-3 rounded-xl text-on-tertiary-container hover:bg-tertiary-container hover:text-white transition-colors">
-            <span class="material-symbols-outlined">{{ item.icono }}</span>
-            <span class="font-medium text-sm flex-1">{{ item.label }}</span>
-            @if (item.ruta === '/admin/usuarios' && pendientesIdentidad() > 0) {
-              <span class="px-2 py-0.5 rounded-full text-[11px] font-bold bg-error text-white">{{ pendientesIdentidad() }}</span>
-            }
-          </a>
+      <nav class="flex-1 px-3 space-y-5 overflow-y-auto">
+        @for (seccion of secciones; track seccion.titulo) {
+          <div>
+            <p class="px-4 mb-1 text-[11px] font-bold uppercase tracking-wider text-on-tertiary-container/70">{{ seccion.titulo }}</p>
+            <div class="space-y-1">
+              @for (item of seccion.items; track item.ruta) {
+                <a [routerLink]="item.ruta" routerLinkActive="bg-primary text-white"
+                  [routerLinkActiveOptions]="{ exact: item.exact }" (click)="sidebarAbierto.set(false)"
+                  class="flex items-center gap-3 px-4 py-3 rounded-xl text-on-tertiary-container hover:bg-tertiary-container hover:text-white transition-colors">
+                  <span class="material-symbols-outlined">{{ item.icono }}</span>
+                  <span class="font-medium text-sm flex-1">{{ item.label }}</span>
+                  @if (item.ruta === '/admin/usuarios' && pendientesIdentidad() > 0) {
+                    <span class="px-2 py-0.5 rounded-full text-[11px] font-bold bg-error text-white">{{ pendientesIdentidad() }}</span>
+                  }
+                </a>
+              }
+            </div>
+          </div>
         }
       </nav>
 
@@ -77,16 +84,36 @@ import { UsuarioService } from '../../core/services/usuario.service';
   `,
 })
 export class AdminLayoutComponent implements OnInit, OnDestroy {
-  menu = [
-    { ruta: '/admin', label: 'Dashboard', icono: 'dashboard', exact: true },
-    { ruta: '/admin/programas', label: 'Programas', icono: 'school', exact: false },
-    { ruta: '/admin/postulantes', label: 'Postulantes', icono: 'group', exact: false },
-    { ruta: '/admin/beneficiarios', label: 'Beneficiarios', icono: 'workspace_premium', exact: false },
-    { ruta: '/admin/evaluaciones', label: 'Evaluaciones', icono: 'assessment', exact: false },
-    { ruta: '/admin/reportes', label: 'Reportes', icono: 'summarize', exact: false },
-    { ruta: '/admin/lista-negra', label: 'Lista negra', icono: 'block', exact: false },
-    { ruta: '/admin/usuarios', label: 'Usuarios', icono: 'manage_accounts', exact: false },
-    { ruta: '/admin/perfil', label: 'Mi perfil', icono: 'person', exact: false },
+  secciones = [
+    {
+      titulo: 'Panel',
+      items: [
+        { ruta: '/admin', label: 'Dashboard', icono: 'dashboard', exact: true },
+      ],
+    },
+    {
+      titulo: 'Convocatorias',
+      items: [
+        { ruta: '/admin/programas', label: 'Programas', icono: 'school', exact: false },
+        { ruta: '/admin/postulantes', label: 'Postulantes', icono: 'group', exact: false },
+        { ruta: '/admin/beneficiarios', label: 'Beneficiarios', icono: 'workspace_premium', exact: false },
+        { ruta: '/admin/evaluaciones', label: 'Evaluaciones', icono: 'assessment', exact: false },
+      ],
+    },
+    {
+      titulo: 'Administración',
+      items: [
+        { ruta: '/admin/reportes', label: 'Reportes', icono: 'summarize', exact: false },
+        { ruta: '/admin/lista-negra', label: 'Lista negra', icono: 'block', exact: false },
+        { ruta: '/admin/usuarios', label: 'Usuarios', icono: 'manage_accounts', exact: false },
+      ],
+    },
+    {
+      titulo: 'Cuenta',
+      items: [
+        { ruta: '/admin/perfil', label: 'Mi perfil', icono: 'person', exact: false },
+      ],
+    },
   ];
 
   pendientesIdentidad = signal(0);

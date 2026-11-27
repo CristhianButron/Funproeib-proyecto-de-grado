@@ -1,6 +1,6 @@
 import { Component, OnInit, signal } from '@angular/core';
 import { Location } from '@angular/common';
-import { ActivatedRoute, Router } from '@angular/router';
+import { ActivatedRoute, Router, RouterLink } from '@angular/router';
 import { UsuarioService } from '../../core/services/usuario.service';
 import { ConfirmDialogService } from '../../core/services/confirm-dialog.service';
 import { UsuarioResponse } from '../../core/models/usuario.model';
@@ -12,11 +12,19 @@ import { UsuarioResponse } from '../../core/models/usuario.model';
  */
 @Component({
   selector: 'app-ficha-usuario',
+  imports: [RouterLink],
   template: `
   <div class="max-w-3xl mx-auto">
-    <button (click)="volver()" class="mb-4 text-sm font-semibold text-on-surface-variant hover:text-primary flex items-center gap-1">
-      <span class="material-symbols-outlined text-[18px]">arrow_back</span> Volver
-    </button>
+    <div class="mb-4 flex items-center justify-between flex-wrap gap-2">
+      <nav class="flex items-center gap-1.5 text-sm min-w-0" aria-label="Ruta de navegación">
+        <a routerLink="../usuarios" class="font-semibold text-on-surface-variant hover:text-primary transition-colors">Usuarios</a>
+        <span class="material-symbols-outlined text-[16px] text-on-surface-variant">chevron_right</span>
+        <span class="font-semibold text-on-surface truncate">{{ usuario()?.nombreCompleto || 'Ficha' }}</span>
+      </nav>
+      <button (click)="volver()" class="text-sm font-semibold text-on-surface-variant hover:text-primary flex items-center gap-1 shrink-0">
+        <span class="material-symbols-outlined text-[18px]">arrow_back</span> Volver
+      </button>
+    </div>
 
     @if (mensaje()) {
       <div class="fixed top-5 left-1/2 -translate-x-1/2 z-[100] max-w-md w-[90vw] p-3 rounded-lg text-sm font-semibold shadow-xl flex items-center gap-2" [class]="mensajeError() ? 'bg-error-container text-on-error-container' : 'bg-secondary-light text-on-secondary-container'">

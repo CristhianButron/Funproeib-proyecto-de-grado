@@ -30,14 +30,21 @@ import { AuthService } from '../../core/services/auth.service';
         </button>
       </div>
 
-      <nav class="flex-1 px-3 space-y-1 overflow-y-auto">
-        @for (item of menu; track item.ruta) {
-          <a [routerLink]="item.ruta" routerLinkActive="bg-primary text-white"
-            [routerLinkActiveOptions]="{ exact: item.exact }" (click)="sidebarAbierto.set(false)"
-            class="flex items-center gap-3 px-4 py-3 rounded-xl text-on-tertiary-container hover:bg-tertiary-container hover:text-white transition-colors">
-            <span class="material-symbols-outlined">{{ item.icono }}</span>
-            <span class="font-medium text-sm">{{ item.label }}</span>
-          </a>
+      <nav class="flex-1 px-3 space-y-5 overflow-y-auto">
+        @for (seccion of secciones; track seccion.titulo) {
+          <div>
+            <p class="px-4 mb-1 text-[11px] font-bold uppercase tracking-wider text-on-tertiary-container/70">{{ seccion.titulo }}</p>
+            <div class="space-y-1">
+              @for (item of seccion.items; track item.ruta) {
+                <a [routerLink]="item.ruta" routerLinkActive="bg-primary text-white"
+                  [routerLinkActiveOptions]="{ exact: item.exact }" (click)="sidebarAbierto.set(false)"
+                  class="flex items-center gap-3 px-4 py-3 rounded-xl text-on-tertiary-container hover:bg-tertiary-container hover:text-white transition-colors">
+                  <span class="material-symbols-outlined">{{ item.icono }}</span>
+                  <span class="font-medium text-sm">{{ item.label }}</span>
+                </a>
+              }
+            </div>
+          </div>
         }
       </nav>
 
@@ -74,12 +81,27 @@ import { AuthService } from '../../core/services/auth.service';
 })
 export class EvaluadorLayoutComponent {
   sidebarAbierto = signal(false);
-  menu = [
-    { ruta: '/evaluador', label: 'Evaluaciones', icono: 'assessment', exact: true },
-    { ruta: '/evaluador/postulantes', label: 'Postulantes', icono: 'group', exact: false },
-    { ruta: '/evaluador/beneficiarios', label: 'Beneficiarios', icono: 'workspace_premium', exact: false },
-    { ruta: '/evaluador/reportes', label: 'Reportes', icono: 'summarize', exact: false },
-    { ruta: '/evaluador/perfil', label: 'Mi perfil', icono: 'person', exact: false },
+  secciones = [
+    {
+      titulo: 'Convocatorias',
+      items: [
+        { ruta: '/evaluador', label: 'Evaluaciones', icono: 'assessment', exact: true },
+        { ruta: '/evaluador/postulantes', label: 'Postulantes', icono: 'group', exact: false },
+        { ruta: '/evaluador/beneficiarios', label: 'Beneficiarios', icono: 'workspace_premium', exact: false },
+      ],
+    },
+    {
+      titulo: 'Administración',
+      items: [
+        { ruta: '/evaluador/reportes', label: 'Reportes', icono: 'summarize', exact: false },
+      ],
+    },
+    {
+      titulo: 'Cuenta',
+      items: [
+        { ruta: '/evaluador/perfil', label: 'Mi perfil', icono: 'person', exact: false },
+      ],
+    },
   ];
 
   constructor(public auth: AuthService, private router: Router) {}

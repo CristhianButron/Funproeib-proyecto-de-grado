@@ -55,9 +55,9 @@ import { PreguntaResponse } from '../../core/models/pregunta.model';
     } @else {
       <div class="grid sm:grid-cols-2 lg:grid-cols-3 gap-5">
         @for (p of programasFiltrados(); track p.id) {
-          <div [routerLink]="['/admin/postulantes']" [queryParams]="{ programa: p.id }"
+          <div [routerLink]="destinoRuta(p.estado)" [queryParams]="{ programa: p.id }"
             class="group bg-white rounded-xl shadow-card hover:shadow-card-hover transition-shadow border-l-4 flex flex-col cursor-pointer" [class]="colorBorde(p.estado)"
-            title="Ver postulantes de este programa">
+            [title]="esFinalizado(p.estado) ? 'Ver beneficiarios de este programa' : 'Ver postulantes de este programa'">
             <div class="p-5 flex-1">
               <div class="flex items-center justify-between mb-3">
                 <span class="inline-flex items-center gap-1 text-xs font-bold uppercase text-on-surface-variant">
@@ -72,7 +72,7 @@ import { PreguntaResponse } from '../../core/models/pregunta.model';
                 <p class="flex items-center gap-2"><span class="material-symbols-outlined text-[18px] text-primary">groups</span>{{ p.cuposDisponibles }} cupos</p>
               </div>
               <p class="mt-3 text-xs font-bold text-primary opacity-0 group-hover:opacity-100 transition-opacity flex items-center gap-1">
-                Ver postulantes <span class="material-symbols-outlined text-[16px]">arrow_forward</span>
+                {{ esFinalizado(p.estado) ? 'Ver beneficiarios' : 'Ver postulantes' }} <span class="material-symbols-outlined text-[16px]">arrow_forward</span>
               </p>
             </div>
             <div class="border-t border-outline-variant px-5 py-3 flex items-center justify-between gap-2" (click)="$event.stopPropagation()">
@@ -547,6 +547,17 @@ export class ProgramasAdminComponent implements OnInit {
 
   contarEstado(estado: EstadoPrograma): number {
     return this.programas().filter(p => p.estado === estado).length;
+  }
+
+  // ACTIVO/CERRADO: la selección de postulantes ya pasó, lo relevante ahora
+  // es el seguimiento de los beneficiarios. BORRADOR/ABIERTO: todavía se
+  // está formando o recibiendo postulaciones.
+  esFinalizado(estado: EstadoPrograma): boolean {
+    return estado === 'ACTIVO' || estado === 'CERRADO';
+  }
+
+  destinoRuta(estado: EstadoPrograma): string[] {
+    return this.esFinalizado(estado) ? ['/admin/beneficiarios'] : ['/admin/postulantes'];
   }
 
   private notificar(msg: string, error: boolean): void {

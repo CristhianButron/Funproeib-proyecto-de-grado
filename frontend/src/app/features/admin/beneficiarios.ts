@@ -1,6 +1,6 @@
 import { Component, OnInit, signal } from '@angular/core';
 import { FormsModule } from '@angular/forms';
-import { RouterLink } from '@angular/router';
+import { ActivatedRoute, RouterLink } from '@angular/router';
 import { ProgramaService } from '../../core/services/programa.service';
 import { PostulacionService } from '../../core/services/postulacion.service';
 import { ProgramaResponse } from '../../core/models/programa.model';
@@ -114,10 +114,19 @@ export class BeneficiariosComponent implements OnInit {
   constructor(
     private programaService: ProgramaService,
     private postulacionService: PostulacionService,
+    private route: ActivatedRoute,
   ) {}
 
   ngOnInit(): void {
     this.programaService.listarTodos().subscribe(d => this.programas.set(d));
+    // Permite llegar directo con un programa preseleccionado desde "Programas"
+    // (?programa=<id>, ver programas-admin.ts), en vez de tener que elegirlo
+    // de nuevo en el filtro.
+    const idPrograma = this.route.snapshot.queryParamMap.get('programa');
+    if (idPrograma) {
+      this.programaSel = +idPrograma;
+      this.cargarBeneficiarios(this.programaSel);
+    }
   }
 
   programaYaFinalizo(): boolean {
