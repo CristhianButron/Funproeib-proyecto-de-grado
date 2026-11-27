@@ -204,7 +204,10 @@ export class PostulantesComponent implements OnInit {
   }
 
   verificar(d: DocumentoResponse): void {
-    this.documentoService.verificar(d.id).subscribe(actualizado => d.verificado = actualizado.verificado);
+    this.documentoService.verificar(d.id).subscribe({
+      next: (actualizado) => { d.verificado = actualizado.verificado; this.notificar('Documento verificado', false); },
+      error: (err) => this.notificar(err.error?.mensaje || 'No se pudo verificar el documento', true),
+    });
   }
 
   // El endpoint para ver el archivo exige el JWT de quien lo pide (ver
@@ -226,9 +229,13 @@ export class PostulantesComponent implements OnInit {
   }
 
   cambiarEstado(po: PostulacionResponse, estado: EstadoPostulacion): void {
-    this.postulacionService.cambiarEstado(po.id, estado).subscribe(actualizado => {
-      po.estado = actualizado.estado;
-      this.postulaciones.update(list => [...list]);
+    this.postulacionService.cambiarEstado(po.id, estado).subscribe({
+      next: (actualizado) => {
+        po.estado = actualizado.estado;
+        this.postulaciones.update(list => [...list]);
+        this.notificar('Postulación actualizada a ' + actualizado.estado, false);
+      },
+      error: (err) => this.notificar(err.error?.mensaje || 'No se pudo cambiar el estado', true),
     });
   }
 

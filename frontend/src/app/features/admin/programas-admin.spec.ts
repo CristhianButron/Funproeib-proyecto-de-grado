@@ -12,6 +12,7 @@ describe('ProgramasAdminComponent - CRUD de criterios de evaluación', () => {
   const programaServiceFake = { listarTodos: vi.fn(() => of([])) };
   const reqDocServiceFake = {};
   const preguntaServiceFake = {};
+  const confirmDialogFake = { confirmar: vi.fn() };
 
   function seisCriterios(): CriterioEvaluacionResponse[] {
     return [1, 2, 3, 4, 5, 6].map(i => criterio(i, i, `Criterio ${i}`));
@@ -26,6 +27,7 @@ describe('ProgramasAdminComponent - CRUD de criterios de evaluación', () => {
     };
     component = new ProgramasAdminComponent(
       programaServiceFake as any, criterioServiceFake, reqDocServiceFake as any, preguntaServiceFake as any,
+      confirmDialogFake as any,
     );
     component.ngOnInit();
   });

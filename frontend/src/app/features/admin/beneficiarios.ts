@@ -232,6 +232,7 @@ export class BeneficiariosComponent implements OnInit {
       next: (actualizado) => {
         b.estadoAprovechamiento = actualizado.estadoAprovechamiento;
         this.beneficiarios.update(list => [...list]);
+        this.notificar('Estado actualizado a ' + actualizado.estadoAprovechamiento, false);
       },
       error: (err) => this.notificar(err?.error?.mensaje ?? 'No se pudo actualizar el estado de aprovechamiento.', true),
     });

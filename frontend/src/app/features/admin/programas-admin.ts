@@ -4,6 +4,7 @@ import { ProgramaService } from '../../core/services/programa.service';
 import { CriterioService } from '../../core/services/criterio.service';
 import { ReqDocumentoService } from '../../core/services/reqdoc.service';
 import { PreguntaService } from '../../core/services/pregunta.service';
+import { ConfirmDialogService } from '../../core/services/confirm-dialog.service';
 import { ProgramaResponse, ProgramaRequest, EstadoPrograma } from '../../core/models/programa.model';
 import { CriterioEvaluacionResponse } from '../../core/models/evaluacion.model';
 import { ReqDocumentoResponse } from '../../core/models/documento.model';
@@ -307,6 +308,7 @@ export class ProgramasAdminComponent implements OnInit {
     private criterioService: CriterioService,
     private reqDocService: ReqDocumentoService,
     private preguntaService: PreguntaService,
+    private confirmDialog: ConfirmDialogService,
   ) {}
 
   ngOnInit(): void {
@@ -366,7 +368,7 @@ export class ProgramasAdminComponent implements OnInit {
   agregarReq(idPrograma: number): void {
     if (!this.nuevoReq.nombreDocumento) return;
     this.reqDocService.crear({ idPrograma, ...this.nuevoReq }).subscribe({
-      next: (r) => { this.requisitos.update(l => [...l, r]); this.nuevoReq = { nombreDocumento: '', descripcion: '', tipoPermitido: 'PDF', obligatorio: true }; },
+      next: (r) => { this.requisitos.update(l => [...l, r]); this.nuevoReq = { nombreDocumento: '', descripcion: '', tipoPermitido: 'PDF', obligatorio: true }; this.notificar('Requisito agregado', false); },
       error: (err) => this.notificar(err.error?.mensaje || 'Error al agregar requisito', true),
     });
   }
@@ -375,14 +377,22 @@ export class ProgramasAdminComponent implements OnInit {
     if (!this.nuevaPregunta.trim()) return;
     const orden = this.preguntas().length + 1;
     this.preguntaService.crear({ idPrograma, enunciado: this.nuevaPregunta.trim(), orden }).subscribe({
-      next: (q) => { this.preguntas.update(l => [...l, q]); this.nuevaPregunta = ''; },
+      next: (q) => { this.preguntas.update(l => [...l, q]); this.nuevaPregunta = ''; this.notificar('Pregunta agregada', false); },
       error: (err) => this.notificar(err.error?.mensaje || 'Error al agregar pregunta', true),
     });
   }
 
-  eliminarPregunta(q: PreguntaResponse): void {
+  async eliminarPregunta(q: PreguntaResponse): Promise<void> {
+    const confirmado = await this.confirmDialog.confirmar({
+      titulo: 'Eliminar pregunta',
+      mensaje: `¿Eliminar la pregunta "${q.enunciado}"?`,
+      textoConfirmar: 'Eliminar',
+      peligroso: true,
+    });
+    if (!confirmado) return;
+
     this.preguntaService.eliminar(q.id).subscribe({
-      next: () => this.preguntas.update(l => l.filter(x => x.id !== q.id)),
+      next: () => { this.preguntas.update(l => l.filter(x => x.id !== q.id)); this.notificar('Pregunta eliminada', false); },
       error: (err) => this.notificar(err.error?.mensaje || 'Error al eliminar', true),
     });
   }
