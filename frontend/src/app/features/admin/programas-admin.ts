@@ -1,5 +1,6 @@
 import { Component, OnInit, signal, computed } from '@angular/core';
 import { FormsModule } from '@angular/forms';
+import { RouterLink } from '@angular/router';
 import { ProgramaService } from '../../core/services/programa.service';
 import { CriterioService } from '../../core/services/criterio.service';
 import { ReqDocumentoService } from '../../core/services/reqdoc.service';
@@ -12,7 +13,7 @@ import { PreguntaResponse } from '../../core/models/pregunta.model';
 
 @Component({
   selector: 'app-programas-admin',
-  imports: [FormsModule],
+  imports: [FormsModule, RouterLink],
   template: `
   <div>
     <div class="flex items-center justify-between mb-6">
@@ -77,6 +78,10 @@ import { PreguntaResponse } from '../../core/models/pregunta.model';
                 <option value="CERRADO">Cerrado</option>
               </select>
               <div class="flex items-center gap-1">
+                <a [routerLink]="['/admin/postulantes']" [queryParams]="{ programa: p.id }"
+                  class="p-1.5 rounded-lg text-on-surface-variant hover:bg-surface-high transition-colors" title="Ver postulantes" aria-label="Ver postulantes de este programa">
+                  <span class="material-symbols-outlined text-[18px]">group</span>
+                </a>
                 <button (click)="abrirEditar(p)" class="p-1.5 rounded-lg text-on-surface-variant hover:bg-surface-high transition-colors" title="Editar" aria-label="Editar programa">
                   <span class="material-symbols-outlined text-[18px]">edit</span>
                 </button>

@@ -17,7 +17,6 @@ describe('UsuariosAdminComponent', () => {
   let component: UsuariosAdminComponent;
   let usuarioServiceFake: any;
   let authFake: any;
-  let routeFake: any;
   let confirmDialogFake: any;
   const listaInicial = [
     usuarioFake({ id: 1, nombre: 'Ana', nombreCompleto: 'Ana Quispe', correo: 'ana@correo.com', ci: '1111', rol: 'POSTULANTE' }),
@@ -30,21 +29,13 @@ describe('UsuariosAdminComponent', () => {
       listarTodos: vi.fn(() => of(listaInicial)),
       cambiarRol: vi.fn(),
       cambiarActivo: vi.fn(),
-      obtenerCarnet: vi.fn(() => of(new Blob(['x']))),
-      verificarIdentidad: vi.fn(),
-      rechazarIdentidad: vi.fn(),
       eliminar: vi.fn(),
     };
     authFake = { usuario: () => usuarioFake({ id: 3 }) };
-    routeFake = { snapshot: { queryParamMap: { get: (_: string) => null } } };
     confirmDialogFake = { confirmar: vi.fn() };
-    component = new UsuariosAdminComponent(usuarioServiceFake, authFake, routeFake, confirmDialogFake);
+    component = new UsuariosAdminComponent(usuarioServiceFake, authFake, confirmDialogFake);
     component.ngOnInit();
-
-    vi.stubGlobal('URL', { createObjectURL: vi.fn(() => 'blob:fake'), revokeObjectURL: vi.fn() });
   });
-
-  afterEach(() => vi.unstubAllGlobals());
 
   it('carga la lista de usuarios al iniciar', () => {
     expect(usuarioServiceFake.listarTodos).toHaveBeenCalled();
@@ -117,48 +108,6 @@ describe('UsuariosAdminComponent', () => {
     expect(component.usuarios().find(u => u.id === 1)?.activo).toBe(false);
   });
 
-  it('revisarIdentidad abre el modal y carga las dos fotos del carnet', () => {
-    component.revisarIdentidad(listaInicial[0]);
-
-    expect(component.usuarioRevision()).toBe(listaInicial[0]);
-    expect(usuarioServiceFake.obtenerCarnet).toHaveBeenCalledWith(1, 'anverso');
-    expect(usuarioServiceFake.obtenerCarnet).toHaveBeenCalledWith(1, 'reverso');
-    expect(component.imgAnverso()).toBe('blob:fake');
-    expect(component.imgReverso()).toBe('blob:fake');
-  });
-
-  it('verificarIdentidad actualiza la lista y cierra el modal', () => {
-    const actualizado = usuarioFake({ id: 1, identidadVerificada: true });
-    usuarioServiceFake.verificarIdentidad.mockReturnValue(of(actualizado));
-    component.revisarIdentidad(listaInicial[0]);
-
-    component.verificarIdentidad(listaInicial[0]);
-
-    expect(usuarioServiceFake.verificarIdentidad).toHaveBeenCalledWith(1);
-    expect(component.usuarios().find(u => u.id === 1)?.identidadVerificada).toBe(true);
-    expect(component.usuarioRevision()).toBeNull();
-  });
-
-  it('rechazarIdentidad no hace nada si no se confirma', async () => {
-    confirmDialogFake.confirmar.mockResolvedValue(false);
-
-    await component.rechazarIdentidad(listaInicial[0]);
-
-    expect(usuarioServiceFake.rechazarIdentidad).not.toHaveBeenCalled();
-  });
-
-  it('rechazarIdentidad elimina al usuario de la lista si se confirma', async () => {
-    confirmDialogFake.confirmar.mockResolvedValue(true);
-    usuarioServiceFake.rechazarIdentidad.mockReturnValue(of(undefined));
-    component.revisarIdentidad(listaInicial[0]);
-
-    await component.rechazarIdentidad(listaInicial[0]);
-
-    expect(usuarioServiceFake.rechazarIdentidad).toHaveBeenCalledWith(1);
-    expect(component.usuarios().find(u => u.id === 1)).toBeUndefined();
-    expect(component.usuarioRevision()).toBeNull();
-  });
-
   it('eliminar no hace nada si no se confirma', async () => {
     confirmDialogFake.confirmar.mockResolvedValue(false);
 
@@ -186,24 +135,5 @@ describe('UsuariosAdminComponent', () => {
     expect(component.mensaje()).toBe('No se puede eliminar: este usuario ya registró evaluaciones');
     expect(component.mensajeError()).toBe(true);
     expect(component.usuarios().find(u => u.id === 2)).toBeDefined();
-  });
-
-  it('al cargar, si la URL trae ?revisar=<id> abre la revisión de esa cuenta automáticamente', () => {
-    routeFake.snapshot.queryParamMap.get = (key: string) => key === 'revisar' ? '1' : null;
-
-    component.cargar();
-
-    expect(component.usuarioRevision()).toEqual(expect.objectContaining({ id: 1 }));
-  });
-
-  it('no abre la revisión automática si la cuenta de la URL ya está verificada', () => {
-    usuarioServiceFake.listarTodos.mockReturnValue(of([
-      usuarioFake({ id: 1, identidadVerificada: true }),
-    ]));
-    routeFake.snapshot.queryParamMap.get = (key: string) => key === 'revisar' ? '1' : null;
-
-    component.cargar();
-
-    expect(component.usuarioRevision()).toBeNull();
   });
 });

@@ -46,7 +46,7 @@ import { UsuarioResponse } from '../../core/models/usuario.model';
                 <p class="font-semibold text-sm text-on-surface">{{ u.nombreCompleto }}</p>
                 <p class="text-xs text-on-surface-variant">{{ u.correo }} · registrado el {{ u.fechaRegistro }}</p>
               </div>
-              <a [routerLink]="['/admin/usuarios']" [queryParams]="{ revisar: u.id }"
+              <a [routerLink]="['/admin/usuarios', u.id]"
                 class="px-3 py-1.5 rounded-lg text-xs font-bold bg-primary text-white hover:bg-primary-dark transition-colors flex items-center gap-1 shrink-0">
                 <span class="material-symbols-outlined text-[16px]">visibility</span> Revisar
               </a>
