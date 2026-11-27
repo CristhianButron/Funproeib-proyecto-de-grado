@@ -221,10 +221,10 @@ export class FichaBeneficiarioComponent implements OnInit {
 
   badgeAprovechamiento(estado: string): string {
     const map: Record<string, string> = {
-      PENDIENTE: 'bg-surface-high text-on-surface-variant',
+      PENDIENTE: 'bg-amber-100 text-amber-800',
       APROBADO: 'bg-secondary-light text-on-secondary-container',
       REPROBADO: 'bg-error-container text-on-error-container',
-      ABANDONO: 'bg-primary-fixed text-primary',
+      ABANDONO: 'bg-orange-100 text-orange-800',
     };
     return map[estado] ?? 'bg-surface-high text-on-surface-variant';
   }

@@ -30,7 +30,6 @@ describe('AdminDashboardComponent', () => {
   beforeEach(() => {
     programaServiceFake = { listarTodos: vi.fn(() => of([programaFake()])) };
     usuarioServiceFake = {
-      listarTodos: vi.fn(() => of([usuarioFake({ rol: 'POSTULANTE' })])),
       listarPendientesIdentidad: vi.fn(() => of([usuarioFake({ id: 5, identidadVerificada: false })])),
     };
     component = new AdminDashboardComponent(programaServiceFake, usuarioServiceFake);
@@ -60,12 +59,14 @@ describe('AdminDashboardComponent', () => {
     expect(component.pendientesIdentidad()).toEqual([]);
   });
 
-  it('calcula los KPIs de programas y postulantes', () => {
+  it('calcula los KPIs de programas por estado', () => {
     component.ngOnInit();
 
     expect(component.kpis()).toEqual(expect.arrayContaining([
-      expect.objectContaining({ label: 'Postulantes', valor: 1 }),
+      expect.objectContaining({ label: 'Total programas', valor: 1 }),
       expect.objectContaining({ label: 'Programas abiertos', valor: 1 }),
+      expect.objectContaining({ label: 'Programas en curso', valor: 0 }),
+      expect.objectContaining({ label: 'Programas finalizados', valor: 0 }),
     ]));
     expect(component.cargando()).toBe(false);
   });

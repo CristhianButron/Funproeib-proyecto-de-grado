@@ -8,6 +8,8 @@ import org.certificaciones.funproeibbackend.dto.OlvidePasswordRequest;
 import org.certificaciones.funproeibbackend.dto.ReenviarVerificacionRequest;
 import org.certificaciones.funproeibbackend.dto.RestablecerPasswordRequest;
 import org.certificaciones.funproeibbackend.dto.UsuarioActualizarRequest;
+import org.certificaciones.funproeibbackend.dto.UsuarioCrearRequest;
+import org.certificaciones.funproeibbackend.dto.UsuarioEditarBasicoRequest;
 import org.certificaciones.funproeibbackend.dto.UsuarioRegistroRequest;
 import org.certificaciones.funproeibbackend.dto.UsuarioResponse;
 import org.certificaciones.funproeibbackend.model.enums.RolUsuario;
@@ -60,9 +62,24 @@ public class UsuarioController {
         return ResponseEntity.ok(usuarioService.actualizarPerfil(id, request));
     }
 
+    @PreAuthorize("hasRole('ADMIN')")
+    @PatchMapping("/{id}/datos-basicos")
+    public ResponseEntity<UsuarioResponse> editarDatosBasicos(@PathVariable Long id, @Valid @RequestBody UsuarioEditarBasicoRequest request) {
+        return ResponseEntity.ok(usuarioService.editarDatosBasicos(id, request));
+    }
+
     @GetMapping
     public ResponseEntity<List<UsuarioResponse>> listarTodos() {
         return ResponseEntity.ok(usuarioService.listarTodos());
+    }
+
+    // Distinto de /registro (autoregistro de POSTULANTE con carnet): esto es
+    // para que un ADMIN cree directamente cuentas de staff (EVALUADOR/ADMIN)
+    // u otras, sin pasar por la verificación de identidad con carnet.
+    @PreAuthorize("hasRole('ADMIN')")
+    @PostMapping
+    public ResponseEntity<UsuarioResponse> crear(@Valid @RequestBody UsuarioCrearRequest request) {
+        return ResponseEntity.status(HttpStatus.CREATED).body(usuarioService.crear(request));
     }
 
     @GetMapping("/pendientes-identidad")

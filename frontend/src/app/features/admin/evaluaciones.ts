@@ -285,11 +285,11 @@ export class EvaluacionesComponent implements OnInit {
   badge(estado: string): string {
     const map: Record<string, string> = {
       INCOMPLETA: 'bg-surface-high text-on-surface-variant',
-      PENDIENTE: 'bg-primary-fixed text-primary',
-      EVALUADA: 'bg-secondary-light text-on-secondary-container',
+      PENDIENTE: 'bg-amber-100 text-amber-800',
+      EVALUADA: 'bg-blue-100 text-blue-800',
       ACEPTADA: 'bg-secondary-light text-on-secondary-container',
       RECHAZADA: 'bg-error-container text-on-error-container',
-      BLOQUEADA: 'bg-error-container text-on-error-container',
+      BLOQUEADA: 'bg-on-surface text-white',
     };
     return map[estado] ?? 'bg-surface-high text-on-surface-variant';
   }

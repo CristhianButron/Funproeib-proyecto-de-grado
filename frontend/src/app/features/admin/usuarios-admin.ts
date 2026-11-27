@@ -4,16 +4,21 @@ import { RouterLink } from '@angular/router';
 import { UsuarioService } from '../../core/services/usuario.service';
 import { AuthService } from '../../core/services/auth.service';
 import { ConfirmDialogService } from '../../core/services/confirm-dialog.service';
-import { RolUsuario, UsuarioResponse } from '../../core/models/usuario.model';
+import { RolUsuario, UsuarioCrearRequest, UsuarioEditarBasicoRequest, UsuarioResponse } from '../../core/models/usuario.model';
 
 @Component({
   selector: 'app-usuarios-admin',
   imports: [FormsModule, RouterLink],
   template: `
   <div>
-    <div class="mb-6">
-      <h1 class="text-3xl font-extrabold text-primary-dark">Gestión de usuarios</h1>
-      <p class="text-on-surface-variant">Cambia el rol o activa/desactiva cualquier cuenta del sistema.</p>
+    <div class="mb-6 flex items-center justify-between flex-wrap gap-3">
+      <div>
+        <h1 class="text-3xl font-extrabold text-primary-dark">Gestión de usuarios</h1>
+        <p class="text-on-surface-variant">Crea cuentas, edita datos, cambia el rol o activa/desactiva cualquiera.</p>
+      </div>
+      <button (click)="abrirCrear()" class="px-5 py-3 rounded-xl bg-primary text-white font-bold hover:bg-primary-dark transition-colors flex items-center gap-2 shadow-card">
+        <span class="material-symbols-outlined">person_add</span> Crear usuario
+      </button>
     </div>
 
     @if (mensaje()) {
@@ -89,11 +94,17 @@ import { RolUsuario, UsuarioResponse } from '../../core/models/usuario.model';
                   </button>
                 </td>
                 <td class="px-6 py-4 text-right">
-                  <button (click)="eliminar(u)" [disabled]="esUsuarioActual(u)"
-                    class="px-2 py-1.5 rounded-lg text-error hover:bg-error-container transition-colors disabled:opacity-30 disabled:cursor-not-allowed"
-                    title="Eliminar cuenta" aria-label="Eliminar cuenta">
-                    <span class="material-symbols-outlined text-[20px]">delete</span>
-                  </button>
+                  <div class="flex items-center justify-end gap-1">
+                    <button (click)="abrirEditar(u)" class="p-1.5 rounded-lg text-on-surface-variant hover:bg-surface-high transition-colors"
+                      title="Editar datos" aria-label="Editar datos del usuario">
+                      <span class="material-symbols-outlined text-[20px]">edit</span>
+                    </button>
+                    <button (click)="eliminar(u)" [disabled]="esUsuarioActual(u)"
+                      class="p-1.5 rounded-lg text-error hover:bg-error-container transition-colors disabled:opacity-30 disabled:cursor-not-allowed"
+                      title="Eliminar cuenta" aria-label="Eliminar cuenta">
+                      <span class="material-symbols-outlined text-[20px]">delete</span>
+                    </button>
+                  </div>
                 </td>
               </tr>
             } @empty {
@@ -105,6 +116,105 @@ import { RolUsuario, UsuarioResponse } from '../../core/models/usuario.model';
       }
     </div>
   </div>
+
+  <!-- Modal crear -->
+  @if (modalCrear()) {
+    <div class="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4" (click)="modalCrear.set(false)">
+      <div class="bg-white w-full max-w-lg rounded-2xl shadow-xl overflow-hidden" (click)="$event.stopPropagation()">
+        <div class="bg-primary text-white px-6 py-4 flex items-center justify-between">
+          <h2 class="font-bold text-lg flex items-center gap-2"><span class="material-symbols-outlined">person_add</span> Crear usuario</h2>
+          <button (click)="modalCrear.set(false)" aria-label="Cerrar"><span class="material-symbols-outlined">close</span></button>
+        </div>
+        <div class="p-6 space-y-4">
+          <p class="text-xs text-on-surface-variant">
+            La cuenta queda activa de inmediato con una contraseña temporal que se le envía por correo; deberá cambiarla en su primer ingreso.
+          </p>
+          <div class="grid grid-cols-2 gap-4">
+            <div class="col-span-2">
+              <label class="block text-sm font-semibold mb-1">Nombre *</label>
+              <input [(ngModel)]="formCrear.nombre" class="campo" />
+            </div>
+            <div>
+              <label class="block text-sm font-semibold mb-1">Apellido paterno *</label>
+              <input [(ngModel)]="formCrear.apellidoPaterno" class="campo" />
+            </div>
+            <div>
+              <label class="block text-sm font-semibold mb-1">Apellido materno</label>
+              <input [(ngModel)]="formCrear.apellidoMaterno" class="campo" />
+            </div>
+            <div class="col-span-2">
+              <label class="block text-sm font-semibold mb-1">Correo *</label>
+              <input type="email" [(ngModel)]="formCrear.correo" class="campo" />
+            </div>
+            <div>
+              <label class="block text-sm font-semibold mb-1">CI *</label>
+              <input [(ngModel)]="formCrear.ci" class="campo" />
+            </div>
+            <div>
+              <label class="block text-sm font-semibold mb-1">Extensión</label>
+              <input [(ngModel)]="formCrear.ciExtension" class="campo" placeholder="LP, CB..." />
+            </div>
+            <div class="col-span-2">
+              <label class="block text-sm font-semibold mb-1">Rol *</label>
+              <select [(ngModel)]="formCrear.rol" class="campo">
+                <option value="EVALUADOR">Evaluador</option>
+                <option value="ADMIN">Administrador</option>
+                <option value="POSTULANTE">Postulante</option>
+              </select>
+            </div>
+          </div>
+        </div>
+        <div class="bg-surface-low px-6 py-4 flex justify-end gap-3">
+          <button (click)="modalCrear.set(false)" class="px-5 py-2 rounded-lg font-semibold text-on-surface-variant hover:bg-surface-high transition-colors">Cancelar</button>
+          <button (click)="crear()" [disabled]="guardando()" class="px-5 py-2 rounded-lg font-bold bg-primary text-white hover:bg-primary-dark transition-colors disabled:opacity-50">
+            {{ guardando() ? 'Creando...' : 'Crear usuario' }}
+          </button>
+        </div>
+      </div>
+    </div>
+  }
+
+  <!-- Modal editar -->
+  @if (usuarioEditando(); as ue) {
+    <div class="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4" (click)="usuarioEditando.set(null)">
+      <div class="bg-white w-full max-w-lg rounded-2xl shadow-xl overflow-hidden" (click)="$event.stopPropagation()">
+        <div class="bg-primary text-white px-6 py-4 flex items-center justify-between">
+          <h2 class="font-bold text-lg flex items-center gap-2"><span class="material-symbols-outlined">edit</span> Editar datos de {{ ue.nombreCompleto }}</h2>
+          <button (click)="usuarioEditando.set(null)" aria-label="Cerrar"><span class="material-symbols-outlined">close</span></button>
+        </div>
+        <div class="p-6 space-y-4">
+          <div class="grid grid-cols-2 gap-4">
+            <div class="col-span-2">
+              <label class="block text-sm font-semibold mb-1">Nombre *</label>
+              <input [(ngModel)]="formEditar.nombre" class="campo" />
+            </div>
+            <div>
+              <label class="block text-sm font-semibold mb-1">Apellido paterno *</label>
+              <input [(ngModel)]="formEditar.apellidoPaterno" class="campo" />
+            </div>
+            <div>
+              <label class="block text-sm font-semibold mb-1">Apellido materno</label>
+              <input [(ngModel)]="formEditar.apellidoMaterno" class="campo" />
+            </div>
+            <div>
+              <label class="block text-sm font-semibold mb-1">CI *</label>
+              <input [(ngModel)]="formEditar.ci" class="campo" />
+            </div>
+            <div>
+              <label class="block text-sm font-semibold mb-1">Extensión</label>
+              <input [(ngModel)]="formEditar.ciExtension" class="campo" placeholder="LP, CB..." />
+            </div>
+          </div>
+        </div>
+        <div class="bg-surface-low px-6 py-4 flex justify-end gap-3">
+          <button (click)="usuarioEditando.set(null)" class="px-5 py-2 rounded-lg font-semibold text-on-surface-variant hover:bg-surface-high transition-colors">Cancelar</button>
+          <button (click)="guardarEdicion()" [disabled]="guardando()" class="px-5 py-2 rounded-lg font-bold bg-primary text-white hover:bg-primary-dark transition-colors disabled:opacity-50">
+            {{ guardando() ? 'Guardando...' : 'Guardar cambios' }}
+          </button>
+        </div>
+      </div>
+    </div>
+  }
   `,
   styles: [`
     .campo { width:100%; padding:.5rem .7rem; border:1px solid #c5c5d3; border-radius:.5rem; outline:none; font-size:.875rem; }
@@ -115,8 +225,15 @@ import { RolUsuario, UsuarioResponse } from '../../core/models/usuario.model';
 export class UsuariosAdminComponent implements OnInit {
   usuarios = signal<UsuarioResponse[]>([]);
   cargando = signal(true);
+  guardando = signal(false);
   mensaje = signal<string | null>(null);
   mensajeError = signal(false);
+
+  modalCrear = signal(false);
+  formCrear: UsuarioCrearRequest = this.crearVacio();
+
+  usuarioEditando = signal<UsuarioResponse | null>(null);
+  formEditar: UsuarioEditarBasicoRequest = { nombre: '', apellidoPaterno: '', apellidoMaterno: '', ci: '', ciExtension: '' };
 
   busqueda = '';
   filtroRol: RolUsuario | '' = '';
@@ -151,6 +268,56 @@ export class UsuariosAdminComponent implements OnInit {
 
   esUsuarioActual(u: UsuarioResponse): boolean {
     return u.id === this.auth.usuario()?.id;
+  }
+
+  private crearVacio(): UsuarioCrearRequest {
+    return { nombre: '', apellidoPaterno: '', apellidoMaterno: '', correo: '', ci: '', ciExtension: '', rol: 'EVALUADOR' };
+  }
+
+  abrirCrear(): void {
+    this.formCrear = this.crearVacio();
+    this.modalCrear.set(true);
+  }
+
+  crear(): void {
+    if (!this.formCrear.nombre.trim() || !this.formCrear.apellidoPaterno.trim() || !this.formCrear.correo.trim() || !this.formCrear.ci.trim()) {
+      this.notificar('Completa los campos obligatorios', true);
+      return;
+    }
+    this.guardando.set(true);
+    this.usuarioService.crear(this.formCrear).subscribe({
+      next: (creado) => {
+        this.guardando.set(false);
+        this.modalCrear.set(false);
+        this.usuarios.update(l => [creado, ...l]);
+        this.notificar(`Cuenta de ${creado.nombreCompleto} creada. Se le envió la contraseña temporal por correo.`, false);
+      },
+      error: (err) => { this.guardando.set(false); this.notificar(err.error?.mensaje || 'No se pudo crear el usuario', true); },
+    });
+  }
+
+  abrirEditar(u: UsuarioResponse): void {
+    this.formEditar = { nombre: u.nombre, apellidoPaterno: u.apellidoPaterno, apellidoMaterno: u.apellidoMaterno ?? '', ci: u.ci, ciExtension: u.ciExtension ?? '' };
+    this.usuarioEditando.set(u);
+  }
+
+  guardarEdicion(): void {
+    const u = this.usuarioEditando();
+    if (!u) return;
+    if (!this.formEditar.nombre.trim() || !this.formEditar.apellidoPaterno.trim() || !this.formEditar.ci.trim()) {
+      this.notificar('Completa los campos obligatorios', true);
+      return;
+    }
+    this.guardando.set(true);
+    this.usuarioService.editarDatosBasicos(u.id, this.formEditar).subscribe({
+      next: (actualizado) => {
+        this.guardando.set(false);
+        this.usuarioEditando.set(null);
+        this.usuarios.update(l => l.map(x => x.id === actualizado.id ? actualizado : x));
+        this.notificar(`Datos de ${actualizado.nombreCompleto} actualizados`, false);
+      },
+      error: (err) => { this.guardando.set(false); this.notificar(err.error?.mensaje || 'No se pudo actualizar los datos', true); },
+    });
   }
 
   // A diferencia de activo/inactivo (reversible con un clic), cambiar el rol

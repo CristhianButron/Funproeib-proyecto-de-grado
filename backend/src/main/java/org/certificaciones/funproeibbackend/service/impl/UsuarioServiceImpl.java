@@ -6,6 +6,8 @@ import org.certificaciones.funproeibbackend.dto.CambiarPasswordRequest;
 import org.certificaciones.funproeibbackend.dto.LoginRequest;
 import org.certificaciones.funproeibbackend.dto.RestablecerPasswordRequest;
 import org.certificaciones.funproeibbackend.dto.UsuarioActualizarRequest;
+import org.certificaciones.funproeibbackend.dto.UsuarioCrearRequest;
+import org.certificaciones.funproeibbackend.dto.UsuarioEditarBasicoRequest;
 import org.certificaciones.funproeibbackend.dto.UsuarioRegistroRequest;
 import org.certificaciones.funproeibbackend.dto.UsuarioResponse;
 import org.certificaciones.funproeibbackend.exception.BusinessException;
@@ -145,6 +147,40 @@ public class UsuarioServiceImpl implements UsuarioService {
         return mapToResponse(guardado);
     }
 
+    @Override
+    @Transactional
+    public UsuarioResponse crear(UsuarioCrearRequest request) {
+        if (usuarioRepository.existsByCorreo(request.getCorreo())) {
+            throw new BusinessException("Ya existe un usuario registrado con ese correo");
+        }
+        if (usuarioRepository.existsByCi(request.getCi())) {
+            throw new BusinessException("Ya existe un usuario registrado con ese CI");
+        }
+
+        String contrasenaTemporal = generarContrasenaTemporal();
+
+        Usuario usuario = Usuario.builder()
+                .nombre(request.getNombre())
+                .apellidoPaterno(request.getApellidoPaterno())
+                .apellidoMaterno(request.getApellidoMaterno())
+                .correo(request.getCorreo())
+                .contrasenaHash(passwordEncoder.encode(contrasenaTemporal))
+                .ci(request.getCi())
+                .ciExtension(request.getCiExtension())
+                .rol(request.getRol())
+                .fechaRegistro(LocalDate.now())
+                .activo(true)
+                .emailVerificado(true)
+                .identidadVerificada(true)
+                .debeCambiarPassword(true)
+                .build();
+
+        Usuario guardado = usuarioRepository.save(usuario);
+        emailService.enviarCuentaCreadaPorAdmin(guardado.getCorreo(), guardado.getNombre(), contrasenaTemporal);
+
+        return mapToResponse(guardado);
+    }
+
     private void validarImagenCarnet(MultipartFile archivo, String lado) {
         if (archivo == null || archivo.isEmpty()) {
             throw new BusinessException("Debes subir la foto del " + lado + " de tu carnet de identidad");
@@ -265,6 +301,25 @@ public class UsuarioServiceImpl implements UsuarioService {
         usuario.setProvinciaNacimiento(request.getProvinciaNacimiento());
         usuario.setDireccionDomicilio(request.getDireccionDomicilio());
         usuario.setCarreras(request.getCarreras() != null ? request.getCarreras() : List.of());
+
+        usuarioRepository.save(usuario);
+        return mapToResponse(usuario);
+    }
+
+    @Override
+    @Transactional
+    public UsuarioResponse editarDatosBasicos(Long id, UsuarioEditarBasicoRequest request) {
+        Usuario usuario = buscarUsuario(id);
+
+        if (!usuario.getCi().equals(request.getCi()) && usuarioRepository.existsByCi(request.getCi())) {
+            throw new BusinessException("Ya existe un usuario registrado con ese CI");
+        }
+
+        usuario.setNombre(request.getNombre());
+        usuario.setApellidoPaterno(request.getApellidoPaterno());
+        usuario.setApellidoMaterno(request.getApellidoMaterno());
+        usuario.setCi(request.getCi());
+        usuario.setCiExtension(request.getCiExtension());
 
         usuarioRepository.save(usuario);
         return mapToResponse(usuario);

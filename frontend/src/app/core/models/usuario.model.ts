@@ -42,6 +42,24 @@ export interface UsuarioActualizarRequest {
   carreras?: string[];
 }
 
+export interface UsuarioCrearRequest {
+  nombre: string;
+  apellidoPaterno: string;
+  apellidoMaterno?: string;
+  correo: string;
+  ci: string;
+  ciExtension?: string;
+  rol: RolUsuario;
+}
+
+export interface UsuarioEditarBasicoRequest {
+  nombre: string;
+  apellidoPaterno: string;
+  apellidoMaterno?: string;
+  ci: string;
+  ciExtension?: string;
+}
+
 export interface LoginRequest {
   correo: string;
   contrasena: string;

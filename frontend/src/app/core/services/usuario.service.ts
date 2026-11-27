@@ -1,7 +1,7 @@
 import { Injectable } from '@angular/core';
 import { Observable } from 'rxjs';
 import { ApiService } from './api.service';
-import { CambiarPasswordObligatorioRequest, CambiarPasswordRequest, LoginRequest, OlvidePasswordRequest, ReenviarVerificacionRequest, RestablecerPasswordRequest, RolUsuario, UsuarioActualizarRequest, UsuarioRegistroRequest, UsuarioResponse } from '../models/usuario.model';
+import { CambiarPasswordObligatorioRequest, CambiarPasswordRequest, LoginRequest, OlvidePasswordRequest, ReenviarVerificacionRequest, RestablecerPasswordRequest, RolUsuario, UsuarioActualizarRequest, UsuarioCrearRequest, UsuarioEditarBasicoRequest, UsuarioRegistroRequest, UsuarioResponse } from '../models/usuario.model';
 
 @Injectable({ providedIn: 'root' })
 export class UsuarioService {
@@ -29,6 +29,16 @@ export class UsuarioService {
 
   listarTodos(): Observable<UsuarioResponse[]> {
     return this.api.get<UsuarioResponse[]>('/usuarios');
+  }
+
+  // Distinto de registrar(): esto es para que un ADMIN cree una cuenta de
+  // staff (o cualquier rol) directamente, sin el flujo de carnet/verificación.
+  crear(request: UsuarioCrearRequest): Observable<UsuarioResponse> {
+    return this.api.post<UsuarioResponse>('/usuarios', request);
+  }
+
+  editarDatosBasicos(id: number, request: UsuarioEditarBasicoRequest): Observable<UsuarioResponse> {
+    return this.api.patchBody<UsuarioResponse>(`/usuarios/${id}/datos-basicos`, request);
   }
 
   listarPendientesIdentidad(): Observable<UsuarioResponse[]> {

@@ -6,6 +6,8 @@ import org.certificaciones.funproeibbackend.dto.CambiarPasswordRequest;
 import org.certificaciones.funproeibbackend.dto.LoginRequest;
 import org.certificaciones.funproeibbackend.dto.RestablecerPasswordRequest;
 import org.certificaciones.funproeibbackend.dto.UsuarioActualizarRequest;
+import org.certificaciones.funproeibbackend.dto.UsuarioCrearRequest;
+import org.certificaciones.funproeibbackend.dto.UsuarioEditarBasicoRequest;
 import org.certificaciones.funproeibbackend.dto.UsuarioRegistroRequest;
 import org.certificaciones.funproeibbackend.dto.UsuarioResponse;
 import org.certificaciones.funproeibbackend.model.enums.RolUsuario;
@@ -15,9 +17,11 @@ import java.util.List;
 
 public interface UsuarioService {
     UsuarioResponse registrar(UsuarioRegistroRequest request, MultipartFile carnetAnverso, MultipartFile carnetReverso);
+    UsuarioResponse crear(UsuarioCrearRequest request);
     UsuarioResponse login(LoginRequest request);
     UsuarioResponse obtenerPorId(Long id);
     UsuarioResponse actualizarPerfil(Long id, UsuarioActualizarRequest request);
+    UsuarioResponse editarDatosBasicos(Long id, UsuarioEditarBasicoRequest request);
     List<UsuarioResponse> listarTodos();
     void verificarCorreo(String token);
     void reenviarVerificacion(String correo);

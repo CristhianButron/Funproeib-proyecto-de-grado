@@ -1,8 +1,9 @@
-import { Component, OnInit, signal } from '@angular/core';
+import { Component, OnInit, computed, signal } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { ActivatedRoute, RouterLink } from '@angular/router';
 import { ProgramaService } from '../../core/services/programa.service';
 import { PostulacionService } from '../../core/services/postulacion.service';
+import { SelectBuscableComponent } from '../../core/components/select-buscable.component';
 import { ProgramaResponse } from '../../core/models/programa.model';
 import { PostulacionResponse, EstadoAprovechamiento } from '../../core/models/postulacion.model';
 
@@ -19,7 +20,7 @@ const LABEL_APROVECHAMIENTO: Record<EstadoAprovechamiento, string> = {
  */
 @Component({
   selector: 'app-beneficiarios',
-  imports: [FormsModule, RouterLink],
+  imports: [FormsModule, RouterLink, SelectBuscableComponent],
   template: `
   <div>
     <div class="mb-6">
@@ -34,15 +35,27 @@ const LABEL_APROVECHAMIENTO: Record<EstadoAprovechamiento, string> = {
       </div>
     }
 
-    <div class="bg-white rounded-xl shadow-card border border-outline-variant p-4 mb-6 flex items-center gap-3">
+    <div class="bg-white rounded-xl shadow-card border border-outline-variant p-4 mb-6 flex flex-wrap items-center gap-3">
       <span class="material-symbols-outlined text-primary">filter_alt</span>
-      <select [(ngModel)]="programaSel" (ngModelChange)="cargarBeneficiarios($event)" class="campo max-w-md">
-        <option [ngValue]="null">Seleccione un programa...</option>
-        @for (p of programas(); track p.id) { <option [ngValue]="p.id">{{ p.nombre }}</option> }
-      </select>
+      <div class="max-w-md flex-1 min-w-[220px]">
+        <app-select-buscable [opciones]="opcionesPrograma()" [valor]="programaSel" placeholder="Seleccione un programa..."
+          (cambio)="onProgramaChange($event)" />
+      </div>
+      @if (programaSel) {
+        <div class="flex items-center gap-2 flex-1 min-w-[220px] max-w-sm">
+          <span class="material-symbols-outlined text-on-surface-variant">search</span>
+          <input [(ngModel)]="busqueda" class="campo" placeholder="Buscar beneficiario por nombre..." />
+        </div>
+      }
     </div>
 
-    @if (programaSel) {
+    @if (!programaSel) {
+      <div class="text-center py-20 bg-white rounded-xl border border-outline-variant text-on-surface-variant">
+        <span class="material-symbols-outlined text-5xl text-outline-variant">workspace_premium</span>
+        <p class="mt-3 font-semibold text-on-surface">Selecciona un programa para ver a sus beneficiarios</p>
+        <p class="text-sm mt-1">Usa el filtro de arriba para elegir una convocatoria.</p>
+      </div>
+    } @else {
       <div class="bg-white rounded-xl shadow-card border border-outline-variant overflow-hidden">
         @if (cargando()) {
           <p class="p-6 text-on-surface-variant">Cargando...</p>
@@ -61,7 +74,7 @@ const LABEL_APROVECHAMIENTO: Record<EstadoAprovechamiento, string> = {
               </tr>
             </thead>
             <tbody class="divide-y divide-outline-variant">
-              @for (b of beneficiarios(); track b.id) {
+              @for (b of beneficiariosFiltrados(); track b.id) {
                 <tr class="hover:bg-surface-low transition-colors">
                   <td class="px-6 py-4 font-semibold text-primary">{{ b.nombrePostulante }}</td>
                   <td class="px-6 py-4 text-sm">{{ b.fechaPostulacion }}</td>
@@ -84,7 +97,13 @@ const LABEL_APROVECHAMIENTO: Record<EstadoAprovechamiento, string> = {
                   </td>
                 </tr>
               } @empty {
-                <tr><td colspan="4" class="px-6 py-10 text-center text-on-surface-variant">Este programa todavía no tiene beneficiarios (postulantes aceptados).</td></tr>
+                <tr><td colspan="4" class="px-6 py-10 text-center text-on-surface-variant">
+                  @if (busqueda.trim()) {
+                    Ningún beneficiario coincide con "{{ busqueda }}".
+                  } @else {
+                    Este programa todavía no tiene beneficiarios (postulantes aceptados).
+                  }
+                </td></tr>
               }
             </tbody>
           </table>
@@ -104,9 +123,18 @@ export class BeneficiariosComponent implements OnInit {
   estadosAprovechamiento: EstadoAprovechamiento[] = ['PENDIENTE', 'ABANDONO', 'APROBADO', 'REPROBADO'];
 
   programas = signal<ProgramaResponse[]>([]);
+  opcionesPrograma = computed(() => this.programas().map(p => ({ id: p.id, nombre: p.nombre })));
   beneficiarios = signal<PostulacionResponse[]>([]);
   programaSel: number | null = null;
+  busqueda = '';
   cargando = signal(false);
+
+  beneficiariosFiltrados = computed(() => {
+    const texto = this.busqueda.trim().toLowerCase();
+    const lista = this.beneficiarios();
+    if (!texto) return lista;
+    return lista.filter(b => b.nombrePostulante.toLowerCase().includes(texto));
+  });
 
   mensaje = signal<string | null>(null);
   mensajeError = signal(false);
@@ -127,6 +155,12 @@ export class BeneficiariosComponent implements OnInit {
       this.programaSel = +idPrograma;
       this.cargarBeneficiarios(this.programaSel);
     }
+  }
+
+  onProgramaChange(idPrograma: number | null): void {
+    this.programaSel = idPrograma;
+    this.busqueda = '';
+    this.cargarBeneficiarios(idPrograma);
   }
 
   programaYaFinalizo(): boolean {
@@ -164,10 +198,10 @@ export class BeneficiariosComponent implements OnInit {
 
   badge(estado: string): string {
     const map: Record<string, string> = {
-      PENDIENTE: 'bg-surface-high text-on-surface-variant',
+      PENDIENTE: 'bg-amber-100 text-amber-800',
       APROBADO: 'bg-secondary-light text-on-secondary-container',
       REPROBADO: 'bg-error-container text-on-error-container',
-      ABANDONO: 'bg-primary-fixed text-primary',
+      ABANDONO: 'bg-orange-100 text-orange-800',
     };
     return map[estado] ?? 'bg-surface-high text-on-surface-variant';
   }

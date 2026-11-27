@@ -7,4 +7,6 @@ public interface EmailService {
     void enviarRecuperacionPassword(String destinatario, String nombre, String tokenRecuperacion);
 
     void enviarRechazoIdentidad(String destinatario, String nombre);
+
+    void enviarCuentaCreadaPorAdmin(String destinatario, String nombre, String contrasenaTemporal);
 }

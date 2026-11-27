@@ -104,6 +104,35 @@ public class EmailServiceImpl implements EmailService {
     }
 
     @Override
+    public void enviarCuentaCreadaPorAdmin(String destinatario, String nombre, String contrasenaTemporal) {
+        String asunto = "Se creó tu cuenta - Funproeib Andes";
+        String cuerpo = """
+                Hola %s,
+
+                Un administrador creó una cuenta para vos en el sistema de Funproeib Andes.
+
+                Tu contraseña temporal es: %s
+
+                Inicia sesión con tu correo y esta contraseña; el sistema te pedirá que la
+                cambies por una nueva en tu primer ingreso.
+                """.formatted(nombre, contrasenaTemporal);
+
+        if (!mailEnabled || mailSender.isEmpty()) {
+            log.info("[EMAIL SIMULADO - app.mail.enabled=false o SMTP no configurado] Para: {} | Asunto: {}\n{}",
+                    destinatario, asunto, cuerpo);
+            return;
+        }
+
+        SimpleMailMessage mensaje = new SimpleMailMessage();
+        mensaje.setFrom(remitente);
+        mensaje.setTo(destinatario);
+        mensaje.setSubject(asunto);
+        mensaje.setText(cuerpo);
+        mailSender.get().send(mensaje);
+        log.info("Correo de cuenta creada por administrador enviado a {}", destinatario);
+    }
+
+    @Override
     public void enviarRechazoIdentidad(String destinatario, String nombre) {
         String asunto = "Tu cuenta fue dada de baja - Funproeib Andes";
         String cuerpo = """

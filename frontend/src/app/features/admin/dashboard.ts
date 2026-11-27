@@ -130,16 +130,13 @@ export class AdminDashboardComponent implements OnInit {
     this.programaService.listarTodos().subscribe({
       next: (data) => {
         this.programas.set(data);
-        this.usuarioService.listarTodos().subscribe(users => {
-          const postulantes = users.filter(u => u.rol === 'POSTULANTE').length;
-          this.kpis.set([
-            { label: 'Programas abiertos', valor: data.filter(p => p.estado === 'ABIERTO').length, icono: 'school', bg: 'bg-primary-fixed', fg: 'text-primary' },
-            { label: 'Total programas', valor: data.length, icono: 'library_books', bg: 'bg-secondary-light', fg: 'text-on-secondary-container' },
-            { label: 'Postulantes', valor: postulantes, icono: 'group', bg: 'bg-primary-fixed', fg: 'text-primary' },
-            { label: 'Cerrados', valor: data.filter(p => p.estado === 'CERRADO').length, icono: 'check_circle', bg: 'bg-surface-high', fg: 'text-on-surface-variant' },
-          ]);
-          this.cargando.set(false);
-        });
+        this.kpis.set([
+          { label: 'Total programas', valor: data.length, icono: 'library_books', bg: 'bg-secondary-light', fg: 'text-on-secondary-container' },
+          { label: 'Programas abiertos', valor: data.filter(p => p.estado === 'ABIERTO').length, icono: 'school', bg: 'bg-primary-fixed', fg: 'text-primary' },
+          { label: 'Programas en curso', valor: data.filter(p => p.estado === 'ACTIVO').length, icono: 'play_circle', bg: 'bg-blue-100', fg: 'text-blue-800' },
+          { label: 'Programas finalizados', valor: data.filter(p => p.estado === 'CERRADO').length, icono: 'check_circle', bg: 'bg-surface-high', fg: 'text-on-surface-variant' },
+        ]);
+        this.cargando.set(false);
       },
       error: () => this.cargando.set(false),
     });
