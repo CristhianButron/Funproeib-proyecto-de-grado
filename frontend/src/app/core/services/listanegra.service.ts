@@ -8,15 +8,25 @@ export interface ListaNegraRequest {
   ciPostulante: string;
   motivo: MotivoListaNegra;
   idRegistradoPor: number;
+  observaciones?: string;
 }
 
 export interface ListaNegraResponse {
   id: number;
   ciPostulante: string;
+  nombrePostulante?: string;
   motivo: MotivoListaNegra;
+  observaciones?: string;
   fechaRegistro: string;
   registradoPorNombre: string;
   activo: boolean;
+}
+
+export interface ListaNegraCandidatoResponse {
+  idUsuario: number;
+  nombreCompleto: string;
+  ci: string;
+  programas: string[];
 }
 
 @Injectable({ providedIn: 'root' })
@@ -25,6 +35,10 @@ export class ListaNegraService {
 
   listarActivos(): Observable<ListaNegraResponse[]> {
     return this.api.get<ListaNegraResponse[]>('/lista-negra');
+  }
+
+  listarCandidatosAbandono(): Observable<ListaNegraCandidatoResponse[]> {
+    return this.api.get<ListaNegraCandidatoResponse[]>('/lista-negra/candidatos-abandono');
   }
 
   agregar(request: ListaNegraRequest): Observable<ListaNegraResponse> {

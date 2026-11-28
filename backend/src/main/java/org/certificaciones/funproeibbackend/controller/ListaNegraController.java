@@ -1,5 +1,6 @@
 package org.certificaciones.funproeibbackend.controller;
 
+import org.certificaciones.funproeibbackend.dto.ListaNegraCandidatoResponse;
 import org.certificaciones.funproeibbackend.dto.ListaNegraRequest;
 import org.certificaciones.funproeibbackend.dto.ListaNegraResponse;
 import org.certificaciones.funproeibbackend.service.ListaNegraService;
@@ -26,6 +27,11 @@ public class ListaNegraController {
     @GetMapping
     public ResponseEntity<List<ListaNegraResponse>> listarActivos() {
         return ResponseEntity.ok(listaNegraService.listarActivos());
+    }
+
+    @GetMapping("/candidatos-abandono")
+    public ResponseEntity<List<ListaNegraCandidatoResponse>> listarCandidatosAbandono() {
+        return ResponseEntity.ok(listaNegraService.listarCandidatosAbandono());
     }
 
     @GetMapping("/verificar/{ci}")

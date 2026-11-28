@@ -8,6 +8,7 @@ import org.certificaciones.funproeibbackend.model.ListaNegra;
 import org.certificaciones.funproeibbackend.model.Usuario;
 import org.certificaciones.funproeibbackend.model.enums.MotivoListaNegra;
 import org.certificaciones.funproeibbackend.repository.ListaNegraRepository;
+import org.certificaciones.funproeibbackend.repository.PostulacionRepository;
 import org.certificaciones.funproeibbackend.repository.UsuarioRepository;
 import org.certificaciones.funproeibbackend.service.impl.ListaNegraServiceImpl;
 import org.junit.jupiter.api.BeforeEach;
@@ -32,12 +33,13 @@ class ListaNegraServiceImplTest {
 
     @Mock private ListaNegraRepository listaNegraRepository;
     @Mock private UsuarioRepository usuarioRepository;
+    @Mock private PostulacionRepository postulacionRepository;
 
     private ListaNegraServiceImpl service;
 
     @BeforeEach
     void setUp() {
-        service = new ListaNegraServiceImpl(listaNegraRepository, usuarioRepository);
+        service = new ListaNegraServiceImpl(listaNegraRepository, usuarioRepository, postulacionRepository);
     }
 
     private Usuario registrador() {

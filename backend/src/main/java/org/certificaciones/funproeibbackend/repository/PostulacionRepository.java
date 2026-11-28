@@ -21,6 +21,10 @@ public interface PostulacionRepository extends JpaRepository<Postulacion, Long> 
 
     List<Postulacion> findByEstado(EstadoPostulacion estado);
 
+    @Query("SELECT p FROM Postulacion p JOIN FETCH p.usuario u JOIN FETCH p.programa pr " +
+            "WHERE p.estadoAprovechamiento = 'ABANDONO'")
+    List<Postulacion> findConAbandono();
+
     Optional<Postulacion> findByUsuarioIdAndProgramaId(Long idUsuario, Long idPrograma);
 
     boolean existsByUsuarioIdAndProgramaId(Long idUsuario, Long idPrograma);

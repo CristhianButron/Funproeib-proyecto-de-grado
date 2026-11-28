@@ -1,12 +1,15 @@
 package org.certificaciones.funproeibbackend.service.impl;
 
+import org.certificaciones.funproeibbackend.dto.ListaNegraCandidatoResponse;
 import org.certificaciones.funproeibbackend.dto.ListaNegraRequest;
 import org.certificaciones.funproeibbackend.dto.ListaNegraResponse;
 import org.certificaciones.funproeibbackend.exception.BusinessException;
 import org.certificaciones.funproeibbackend.exception.ResourceNotFoundException;
 import org.certificaciones.funproeibbackend.model.ListaNegra;
+import org.certificaciones.funproeibbackend.model.Postulacion;
 import org.certificaciones.funproeibbackend.model.Usuario;
 import org.certificaciones.funproeibbackend.repository.ListaNegraRepository;
+import org.certificaciones.funproeibbackend.repository.PostulacionRepository;
 import org.certificaciones.funproeibbackend.repository.UsuarioRepository;
 import org.certificaciones.funproeibbackend.service.ListaNegraService;
 import lombok.RequiredArgsConstructor;
@@ -14,7 +17,10 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDate;
+import java.util.ArrayList;
+import java.util.LinkedHashMap;
 import java.util.List;
+import java.util.Map;
 
 @Service
 @RequiredArgsConstructor
@@ -22,6 +28,7 @@ public class ListaNegraServiceImpl implements ListaNegraService {
 
     private final ListaNegraRepository listaNegraRepository;
     private final UsuarioRepository usuarioRepository;
+    private final PostulacionRepository postulacionRepository;
 
     @Override
     @Transactional
@@ -36,6 +43,7 @@ public class ListaNegraServiceImpl implements ListaNegraService {
         ListaNegra entrada = ListaNegra.builder()
                 .ciPostulante(request.getCiPostulante())
                 .motivo(request.getMotivo())
+                .observaciones(request.getObservaciones())
                 .fechaRegistro(LocalDate.now())
                 .registradoPor(registradoPor)
                 .activo(true)
@@ -71,11 +79,39 @@ public class ListaNegraServiceImpl implements ListaNegraService {
         return mapToResponse(listaNegraRepository.save(entrada));
     }
 
+    @Override
+    @Transactional(readOnly = true)
+    public List<ListaNegraCandidatoResponse> listarCandidatosAbandono() {
+        Map<Long, ListaNegraCandidatoResponse.ListaNegraCandidatoResponseBuilder> candidatos = new LinkedHashMap<>();
+        Map<Long, List<String>> programasPorUsuario = new LinkedHashMap<>();
+
+        for (Postulacion p : postulacionRepository.findConAbandono()) {
+            Usuario u = p.getUsuario();
+            if (listaNegraRepository.existsByCiPostulanteAndActivoTrue(u.getCi())) {
+                continue;
+            }
+            candidatos.computeIfAbsent(u.getId(), id -> ListaNegraCandidatoResponse.builder()
+                    .idUsuario(u.getId()).nombreCompleto(u.getNombreCompleto()).ci(u.getCi()));
+            programasPorUsuario.computeIfAbsent(u.getId(), id -> new ArrayList<>())
+                    .add(p.getPrograma().getNombre());
+        }
+
+        return candidatos.entrySet().stream()
+                .map(e -> e.getValue().programas(programasPorUsuario.get(e.getKey())).build())
+                .toList();
+    }
+
     private ListaNegraResponse mapToResponse(ListaNegra ln) {
+        String nombrePostulante = usuarioRepository.findByCi(ln.getCiPostulante())
+                .map(Usuario::getNombreCompleto)
+                .orElse(null);
+
         return ListaNegraResponse.builder()
                 .id(ln.getId())
                 .ciPostulante(ln.getCiPostulante())
+                .nombrePostulante(nombrePostulante)
                 .motivo(ln.getMotivo())
+                .observaciones(ln.getObservaciones())
                 .fechaRegistro(ln.getFechaRegistro())
                 .registradoPorNombre(ln.getRegistradoPor().getNombreCompleto())
                 .activo(ln.getActivo())

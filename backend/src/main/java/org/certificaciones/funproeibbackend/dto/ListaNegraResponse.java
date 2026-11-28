@@ -10,7 +10,9 @@ import java.time.LocalDate;
 public class ListaNegraResponse {
     private Long id;
     private String ciPostulante;
+    private String nombrePostulante;
     private MotivoListaNegra motivo;
+    private String observaciones;
     private LocalDate fechaRegistro;
     private String registradoPorNombre;
     private Boolean activo;
