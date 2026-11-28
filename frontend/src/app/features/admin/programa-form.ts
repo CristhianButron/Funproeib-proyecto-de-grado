@@ -90,7 +90,9 @@ type SeccionId = 'datos' | 'descripcion' | 'requisitos' | 'preguntas' | 'criteri
             <div class="space-y-5 max-w-xl">
               <div>
                 <label class="block text-sm font-semibold mb-1.5">Nombre del programa *</label>
-                <input [(ngModel)]="form.nombre" class="campo" placeholder="Ej: Diplomado en Educación Intercultural" />
+                <input [(ngModel)]="form.nombre" (ngModelChange)="nombreInvalido.set(false)"
+                  class="campo" [class.campo-invalido]="nombreInvalido()" placeholder="Ej: Diplomado en Educación Intercultural" />
+                @if (nombreInvalido()) { <p class="text-xs text-error mt-1">Campo requerido</p> }
               </div>
               <div class="grid grid-cols-2 gap-4">
                 <div>
@@ -107,15 +109,21 @@ type SeccionId = 'datos' | 'descripcion' | 'requisitos' | 'preguntas' | 'criteri
                 </div>
                 <div>
                   <label class="block text-sm font-semibold mb-1.5">Fecha inicio *</label>
-                  <input type="date" [(ngModel)]="form.fechaInicio" class="campo" />
+                  <input type="date" [(ngModel)]="form.fechaInicio" (ngModelChange)="fechaInicioInvalida.set(false)"
+                    class="campo" [class.campo-invalido]="fechaInicioInvalida()" />
+                  @if (fechaInicioInvalida()) { <p class="text-xs text-error mt-1">Campo requerido</p> }
                 </div>
                 <div>
                   <label class="block text-sm font-semibold mb-1.5">Fecha fin *</label>
-                  <input type="date" [(ngModel)]="form.fechaFin" [min]="hoy" class="campo" />
+                  <input type="date" [(ngModel)]="form.fechaFin" (ngModelChange)="fechaFinInvalida.set(false)"
+                    [min]="hoy" class="campo" [class.campo-invalido]="fechaFinInvalida()" />
+                  @if (fechaFinInvalida()) { <p class="text-xs text-error mt-1">Campo requerido</p> }
                 </div>
                 <div>
                   <label class="block text-sm font-semibold mb-1.5">Cupos disponibles *</label>
-                  <input type="number" min="1" [(ngModel)]="form.cuposDisponibles" class="campo" placeholder="30" />
+                  <input type="number" min="1" [(ngModel)]="form.cuposDisponibles" (ngModelChange)="cuposInvalidos.set(false)"
+                    class="campo" [class.campo-invalido]="cuposInvalidos()" placeholder="30" />
+                  @if (cuposInvalidos()) { <p class="text-xs text-error mt-1">Debe ser al menos 1</p> }
                 </div>
               </div>
             </div>
@@ -338,6 +346,11 @@ export class ProgramaFormComponent implements OnInit {
     { nombreDocumento: '', descripcion: '', tipoPermitido: 'PDF', obligatorio: true };
   nuevaPregunta = '';
 
+  nombreInvalido = signal(false);
+  fechaInicioInvalida = signal(false);
+  fechaFinInvalida = signal(false);
+  cuposInvalidos = signal(false);
+
   nuevoCriterio = { nombreCriterio: '', descripcion: '' };
   editandoCriterioId = signal<number | null>(null);
   edicionCriterio = { nombreCriterio: '', descripcion: '' };
@@ -450,6 +463,14 @@ export class ProgramaFormComponent implements OnInit {
   }
 
   guardarDatos(avanzarA?: SeccionId): void {
+    this.nombreInvalido.set(!this.form.nombre.trim());
+    this.fechaInicioInvalida.set(!this.form.fechaInicio);
+    this.fechaFinInvalida.set(!this.form.fechaFin);
+    this.cuposInvalidos.set(!this.form.cuposDisponibles || this.form.cuposDisponibles < 1);
+    if (this.nombreInvalido() || this.fechaInicioInvalida() || this.fechaFinInvalida() || this.cuposInvalidos()) {
+      return;
+    }
+
     this.guardando.set(true);
     const id = this.idPrograma();
     const obs = id ? this.programaService.actualizar(id, this.form) : this.programaService.crear(this.form);

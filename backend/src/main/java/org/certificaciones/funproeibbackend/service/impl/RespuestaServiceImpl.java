@@ -57,6 +57,16 @@ public class RespuestaServiceImpl implements RespuestaService {
                 .toList();
     }
 
+    @Override
+    @Transactional
+    public void eliminar(Long id) {
+        RespuestaPostulacion respuesta = respuestaRepository.findById(id)
+                .orElseThrow(() -> new ResourceNotFoundException("Respuesta no encontrada con id: " + id));
+        Long idPostulacion = respuesta.getPostulacion().getId();
+        respuestaRepository.delete(respuesta);
+        completitudService.revisar(idPostulacion);
+    }
+
     private RespuestaResponse mapToResponse(RespuestaPostulacion r) {
         return RespuestaResponse.builder()
                 .id(r.getId())

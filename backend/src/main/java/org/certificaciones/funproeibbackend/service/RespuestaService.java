@@ -8,4 +8,5 @@ import java.util.List;
 public interface RespuestaService {
     RespuestaResponse guardar(RespuestaRequest request);
     List<RespuestaResponse> listarPorPostulacion(Long idPostulacion);
+    void eliminar(Long id);
 }

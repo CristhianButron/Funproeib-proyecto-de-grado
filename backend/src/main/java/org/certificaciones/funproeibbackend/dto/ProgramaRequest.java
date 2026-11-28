@@ -9,24 +9,24 @@ import java.util.List;
 @Data
 public class ProgramaRequest {
 
-    @NotBlank
-    @Size(max = 150)
+    @NotBlank(message = "El nombre es obligatorio")
+    @Size(max = 150, message = "El nombre no puede superar los 150 caracteres")
     private String nombre;
 
-    @NotNull
+    @NotNull(message = "El tipo de programa es obligatorio")
     private TipoPrograma tipo;
 
     @Size(max = 10)
     private String edicion;
 
-    @NotNull
+    @NotNull(message = "La fecha de inicio es obligatoria")
     private LocalDate fechaInicio;
 
-    @NotNull
+    @NotNull(message = "La fecha de fin es obligatoria")
     private LocalDate fechaFin;
 
-    @NotNull
-    @Min(1)
+    @NotNull(message = "Los cupos disponibles son obligatorios")
+    @Min(value = 1, message = "Los cupos disponibles deben ser al menos 1")
     private Integer cuposDisponibles;
 
     @Size(max = 4000)

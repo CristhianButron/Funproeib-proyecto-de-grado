@@ -44,6 +44,7 @@ export const routes: Routes = [
     children: [
       { path: '', loadComponent: () => import('./features/portal/portal-programas').then(m => m.PortalProgramasComponent) },
       { path: 'mis-postulaciones', loadComponent: () => import('./features/portal/portal-mis-postulaciones').then(m => m.PortalMisPostulacionesComponent) },
+      { path: 'mis-postulaciones/:id', loadComponent: () => import('./features/portal/portal-postulacion-detalle').then(m => m.PortalPostulacionDetalleComponent) },
       { path: 'perfil', loadComponent: () => import('./features/perfil/mi-perfil').then(m => m.MiPerfilComponent) },
     ],
   },

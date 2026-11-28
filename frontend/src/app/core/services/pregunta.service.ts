@@ -31,4 +31,8 @@ export class RespuestaService {
   guardar(request: RespuestaRequest): Observable<RespuestaResponse> {
     return this.api.post<RespuestaResponse>('/respuestas', request);
   }
+
+  eliminar(id: number): Observable<void> {
+    return this.api.delete<void>(`/respuestas/${id}`);
+  }
 }

@@ -2,6 +2,7 @@ package org.certificaciones.funproeibbackend.security;
 
 import org.certificaciones.funproeibbackend.repository.DocumentoRepository;
 import org.certificaciones.funproeibbackend.repository.PostulacionRepository;
+import org.certificaciones.funproeibbackend.repository.RespuestaPostulacionRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Component;
 import org.springframework.transaction.annotation.Transactional;
@@ -28,6 +29,7 @@ public class RecursoAuthService {
 
     private final PostulacionRepository postulacionRepository;
     private final DocumentoRepository documentoRepository;
+    private final RespuestaPostulacionRepository respuestaRepository;
 
     // @Transactional porque usuario/postulacion son relaciones LAZY: sin una
     // sesión abierta durante el .map(), acceder a getUsuario() después de
@@ -51,6 +53,16 @@ public class RecursoAuthService {
         }
         return documentoRepository.findById(idDocumento)
                 .map(d -> idUsuarioAutenticado.equals(d.getPostulacion().getUsuario().getId().toString()))
+                .orElse(false);
+    }
+
+    @Transactional(readOnly = true)
+    public boolean esDuenoDeRespuesta(Long idRespuesta, String idUsuarioAutenticado) {
+        if (idRespuesta == null || idUsuarioAutenticado == null) {
+            return false;
+        }
+        return respuestaRepository.findById(idRespuesta)
+                .map(r -> idUsuarioAutenticado.equals(r.getPostulacion().getUsuario().getId().toString()))
                 .orElse(false);
     }
 }

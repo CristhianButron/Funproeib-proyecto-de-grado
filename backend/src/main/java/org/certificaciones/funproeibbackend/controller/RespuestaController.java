@@ -34,4 +34,11 @@ public class RespuestaController {
     public ResponseEntity<List<RespuestaResponse>> listarPorPostulacion(@PathVariable Long idPostulacion) {
         return ResponseEntity.ok(respuestaService.listarPorPostulacion(idPostulacion));
     }
+
+    @PreAuthorize("hasRole('ADMIN') or @recursoAuth.esDuenoDeRespuesta(#id, authentication.name)")
+    @DeleteMapping("/{id}")
+    public ResponseEntity<Void> eliminar(@PathVariable Long id) {
+        respuestaService.eliminar(id);
+        return ResponseEntity.noContent().build();
+    }
 }
