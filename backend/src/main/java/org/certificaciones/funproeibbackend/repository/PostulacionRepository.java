@@ -25,6 +25,9 @@ public interface PostulacionRepository extends JpaRepository<Postulacion, Long> 
             "WHERE p.estadoAprovechamiento = 'ABANDONO'")
     List<Postulacion> findConAbandono();
 
+    @Query("SELECT p FROM Postulacion p WHERE p.usuario.ci = :ci AND p.estado IN :estados")
+    List<Postulacion> findByUsuarioCiAndEstadoIn(@Param("ci") String ci, @Param("estados") List<EstadoPostulacion> estados);
+
     Optional<Postulacion> findByUsuarioIdAndProgramaId(Long idUsuario, Long idPrograma);
 
     boolean existsByUsuarioIdAndProgramaId(Long idUsuario, Long idPrograma);

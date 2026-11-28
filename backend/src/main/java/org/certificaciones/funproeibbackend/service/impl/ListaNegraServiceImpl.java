@@ -8,6 +8,7 @@ import org.certificaciones.funproeibbackend.exception.ResourceNotFoundException;
 import org.certificaciones.funproeibbackend.model.ListaNegra;
 import org.certificaciones.funproeibbackend.model.Postulacion;
 import org.certificaciones.funproeibbackend.model.Usuario;
+import org.certificaciones.funproeibbackend.model.enums.EstadoPostulacion;
 import org.certificaciones.funproeibbackend.repository.ListaNegraRepository;
 import org.certificaciones.funproeibbackend.repository.PostulacionRepository;
 import org.certificaciones.funproeibbackend.repository.UsuarioRepository;
@@ -49,7 +50,21 @@ public class ListaNegraServiceImpl implements ListaNegraService {
                 .activo(true)
                 .build();
 
-        return mapToResponse(listaNegraRepository.save(entrada));
+        ListaNegra guardada = listaNegraRepository.save(entrada);
+        bloquearPostulacionesEnCurso(request.getCiPostulante());
+        return mapToResponse(guardada);
+    }
+
+    // Una postulación ya decidida (ACEPTADA/RECHAZADA/EVALUADA) no se toca:
+    // el bloqueo aplica hacia adelante, no reescribe una decisión ya tomada.
+    // Solo las que siguen en trámite (INCOMPLETA/PENDIENTE) se bloquean, lo
+    // que además libera su cupo (countByProgramaIdAndEstadoNotIn en
+    // PostulacionServiceImpl.crear ya excluye BLOQUEADA).
+    private void bloquearPostulacionesEnCurso(String ci) {
+        List<Postulacion> enCurso = postulacionRepository.findByUsuarioCiAndEstadoIn(
+                ci, List.of(EstadoPostulacion.INCOMPLETA, EstadoPostulacion.PENDIENTE));
+        enCurso.forEach(p -> p.setEstado(EstadoPostulacion.BLOQUEADA));
+        postulacionRepository.saveAll(enCurso);
     }
 
     @Override
