@@ -23,4 +23,6 @@ export interface ProgramaResponse {
   estado: EstadoPrograma;
   descripcion?: string;
   modulos: string[];
+  totalPostulantes: number;
+  totalBeneficiarios: number;
 }

@@ -26,10 +26,20 @@ import { ProgramaResponse, EstadoPrograma } from '../../core/models/programa.mod
       </div>
     }
 
-    <!-- Búsqueda -->
-    <div class="bg-white rounded-xl shadow-card border border-outline-variant p-3 mb-4 flex items-center gap-2">
-      <span class="material-symbols-outlined text-outline">search</span>
-      <input [(ngModel)]="busqueda" (ngModelChange)="busquedaSignal.set($event)" class="flex-1 outline-none text-sm" placeholder="Buscar por nombre o tipo..." />
+    <!-- Búsqueda y orden -->
+    <div class="bg-white rounded-xl shadow-card border border-outline-variant p-3 mb-4 flex items-center gap-3 flex-wrap">
+      <div class="flex items-center gap-2 flex-1 min-w-[200px]">
+        <span class="material-symbols-outlined text-outline">search</span>
+        <input [(ngModel)]="busqueda" (ngModelChange)="busquedaSignal.set($event)" class="flex-1 outline-none text-sm" placeholder="Buscar por nombre o tipo..." />
+      </div>
+      <div class="flex items-center gap-2">
+        <span class="material-symbols-outlined text-outline text-[20px]">sort</span>
+        <select [(ngModel)]="orden" (ngModelChange)="ordenSignal.set($event)" class="text-sm font-semibold rounded-lg px-2 py-1.5 border border-outline-variant bg-white cursor-pointer">
+          <option value="fecha">Fecha de inicio</option>
+          <option value="nombre">Nombre (A-Z)</option>
+          <option value="tipo">Tipo</option>
+        </select>
+      </div>
     </div>
 
     <!-- Resumen por estado -->
@@ -63,6 +73,10 @@ import { ProgramaResponse, EstadoPrograma } from '../../core/models/programa.mod
               <div class="mt-4 space-y-2 text-sm text-on-surface-variant">
                 <p class="flex items-center gap-2"><span class="material-symbols-outlined text-[18px] text-primary">event</span>{{ p.fechaInicio }} → {{ p.fechaFin }}</p>
                 <p class="flex items-center gap-2"><span class="material-symbols-outlined text-[18px] text-primary">groups</span>{{ p.cuposDisponibles }} cupos</p>
+                <p class="flex items-center gap-2"><span class="material-symbols-outlined text-[18px] text-primary">how_to_reg</span>{{ p.totalPostulantes }} postulante{{ p.totalPostulantes === 1 ? '' : 's' }}</p>
+                @if (esFinalizado(p.estado)) {
+                  <p class="flex items-center gap-2"><span class="material-symbols-outlined text-[18px] text-secondary">verified</span>{{ p.totalBeneficiarios }} beneficiario{{ p.totalBeneficiarios === 1 ? '' : 's' }}</p>
+                }
               </div>
               <p class="mt-3 text-xs font-bold text-primary opacity-0 group-hover:opacity-100 transition-opacity flex items-center gap-1">
                 {{ esFinalizado(p.estado) ? 'Ver beneficiarios' : 'Ver postulantes' }} <span class="material-symbols-outlined text-[16px]">arrow_forward</span>
@@ -98,10 +112,20 @@ export class ProgramasAdminComponent implements OnInit {
   programas = signal<ProgramaResponse[]>([]);
   busqueda = '';
   busquedaSignal = signal('');
+  orden: 'fecha' | 'nombre' | 'tipo' = 'fecha';
+  ordenSignal = signal<'fecha' | 'nombre' | 'tipo'>('fecha');
+
   programasFiltrados = computed(() => {
     const b = this.busquedaSignal().toLowerCase().trim();
-    if (!b) return this.programas();
-    return this.programas().filter(p => p.nombre.toLowerCase().includes(b) || p.tipo.toLowerCase().includes(b));
+    const filtrados = !b ? this.programas()
+      : this.programas().filter(p => p.nombre.toLowerCase().includes(b) || p.tipo.toLowerCase().includes(b));
+
+    const orden = this.ordenSignal();
+    return [...filtrados].sort((a, b) => {
+      if (orden === 'nombre') return a.nombre.localeCompare(b.nombre);
+      if (orden === 'tipo') return a.tipo.localeCompare(b.tipo) || a.nombre.localeCompare(b.nombre);
+      return a.fechaInicio.localeCompare(b.fechaInicio);
+    });
   });
 
   cargando = signal(true);

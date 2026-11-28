@@ -5,7 +5,9 @@ import org.certificaciones.funproeibbackend.dto.ProgramaResponse;
 import org.certificaciones.funproeibbackend.exception.BusinessException;
 import org.certificaciones.funproeibbackend.exception.ResourceNotFoundException;
 import org.certificaciones.funproeibbackend.model.Programa;
+import org.certificaciones.funproeibbackend.model.enums.EstadoPostulacion;
 import org.certificaciones.funproeibbackend.model.enums.EstadoPrograma;
+import org.certificaciones.funproeibbackend.repository.PostulacionRepository;
 import org.certificaciones.funproeibbackend.repository.ProgramaRepository;
 import org.certificaciones.funproeibbackend.service.ProgramaService;
 import lombok.RequiredArgsConstructor;
@@ -25,6 +27,7 @@ public class ProgramaServiceImpl implements ProgramaService {
     private static final Logger log = LoggerFactory.getLogger(ProgramaServiceImpl.class);
 
     private final ProgramaRepository programaRepository;
+    private final PostulacionRepository postulacionRepository;
 
     @Override
     @Transactional
@@ -139,6 +142,8 @@ public class ProgramaServiceImpl implements ProgramaService {
                 .estado(programa.getEstado())
                 .descripcion(programa.getDescripcion())
                 .modulos(List.copyOf(programa.getModulos()))
+                .totalPostulantes(postulacionRepository.countByProgramaId(programa.getId()))
+                .totalBeneficiarios(postulacionRepository.countByProgramaIdAndEstado(programa.getId(), EstadoPostulacion.ACEPTADA))
                 .build();
     }
 }

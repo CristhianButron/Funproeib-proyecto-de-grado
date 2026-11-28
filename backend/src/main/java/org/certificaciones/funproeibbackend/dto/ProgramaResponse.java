@@ -20,4 +20,6 @@ public class ProgramaResponse {
     private EstadoPrograma estado;
     private String descripcion;
     private List<String> modulos;
+    private Long totalPostulantes;
+    private Long totalBeneficiarios;
 }

@@ -1,5 +1,6 @@
 import { Component, OnInit, computed, signal } from '@angular/core';
 import { FormsModule } from '@angular/forms';
+import { ActivatedRoute } from '@angular/router';
 import { ProgramaService } from '../../core/services/programa.service';
 import { PostulacionService } from '../../core/services/postulacion.service';
 import { CriterioService } from '../../core/services/criterio.service';
@@ -214,11 +215,25 @@ export class EvaluacionesComponent implements OnInit {
     private documentoService: DocumentoService,
     private reqDocService: ReqDocumentoService,
     private auth: AuthService,
+    private route: ActivatedRoute,
   ) {}
 
   ngOnInit(): void {
     this.programaService.listarTodos().subscribe(d => this.programas.set(d));
     this.criterioService.listarActivos().subscribe(c => this.criterios.set(c));
+
+    // Soporta llegar desde la ficha de una postulación (botón "Evaluar"),
+    // que pasa el programa y la postulación a preseleccionar por query param.
+    const idPrograma = Number(this.route.snapshot.queryParamMap.get('programa')) || null;
+    const idPostulacion = Number(this.route.snapshot.queryParamMap.get('postulacion')) || null;
+    if (idPrograma) {
+      this.programaSel = idPrograma;
+      this.postulacionService.listarPorPrograma(idPrograma).subscribe(p => {
+        this.postulaciones.set(p);
+        const po = idPostulacion ? p.find(x => x.id === idPostulacion) : undefined;
+        if (po) this.seleccionar(po);
+      });
+    }
   }
 
   valorPorCriterio(): string {

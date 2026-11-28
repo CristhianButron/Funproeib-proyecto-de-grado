@@ -1,6 +1,6 @@
 import { Component, OnInit, signal } from '@angular/core';
 import { Location } from '@angular/common';
-import { ActivatedRoute, RouterLink } from '@angular/router';
+import { ActivatedRoute, Router, RouterLink } from '@angular/router';
 import { PostulacionService } from '../../core/services/postulacion.service';
 import { DocumentoService } from '../../core/services/documento.service';
 import { UsuarioService } from '../../core/services/usuario.service';
@@ -58,7 +58,12 @@ const LABEL_APROVECHAMIENTO: Record<EstadoAprovechamiento, string> = {
             <h1 class="font-bold text-xl flex items-center gap-2 truncate"><span class="material-symbols-outlined">badge</span> {{ perfil()?.nombreCompleto }}</h1>
             <p class="text-primary-light text-sm mt-1">{{ postulacion()!.nombrePrograma }} · Postulado el {{ postulacion()!.fechaPostulacion }}</p>
           </div>
-          <span class="px-3 py-1 rounded-full text-xs font-bold bg-white/20 shrink-0">{{ postulacion()!.estado }}</span>
+          <div class="flex items-center gap-3 shrink-0">
+            <span class="px-3 py-1 rounded-full text-xs font-bold bg-white/20">{{ postulacion()!.estado }}</span>
+            <button (click)="irAEvaluar()" class="px-4 py-2 rounded-lg bg-white text-primary font-bold hover:bg-surface-low transition-colors flex items-center gap-1.5 text-sm">
+              <span class="material-symbols-outlined text-[18px]">fact_check</span> Evaluar
+            </button>
+          </div>
         </div>
 
         <div class="p-6 space-y-8">
@@ -179,6 +184,7 @@ export class FichaPostulacionComponent implements OnInit {
 
   constructor(
     private route: ActivatedRoute,
+    private router: Router,
     private location: Location,
     private postulacionService: PostulacionService,
     private documentoService: DocumentoService,
@@ -301,6 +307,18 @@ export class FichaPostulacionComponent implements OnInit {
 
   volver(): void {
     this.location.back();
+  }
+
+  // Esta ficha se usa tanto desde /admin como desde /evaluador (ver
+  // app.routes.ts), y la pantalla de evaluación vive en rutas distintas en
+  // cada caso ('/admin/evaluaciones' vs. la raíz '/evaluador'): no hay un
+  // routerLink relativo que sirva para ambas, así que se arma la ruta
+  // absoluta según el prefijo actual.
+  irAEvaluar(): void {
+    const po = this.postulacion();
+    if (!po) return;
+    const destino = this.router.url.startsWith('/admin') ? '/admin/evaluaciones' : '/evaluador';
+    this.router.navigate([destino], { queryParams: { programa: po.idPrograma, postulacion: po.id } });
   }
 
   private notificar(msg: string, error: boolean): void {
