@@ -37,11 +37,6 @@ type SeccionId = 'datos' | 'descripcion' | 'requisitos' | 'preguntas' | 'criteri
         </div>
         <div class="flex items-center gap-3 shrink-0">
           <a routerLink="/admin/programas" class="px-4 py-2.5 rounded-xl font-semibold text-on-surface-variant hover:bg-surface-low transition-colors">Cancelar</a>
-          @if (seccionActiva() === 'datos' || seccionActiva() === 'descripcion') {
-            <button (click)="guardarDatos()" [disabled]="guardando()" class="px-5 py-2.5 rounded-xl font-bold bg-primary text-white hover:bg-primary-dark transition-colors disabled:opacity-50 flex items-center gap-2 shadow-card">
-              <span class="material-symbols-outlined text-[18px]">save</span> {{ guardando() ? 'Guardando...' : (idPrograma() ? 'Guardar cambios' : 'Guardar programa') }}
-            </button>
-          }
         </div>
       </div>
     </div>
@@ -279,6 +274,26 @@ type SeccionId = 'datos' | 'descripcion' | 'requisitos' | 'preguntas' | 'criteri
             </div>
           </section>
           }
+
+          <!-- Navegación paso a paso -->
+          <div class="flex items-center justify-between pt-6 mt-6 border-t border-outline-variant max-w-2xl">
+            @if (indiceActual() > 0) {
+              <button (click)="atras()" class="px-4 py-2.5 rounded-xl font-semibold text-on-surface-variant hover:bg-surface-low transition-colors flex items-center gap-1">
+                <span class="material-symbols-outlined text-[18px]">arrow_back</span> Atrás
+              </button>
+            } @else {
+              <span></span>
+            }
+            @if (esUltimaSeccion()) {
+              <button (click)="finalizar()" class="px-5 py-2.5 rounded-xl font-bold bg-secondary text-white hover:opacity-90 transition-colors flex items-center gap-2 shadow-card">
+                <span class="material-symbols-outlined text-[18px]">check_circle</span> Finalizar
+              </button>
+            } @else {
+              <button (click)="continuar()" [disabled]="guardando()" class="px-5 py-2.5 rounded-xl font-bold bg-primary text-white hover:bg-primary-dark transition-colors disabled:opacity-50 flex items-center gap-2 shadow-card">
+                {{ etiquetaContinuar() }} <span class="material-symbols-outlined text-[18px]">arrow_forward</span>
+              </button>
+            }
+          </div>
         </div>
       </div>
     }
@@ -354,6 +369,12 @@ export class ProgramaFormComponent implements OnInit {
 
     const id = Number(idParam);
     this.idPrograma.set(id);
+
+    const pasoQuery = this.route.snapshot.queryParamMap.get('paso') as SeccionId | null;
+    if (pasoQuery && this.secciones.some(s => s.id === pasoQuery)) {
+      this.seccionActiva.set(pasoQuery);
+    }
+
     this.programaService.obtenerPorId(id).subscribe({
       next: (p) => {
         this.programa.set(p);
@@ -382,6 +403,37 @@ export class ProgramaFormComponent implements OnInit {
     this.seccionActiva.set(id);
   }
 
+  indiceActual(): number {
+    return this.secciones.findIndex(s => s.id === this.seccionActiva());
+  }
+
+  esUltimaSeccion(): boolean {
+    return this.indiceActual() === this.secciones.length - 1;
+  }
+
+  etiquetaContinuar(): string {
+    if (this.guardando()) return 'Guardando...';
+    return (this.seccionActiva() === 'datos' || this.seccionActiva() === 'descripcion') ? 'Guardar y continuar' : 'Continuar';
+  }
+
+  atras(): void {
+    const anterior = this.secciones[this.indiceActual() - 1];
+    if (anterior) this.seccionActiva.set(anterior.id);
+  }
+
+  continuar(): void {
+    const siguiente = this.secciones[this.indiceActual() + 1];
+    if (this.seccionActiva() === 'datos' || this.seccionActiva() === 'descripcion') {
+      this.guardarDatos(siguiente?.id);
+    } else if (siguiente) {
+      this.seccionActiva.set(siguiente.id);
+    }
+  }
+
+  finalizar(): void {
+    this.router.navigate(['/admin/programas']);
+  }
+
   vacio(): ProgramaRequest {
     return { nombre: '', tipo: 'DIPLOMADO', edicion: '', fechaInicio: '', fechaFin: '', cuposDisponibles: 30, descripcion: '', modulos: [] };
   }
@@ -397,7 +449,7 @@ export class ProgramaFormComponent implements OnInit {
     this.form.modulos = (this.form.modulos ?? []).filter((_, idx) => idx !== i);
   }
 
-  guardarDatos(): void {
+  guardarDatos(avanzarA?: SeccionId): void {
     this.guardando.set(true);
     const id = this.idPrograma();
     const obs = id ? this.programaService.actualizar(id, this.form) : this.programaService.crear(this.form);
@@ -407,9 +459,10 @@ export class ProgramaFormComponent implements OnInit {
         if (id) {
           this.programa.set(p);
           this.notificar('Programa actualizado', false);
+          if (avanzarA) this.seccionActiva.set(avanzarA);
         } else {
-          this.notificar('Programa creado. Ya puedes completar requisitos, preguntas y criterios.', false);
-          this.router.navigate(['/admin/programas', p.id]);
+          this.notificar('Programa creado. Ahora completa el resto de la convocatoria.', false);
+          this.router.navigate(['/admin/programas', p.id], avanzarA ? { queryParams: { paso: avanzarA } } : undefined);
         }
       },
       error: (err) => { this.guardando.set(false); this.notificar(err.error?.mensaje || 'Error al guardar', true); },

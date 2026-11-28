@@ -3,6 +3,7 @@ import { FormBuilder, FormControl, FormGroup, Validators, ReactiveFormsModule, F
 import { AuthService } from '../../core/services/auth.service';
 import { UsuarioService } from '../../core/services/usuario.service';
 import { UbicacionService } from '../../core/services/ubicacion.service';
+import { ConfirmDialogService } from '../../core/services/confirm-dialog.service';
 import { CiudadResponse, PaisResponse } from '../../core/models/ubicacion.model';
 import { UsuarioActualizarRequest } from '../../core/models/usuario.model';
 import { CARRERAS } from '../../core/constants/carreras';
@@ -82,20 +83,21 @@ type Pestana = 'personal' | 'perfil' | 'ubicacion' | 'seguridad';
             </div>
             <div>
               <label class="block text-sm font-semibold mb-1">Teléfono</label>
-              <input formControlName="telefono" class="campo" placeholder="Ej: 700xxxxx" />
-            </div>
-            <div>
-              <label class="block text-sm font-semibold mb-1">Cédula de Identidad *</label>
-              <input formControlName="ci" class="campo" inputmode="numeric" maxlength="20" (input)="soloNumeros($event)" />
-              @if (form.get('ci')?.value && form.get('ci')?.invalid) {
-                <p class="text-xs text-error mt-1">El CI debe contener solo números.</p>
+              <input formControlName="telefono" class="campo" placeholder="Ej: +591 700xxxxx" inputmode="tel" (input)="soloNumerosConPrefijo($event)" />
+              @if (form.get('telefono')?.value && form.get('telefono')?.invalid) {
+                <p class="text-xs text-error mt-1">El teléfono debe contener solo números, con un "+" opcional al inicio para el prefijo.</p>
               }
             </div>
             <div>
+              <label class="block text-sm font-semibold mb-1">Cédula de Identidad</label>
+              <input [value]="auth.usuario()?.ci" disabled class="campo" />
+            </div>
+            <div>
               <label class="block text-sm font-semibold mb-1">Extensión</label>
-              <input formControlName="ciExtension" class="campo" />
+              <input [value]="auth.usuario()?.ciExtension" disabled class="campo" />
             </div>
           </div>
+          <p class="text-xs text-on-surface-variant mt-2">La Cédula de Identidad no se puede cambiar desde aquí: quedó fijada junto con la verificación de tu carnet.</p>
         }
 
         @if (pestanaActiva() === 'perfil') {
@@ -349,14 +351,13 @@ export class MiPerfilComponent implements OnInit {
     public auth: AuthService,
     private usuarioService: UsuarioService,
     private ubicacionService: UbicacionService,
+    private confirmDialog: ConfirmDialogService,
   ) {
     this.form = this.fb.group({
       nombre: ['', [Validators.required, Validators.maxLength(80)]],
       apellidoPaterno: ['', [Validators.required, Validators.maxLength(80)]],
       apellidoMaterno: ['', Validators.maxLength(80)],
-      ci: ['', [Validators.required, Validators.pattern(/^[0-9]+$/)]],
-      ciExtension: [''],
-      telefono: [''],
+      telefono: ['', Validators.pattern(/^\+?[0-9]+$/)],
       genero: ['', Validators.required],
       fechaNacimiento: ['', Validators.required],
       nivelEducativo: ['', Validators.required],
@@ -394,8 +395,6 @@ export class MiPerfilComponent implements OnInit {
       nombre: u.nombre,
       apellidoPaterno: u.apellidoPaterno,
       apellidoMaterno: u.apellidoMaterno ?? '',
-      ci: u.ci,
-      ciExtension: u.ciExtension ?? '',
       telefono: u.telefono ?? '',
       genero: u.genero,
       fechaNacimiento: u.fechaNacimiento,
@@ -483,15 +482,17 @@ export class MiPerfilComponent implements OnInit {
     this.carreras.update(l => l.filter((_, i) => i !== index));
   }
 
-  soloNumeros(event: Event): void {
+  soloNumerosConPrefijo(event: Event): void {
     const input = event.target as HTMLInputElement;
-    const limpio = input.value.replace(/\D/g, '');
+    const tienePrefijo = input.value.startsWith('+');
+    const soloDigitos = input.value.replace(/\D/g, '');
+    const limpio = tienePrefijo ? '+' + soloDigitos : soloDigitos;
     if (limpio !== input.value) {
-      this.form.get('ci')?.setValue(limpio);
+      this.form.get('telefono')?.setValue(limpio);
     }
   }
 
-  guardar(): void {
+  async guardar(): Promise<void> {
     if (this.form.invalid || !this.idCiudadSeleccionada() || !this.idCiudadNacimientoSeleccionada()) return;
     if (this.nivelRequiereCarrera() && this.carreras().length === 0) {
       this.mensaje.set('Agrega al menos una carrera o profesión.');
@@ -500,6 +501,13 @@ export class MiPerfilComponent implements OnInit {
     }
     const usuarioActual = this.auth.usuario();
     if (!usuarioActual) return;
+
+    const confirmado = await this.confirmDialog.confirmar({
+      titulo: 'Guardar cambios',
+      mensaje: '¿Confirmas que quieres guardar los cambios en tu perfil?',
+      textoConfirmar: 'Guardar',
+    });
+    if (!confirmado) return;
 
     this.guardando.set(true);
     this.mensaje.set(null);
@@ -513,6 +521,8 @@ export class MiPerfilComponent implements OnInit {
 
     const request: UsuarioActualizarRequest = {
       ...this.form.value,
+      ci: usuarioActual.ci,
+      ciExtension: usuarioActual.ciExtension,
       idCiudad: this.idCiudadSeleccionada(),
       idCiudadNacimiento: this.idCiudadNacimientoSeleccionada(),
       carreras: this.carreras(),
@@ -534,7 +544,7 @@ export class MiPerfilComponent implements OnInit {
     });
   }
 
-  cambiarPassword(): void {
+  async cambiarPassword(): Promise<void> {
     if (this.formPassword.invalid) return;
     const { contrasenaActual, contrasenaNueva, confirmar } = this.formPassword.value;
     if (contrasenaNueva !== confirmar) {
@@ -544,6 +554,13 @@ export class MiPerfilComponent implements OnInit {
     }
     const usuarioActual = this.auth.usuario();
     if (!usuarioActual) return;
+
+    const confirmado = await this.confirmDialog.confirmar({
+      titulo: 'Cambiar contraseña',
+      mensaje: '¿Confirmas que quieres cambiar tu contraseña?',
+      textoConfirmar: 'Cambiar',
+    });
+    if (!confirmado) return;
 
     this.cambiandoPassword.set(true);
     this.mensajePassword.set(null);
