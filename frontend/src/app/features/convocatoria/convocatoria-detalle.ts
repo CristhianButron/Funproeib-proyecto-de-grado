@@ -55,7 +55,6 @@ import { ReqDocumentoResponse } from '../../core/models/documento.model';
 
             <div class="mt-5 flex flex-wrap gap-6 text-sm text-on-surface-variant">
               <p class="flex items-center gap-2"><span class="material-symbols-outlined text-[18px] text-primary">event</span>{{ p.fechaInicio }} → {{ p.fechaFin }}</p>
-              <p class="flex items-center gap-2"><span class="material-symbols-outlined text-[18px] text-primary">groups</span>{{ p.cuposDisponibles }} cupos disponibles</p>
             </div>
 
             @if (p.descripcion) {

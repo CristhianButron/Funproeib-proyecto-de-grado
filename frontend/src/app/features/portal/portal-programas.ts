@@ -42,7 +42,6 @@ import { ProgramaResponse } from '../../core/models/programa.model';
               <h3 class="font-bold text-on-surface text-lg mt-1">{{ p.nombre }}</h3>
               <div class="mt-4 space-y-2 text-sm text-on-surface-variant flex-1">
                 <p class="flex items-center gap-2"><span class="material-symbols-outlined text-[18px] text-primary">event</span>{{ p.fechaInicio }} → {{ p.fechaFin }}</p>
-                <p class="flex items-center gap-2"><span class="material-symbols-outlined text-[18px] text-primary">groups</span>{{ p.cuposDisponibles }} cupos</p>
               </div>
               <div class="mt-5 flex gap-2">
                 <a [routerLink]="['/programas', p.id]"

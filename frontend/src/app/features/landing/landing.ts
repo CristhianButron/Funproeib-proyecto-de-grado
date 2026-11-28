@@ -97,51 +97,34 @@ import { ReqDocumentoResponse } from '../../core/models/documento.model';
         } @else {
           <div class="grid md:grid-cols-3 gap-6">
             @for (p of programasAbiertos(); track p.id) {
-              <div class="group relative rounded-2xl border border-outline-variant overflow-hidden shadow-card hover:shadow-card-hover transition-shadow bg-white flex flex-col">
+              <a [routerLink]="['/programas', p.id]" class="group rounded-2xl border border-outline-variant overflow-hidden shadow-card hover:shadow-card-hover transition-shadow bg-white flex flex-col">
                 <div class="h-2 bg-gradient-to-r from-primary to-secondary"></div>
                 <div class="p-6 flex-1 flex flex-col">
-                  <span class="text-xs font-bold text-secondary uppercase">{{ p.tipo }}</span>
-                  <h3 class="font-bold text-on-surface text-lg mt-1">{{ p.nombre }}</h3>
-                  <div class="mt-4 space-y-2 text-sm text-on-surface-variant flex-1">
+                  <span class="inline-flex items-center gap-1 text-xs font-bold text-secondary uppercase">
+                    <span class="material-symbols-outlined text-[16px]">{{ iconoTipo(p.tipo) }}</span> {{ p.tipo }}
+                  </span>
+                  <h3 class="font-bold text-on-surface text-lg mt-1 group-hover:text-primary transition-colors">{{ p.nombre }}</h3>
+                  <div class="mt-4 space-y-3 text-sm text-on-surface-variant flex-1">
                     <p class="flex items-center gap-2">
                       <span class="material-symbols-outlined text-[18px] text-primary">event</span>
                       {{ p.fechaInicio }} → {{ p.fechaFin }}
                     </p>
-                    <p class="flex items-center gap-2">
-                      <span class="material-symbols-outlined text-[18px] text-primary">groups</span>
-                      {{ p.cuposDisponibles }} cupos disponibles
-                    </p>
+                    @if (requisitosPorPrograma()[p.id]?.length) {
+                      <div>
+                        <p class="text-xs font-bold text-on-surface-variant uppercase mb-1">Requisitos</p>
+                        <ul class="space-y-1">
+                          @for (r of requisitosPorPrograma()[p.id].slice(0, 3); track r.id) {
+                            <li class="flex items-start gap-1.5"><span class="material-symbols-outlined text-[14px] text-secondary mt-0.5">check_circle</span>{{ r.nombreDocumento }}</li>
+                          }
+                        </ul>
+                      </div>
+                    }
                   </div>
-                  <a routerLink="/registro" class="mt-5 w-full text-center px-4 py-2 rounded-lg font-semibold bg-primary text-white hover:bg-primary-dark transition-colors">
-                    Postularme
-                  </a>
+                  <p class="mt-5 text-sm font-bold text-primary flex items-center gap-1">
+                    Ver convocatoria completa <span class="material-symbols-outlined text-[16px] group-hover:translate-x-0.5 transition-transform">arrow_forward</span>
+                  </p>
                 </div>
-
-                <!-- Popover con especificaciones generales (al pasar el cursor) -->
-                <div class="hidden md:block absolute inset-x-3 top-3 z-20 opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-opacity duration-150 bg-white rounded-xl shadow-card-hover border border-outline-variant p-5 text-left">
-                  <span class="inline-flex items-center gap-1 text-xs font-bold uppercase text-secondary">
-                    <span class="material-symbols-outlined text-[16px]">{{ iconoTipo(p.tipo) }}</span> {{ p.tipo }}
-                  </span>
-                  <h4 class="font-bold text-on-surface mt-1">{{ p.nombre }}</h4>
-                  <div class="mt-3 space-y-1.5 text-sm text-on-surface-variant">
-                    <p class="flex items-center gap-2"><span class="material-symbols-outlined text-[16px] text-primary">event</span>{{ p.fechaInicio }} → {{ p.fechaFin }}</p>
-                    <p class="flex items-center gap-2"><span class="material-symbols-outlined text-[16px] text-primary">groups</span>{{ p.cuposDisponibles }} cupos</p>
-                  </div>
-                  @if (requisitosPorPrograma()[p.id]?.length) {
-                    <div class="mt-3">
-                      <p class="text-xs font-bold text-on-surface-variant uppercase mb-1">Requisitos</p>
-                      <ul class="text-sm text-on-surface-variant space-y-1">
-                        @for (r of requisitosPorPrograma()[p.id].slice(0, 3); track r.id) {
-                          <li class="flex items-start gap-1.5"><span class="material-symbols-outlined text-[14px] text-secondary mt-0.5">check_circle</span>{{ r.nombreDocumento }}</li>
-                        }
-                      </ul>
-                    </div>
-                  }
-                  <a [routerLink]="['/programas', p.id]" class="mt-4 inline-flex items-center gap-1 text-sm font-bold text-primary hover:underline">
-                    Ver convocatoria completa <span class="material-symbols-outlined text-[16px]">arrow_forward</span>
-                  </a>
-                </div>
-              </div>
+              </a>
             }
           </div>
         }

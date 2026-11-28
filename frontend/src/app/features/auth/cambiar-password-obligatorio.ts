@@ -3,10 +3,11 @@ import { FormBuilder, FormGroup, Validators, ReactiveFormsModule } from '@angula
 import { Router } from '@angular/router';
 import { AuthService } from '../../core/services/auth.service';
 import { rutaInicialPorRol } from '../../core/utils/rol-ruta';
+import { PasswordRequisitosComponent } from '../../core/components/password-requisitos.component';
 
 @Component({
   selector: 'app-cambiar-password-obligatorio',
-  imports: [ReactiveFormsModule],
+  imports: [ReactiveFormsModule, PasswordRequisitosComponent],
   template: `
   <div class="min-h-screen flex items-center justify-center bg-surface p-6">
     <div class="w-full max-w-md bg-white rounded-2xl border border-outline-variant shadow-card p-8">
@@ -32,6 +33,7 @@ import { rutaInicialPorRol } from '../../core/utils/rol-ruta';
               <span class="material-symbols-outlined text-[20px]">{{ mostrarNueva() ? 'visibility_off' : 'visibility' }}</span>
             </button>
           </div>
+          <app-password-requisitos [password]="form.get('contrasenaNueva')?.value || ''" />
         </div>
         <div>
           <label class="block text-sm font-semibold mb-1">Confirmar nueva contraseña *</label>
@@ -54,10 +56,10 @@ import { rutaInicialPorRol } from '../../core/utils/rol-ruta';
   `,
   styles: [`
     .campo { width:100%; padding:.6rem .8rem; border:1px solid #c5c5d3; border-radius:.5rem; outline:none; transition: all .15s; }
-    .campo:focus { border-color:#9a4a2e; box-shadow:0 0 0 2px rgba(154,74,46,.2); }
+    .campo:focus { border-color:#1d4e74; box-shadow:0 0 0 2px rgba(29,78,116,.2); }
     .campo-password { padding-right: 2.75rem; }
     .toggle-password { position:absolute; right:.75rem; top:50%; transform:translateY(-50%); color:#6b7280; }
-    .toggle-password:hover { color:#9a4a2e; }
+    .toggle-password:hover { color:#1d4e74; }
   `],
 })
 export class CambiarPasswordObligatorioComponent {

@@ -8,6 +8,7 @@ import { CiudadResponse, PaisResponse } from '../../core/models/ubicacion.model'
 import { UsuarioActualizarRequest } from '../../core/models/usuario.model';
 import { CARRERAS } from '../../core/constants/carreras';
 import { SelectBuscableComponent } from '../../core/components/select-buscable.component';
+import { PasswordRequisitosComponent } from '../../core/components/password-requisitos.component';
 
 const OPCIONES_ETNIA = [
   'NINGUNA', 'Quechua', 'Aymara', 'Guaraní', 'Chiquitano', 'Mojeño', 'Guarayo',
@@ -23,7 +24,7 @@ type Pestana = 'personal' | 'perfil' | 'ubicacion' | 'seguridad';
 
 @Component({
   selector: 'app-mi-perfil',
-  imports: [ReactiveFormsModule, FormsModule, SelectBuscableComponent],
+  imports: [ReactiveFormsModule, FormsModule, SelectBuscableComponent, PasswordRequisitosComponent],
   template: `
   <div class="max-w-3xl mx-auto">
     <!-- Encabezado de perfil -->
@@ -267,6 +268,7 @@ type Pestana = 'personal' | 'perfil' | 'ubicacion' | 'seguridad';
                 <span class="material-symbols-outlined text-[20px]">{{ mostrarNueva() ? 'visibility_off' : 'visibility' }}</span>
               </button>
             </div>
+            <app-password-requisitos [password]="formPassword.get('contrasenaNueva')?.value || ''" />
           </div>
           <div>
             <label class="block text-sm font-semibold mb-1">Confirmar nueva contraseña *</label>
@@ -298,11 +300,11 @@ type Pestana = 'personal' | 'perfil' | 'ubicacion' | 'seguridad';
       outline: none;
       transition: all .15s;
     }
-    .campo:focus { border-color: #9a4a2e; box-shadow: 0 0 0 2px rgba(154,74,46,.2); }
+    .campo:focus { border-color: #1d4e74; box-shadow: 0 0 0 2px rgba(29,78,116,.2); }
     .campo:disabled { background: #f2f2f5; color: #9ca3af; }
     .campo-password { padding-right: 2.75rem; }
     .toggle-password { position:absolute; right:.75rem; top:50%; transform:translateY(-50%); color:#6b7280; }
-    .toggle-password:hover { color:#9a4a2e; }
+    .toggle-password:hover { color:#1d4e74; }
   `],
 })
 export class MiPerfilComponent implements OnInit {

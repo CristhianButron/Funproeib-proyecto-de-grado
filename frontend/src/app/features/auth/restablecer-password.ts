@@ -2,10 +2,11 @@ import { Component, OnInit, signal } from '@angular/core';
 import { FormBuilder, FormGroup, Validators, ReactiveFormsModule } from '@angular/forms';
 import { ActivatedRoute, Router, RouterLink } from '@angular/router';
 import { UsuarioService } from '../../core/services/usuario.service';
+import { PasswordRequisitosComponent } from '../../core/components/password-requisitos.component';
 
 @Component({
   selector: 'app-restablecer-password',
-  imports: [ReactiveFormsModule, RouterLink],
+  imports: [ReactiveFormsModule, RouterLink, PasswordRequisitosComponent],
   template: `
   <div class="min-h-screen flex items-center justify-center bg-surface p-6">
     <div class="w-full max-w-md bg-white rounded-2xl border border-outline-variant shadow-card p-8">
@@ -52,6 +53,7 @@ import { UsuarioService } from '../../core/services/usuario.service';
                   <span class="material-symbols-outlined text-[20px]">{{ mostrarNueva() ? 'visibility_off' : 'visibility' }}</span>
                 </button>
               </div>
+              <app-password-requisitos [password]="form.get('contrasenaNueva')?.value || ''" />
             </div>
             <div>
               <label class="block text-sm font-semibold mb-1">Confirmar nueva contraseña *</label>
@@ -76,10 +78,10 @@ import { UsuarioService } from '../../core/services/usuario.service';
   `,
   styles: [`
     .campo { width:100%; padding:.6rem .8rem; border:1px solid #c5c5d3; border-radius:.5rem; outline:none; transition: all .15s; }
-    .campo:focus { border-color:#9a4a2e; box-shadow:0 0 0 2px rgba(154,74,46,.2); }
+    .campo:focus { border-color:#1d4e74; box-shadow:0 0 0 2px rgba(29,78,116,.2); }
     .campo-password { padding-right: 2.75rem; }
     .toggle-password { position:absolute; right:.75rem; top:50%; transform:translateY(-50%); color:#6b7280; }
-    .toggle-password:hover { color:#9a4a2e; }
+    .toggle-password:hover { color:#1d4e74; }
   `],
 })
 export class RestablecerPasswordComponent implements OnInit {
