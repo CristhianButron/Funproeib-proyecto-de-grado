@@ -703,7 +703,7 @@ class UsuarioServiceImplTest {
         Usuario verificado = Usuario.builder().id(1L).identidadVerificada(true).build();
         Usuario pendiente = Usuario.builder().id(2L).identidadVerificada(false).build();
         Usuario legacySinDato = Usuario.builder().id(3L).identidadVerificada(null).build();
-        when(usuarioRepository.findAll()).thenReturn(List.of(verificado, pendiente, legacySinDato));
+        when(usuarioRepository.findAllConUbicacion()).thenReturn(List.of(verificado, pendiente, legacySinDato));
 
         List<UsuarioResponse> res = service.listarPendientesIdentidad();
 

@@ -57,19 +57,7 @@ public class EmailServiceImpl implements EmailService {
                 Este enlace vence en 24 horas.
                 """.formatted(nombre, enlace, contrasenaTemporal);
 
-        if (!mailEnabled || mailSender.isEmpty()) {
-            log.info("[EMAIL SIMULADO - app.mail.enabled=false o SMTP no configurado] Para: {} | Asunto: {}\n{}",
-                    destinatario, asunto, cuerpo);
-            return;
-        }
-
-        SimpleMailMessage mensaje = new SimpleMailMessage();
-        mensaje.setFrom(remitente);
-        mensaje.setTo(destinatario);
-        mensaje.setSubject(asunto);
-        mensaje.setText(cuerpo);
-        mailSender.get().send(mensaje);
-        log.info("Correo de verificación enviado a {}", destinatario);
+        enviar(destinatario, asunto, cuerpo, "Correo de verificación enviado a {}");
     }
 
     @Override
@@ -88,19 +76,7 @@ public class EmailServiceImpl implements EmailService {
                 tu contraseña actual seguirá funcionando con normalidad.
                 """.formatted(nombre, enlace);
 
-        if (!mailEnabled || mailSender.isEmpty()) {
-            log.info("[EMAIL SIMULADO - app.mail.enabled=false o SMTP no configurado] Para: {} | Asunto: {}\n{}",
-                    destinatario, asunto, cuerpo);
-            return;
-        }
-
-        SimpleMailMessage mensaje = new SimpleMailMessage();
-        mensaje.setFrom(remitente);
-        mensaje.setTo(destinatario);
-        mensaje.setSubject(asunto);
-        mensaje.setText(cuerpo);
-        mailSender.get().send(mensaje);
-        log.info("Correo de recuperación de contraseña enviado a {}", destinatario);
+        enviar(destinatario, asunto, cuerpo, "Correo de recuperación de contraseña enviado a {}");
     }
 
     @Override
@@ -117,19 +93,7 @@ public class EmailServiceImpl implements EmailService {
                 cambies por una nueva en tu primer ingreso.
                 """.formatted(nombre, contrasenaTemporal);
 
-        if (!mailEnabled || mailSender.isEmpty()) {
-            log.info("[EMAIL SIMULADO - app.mail.enabled=false o SMTP no configurado] Para: {} | Asunto: {}\n{}",
-                    destinatario, asunto, cuerpo);
-            return;
-        }
-
-        SimpleMailMessage mensaje = new SimpleMailMessage();
-        mensaje.setFrom(remitente);
-        mensaje.setTo(destinatario);
-        mensaje.setSubject(asunto);
-        mensaje.setText(cuerpo);
-        mailSender.get().send(mensaje);
-        log.info("Correo de cuenta creada por administrador enviado a {}", destinatario);
+        enviar(destinatario, asunto, cuerpo, "Correo de cuenta creada por administrador enviado a {}");
     }
 
     @Override
@@ -149,6 +113,10 @@ public class EmailServiceImpl implements EmailService {
                 FUNPROEIB ANDES para aclararlo.
                 """.formatted(nombre);
 
+        enviar(destinatario, asunto, cuerpo, "Correo de rechazo de identidad enviado a {}");
+    }
+
+    private void enviar(String destinatario, String asunto, String cuerpo, String logExito) {
         if (!mailEnabled || mailSender.isEmpty()) {
             log.info("[EMAIL SIMULADO - app.mail.enabled=false o SMTP no configurado] Para: {} | Asunto: {}\n{}",
                     destinatario, asunto, cuerpo);
@@ -161,6 +129,6 @@ public class EmailServiceImpl implements EmailService {
         mensaje.setSubject(asunto);
         mensaje.setText(cuerpo);
         mailSender.get().send(mensaje);
-        log.info("Correo de rechazo de identidad enviado a {}", destinatario);
+        log.info(logExito, destinatario);
     }
 }

@@ -1,8 +1,9 @@
-import { Component, OnInit, signal } from '@angular/core';
+import { Component, OnInit, Signal, signal } from '@angular/core';
 import { Location } from '@angular/common';
 import { ActivatedRoute, Router, RouterLink } from '@angular/router';
 import { UsuarioService } from '../../core/services/usuario.service';
 import { ConfirmDialogService } from '../../core/services/confirm-dialog.service';
+import { ToastService } from '../../core/services/toast.service';
 import { UsuarioResponse } from '../../core/models/usuario.model';
 
 /**
@@ -25,13 +26,6 @@ import { UsuarioResponse } from '../../core/models/usuario.model';
         <span class="material-symbols-outlined text-[18px]">arrow_back</span> Volver
       </button>
     </div>
-
-    @if (mensaje()) {
-      <div class="fixed top-5 left-1/2 -translate-x-1/2 z-[100] max-w-md w-[90vw] p-3 rounded-lg text-sm font-semibold shadow-xl flex items-center gap-2" [class]="mensajeError() ? 'bg-error-container text-on-error-container' : 'bg-secondary-light text-on-secondary-container'">
-        <span class="material-symbols-outlined text-[20px]">{{ mensajeError() ? 'error' : 'check_circle' }}</span>
-        {{ mensaje() }}
-      </div>
-    }
 
     @if (cargando()) {
       <p class="text-on-surface-variant py-10 text-center">Cargando...</p>
@@ -96,8 +90,8 @@ export class FichaUsuarioComponent implements OnInit {
   imgAnverso = signal<string | null>(null);
   imgReverso = signal<string | null>(null);
 
-  mensaje = signal<string | null>(null);
-  mensajeError = signal(false);
+  readonly mensaje: Signal<string | null>;
+  readonly mensajeError: Signal<boolean>;
 
   constructor(
     private route: ActivatedRoute,
@@ -105,7 +99,11 @@ export class FichaUsuarioComponent implements OnInit {
     private location: Location,
     private usuarioService: UsuarioService,
     private confirmDialog: ConfirmDialogService,
-  ) {}
+    private toast: ToastService,
+  ) {
+    this.mensaje = toast.mensaje;
+    this.mensajeError = toast.esError;
+  }
 
   ngOnInit(): void {
     const id = Number(this.route.snapshot.paramMap.get('id'));
@@ -162,7 +160,6 @@ export class FichaUsuarioComponent implements OnInit {
   }
 
   private notificar(msg: string, error: boolean): void {
-    this.mensaje.set(msg); this.mensajeError.set(error);
-    setTimeout(() => this.mensaje.set(null), 4000);
+    this.toast.notificar(msg, error);
   }
 }

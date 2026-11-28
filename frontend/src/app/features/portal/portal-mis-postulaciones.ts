@@ -3,6 +3,7 @@ import { RouterLink } from '@angular/router';
 import { PostulacionService } from '../../core/services/postulacion.service';
 import { AuthService } from '../../core/services/auth.service';
 import { PostulacionResponse } from '../../core/models/postulacion.model';
+import { badgePostulacion } from '../../core/utils/estado-colores';
 
 @Component({
   selector: 'app-portal-mis-postulaciones',
@@ -60,15 +61,5 @@ export class PortalMisPostulacionesComponent implements OnInit {
     });
   }
 
-  badge(estado: string): string {
-    const map: Record<string, string> = {
-      INCOMPLETA: 'bg-surface-high text-on-surface-variant',
-      PENDIENTE: 'bg-amber-100 text-amber-800',
-      EVALUADA: 'bg-blue-100 text-blue-800',
-      ACEPTADA: 'bg-secondary-light text-on-secondary-container',
-      RECHAZADA: 'bg-error-container text-on-error-container',
-      BLOQUEADA: 'bg-on-surface text-white',
-    };
-    return map[estado] ?? 'bg-surface-high text-on-surface-variant';
-  }
+  badge = badgePostulacion;
 }

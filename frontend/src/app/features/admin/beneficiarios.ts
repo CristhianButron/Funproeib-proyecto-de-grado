@@ -1,11 +1,13 @@
-import { Component, OnInit, computed, signal } from '@angular/core';
+import { Component, OnInit, Signal, computed, signal } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { ActivatedRoute, RouterLink } from '@angular/router';
 import { ProgramaService } from '../../core/services/programa.service';
 import { PostulacionService } from '../../core/services/postulacion.service';
+import { ToastService } from '../../core/services/toast.service';
 import { SelectBuscableComponent } from '../../core/components/select-buscable.component';
 import { ProgramaResponse } from '../../core/models/programa.model';
 import { PostulacionResponse, EstadoAprovechamiento } from '../../core/models/postulacion.model';
+import { badgeAprovechamiento, colorBordeAprovechamiento, colorTextoAprovechamiento } from '../../core/utils/estado-colores';
 
 const LABEL_APROVECHAMIENTO: Record<EstadoAprovechamiento, string> = {
   PENDIENTE: 'Pendiente', APROBADO: 'Aprobado', REPROBADO: 'Reprobado', ABANDONO: 'Abandono',
@@ -27,13 +29,6 @@ const LABEL_APROVECHAMIENTO: Record<EstadoAprovechamiento, string> = {
       <h1 class="text-3xl font-extrabold text-primary-dark">Beneficiarios</h1>
       <p class="text-on-surface-variant">Registra el estado final de los postulantes aceptados en cada programa.</p>
     </div>
-
-    @if (mensaje()) {
-      <div class="fixed top-5 left-1/2 -translate-x-1/2 z-[100] max-w-md w-[90vw] p-3 rounded-lg text-sm font-semibold shadow-xl flex items-center gap-2" [class]="mensajeError() ? 'bg-error-container text-on-error-container' : 'bg-secondary-light text-on-secondary-container'">
-        <span class="material-symbols-outlined text-[20px]">{{ mensajeError() ? 'error' : 'check_circle' }}</span>
-        {{ mensaje() }}
-      </div>
-    }
 
     <div class="bg-white rounded-xl shadow-card border border-outline-variant p-4 mb-6 flex flex-wrap items-center gap-3">
       <span class="material-symbols-outlined text-primary">filter_alt</span>
@@ -149,14 +144,18 @@ export class BeneficiariosComponent implements OnInit {
     return this.estadosAprovechamiento.map(estado => ({ estado, cantidad: lista.filter(b => b.estadoAprovechamiento === estado).length }));
   });
 
-  mensaje = signal<string | null>(null);
-  mensajeError = signal(false);
+  readonly mensaje: Signal<string | null>;
+  readonly mensajeError: Signal<boolean>;
 
   constructor(
     private programaService: ProgramaService,
     private postulacionService: PostulacionService,
     private route: ActivatedRoute,
-  ) {}
+    private toast: ToastService,
+  ) {
+    this.mensaje = toast.mensaje;
+    this.mensajeError = toast.esError;
+  }
 
   ngOnInit(): void {
     this.programaService.listarTodos().subscribe(d => this.programas.set(d));
@@ -209,38 +208,11 @@ export class BeneficiariosComponent implements OnInit {
     });
   }
 
-  badge(estado: string): string {
-    const map: Record<string, string> = {
-      PENDIENTE: 'bg-amber-100 text-amber-800',
-      APROBADO: 'bg-secondary-light text-on-secondary-container',
-      REPROBADO: 'bg-error-container text-on-error-container',
-      ABANDONO: 'bg-orange-100 text-orange-800',
-    };
-    return map[estado] ?? 'bg-surface-high text-on-surface-variant';
-  }
-
-  colorBorde(estado: string): string {
-    const map: Record<string, string> = {
-      PENDIENTE: 'border-amber-500',
-      APROBADO: 'border-secondary',
-      REPROBADO: 'border-error',
-      ABANDONO: 'border-orange-500',
-    };
-    return map[estado] ?? 'border-outline-variant';
-  }
-
-  colorTexto(estado: string): string {
-    const map: Record<string, string> = {
-      PENDIENTE: 'text-amber-700',
-      APROBADO: 'text-secondary',
-      REPROBADO: 'text-error',
-      ABANDONO: 'text-orange-700',
-    };
-    return map[estado] ?? 'text-on-surface-variant';
-  }
+  badge = badgeAprovechamiento;
+  colorBorde = colorBordeAprovechamiento;
+  colorTexto = colorTextoAprovechamiento;
 
   private notificar(msg: string, error: boolean): void {
-    this.mensaje.set(msg); this.mensajeError.set(error);
-    setTimeout(() => this.mensaje.set(null), 4000);
+    this.toast.notificar(msg, error);
   }
 }

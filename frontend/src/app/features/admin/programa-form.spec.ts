@@ -1,5 +1,6 @@
 import { of, throwError } from 'rxjs';
 import { ProgramaFormComponent } from './programa-form';
+import { ToastService } from '../../core/services/toast.service';
 import { CriterioEvaluacionResponse } from '../../core/models/evaluacion.model';
 
 function criterio(id: number, orden: number, nombreCriterio: string, activo = true): CriterioEvaluacionResponse {
@@ -30,7 +31,7 @@ describe('ProgramaFormComponent - CRUD de criterios de evaluación', () => {
     component = new ProgramaFormComponent(
       routeFake as any, routerFake as any,
       programaServiceFake as any, criterioServiceFake, reqDocServiceFake as any, preguntaServiceFake as any,
-      confirmDialogFake as any,
+      confirmDialogFake as any, new ToastService(),
     );
     component.ngOnInit();
   });

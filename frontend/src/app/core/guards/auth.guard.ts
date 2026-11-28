@@ -1,6 +1,7 @@
 import { inject } from '@angular/core';
 import { CanActivateFn, Router } from '@angular/router';
 import { AuthService } from '../services/auth.service';
+import { RolUsuario } from '../models/usuario.model';
 
 export const authGuard: CanActivateFn = () => {
   const auth = inject(AuthService);
@@ -10,44 +11,25 @@ export const authGuard: CanActivateFn = () => {
   return false;
 };
 
-export const adminGuard: CanActivateFn = () => {
-  const auth = inject(AuthService);
-  const router = inject(Router);
-  if (!auth.esAdmin()) {
-    router.navigate(['/login']);
-    return false;
-  }
-  if (auth.usuario()?.debeCambiarPassword) {
-    router.navigate(['/cambiar-password']);
-    return false;
-  }
-  return true;
-};
+// Exige el rol indicado y, si ya inició sesión con ese rol, que no tenga
+// pendiente el cambio obligatorio de la contraseña temporal del primer
+// ingreso (ver UsuarioServiceImpl.debeCambiarPassword en el backend).
+function roleGuard(rol: RolUsuario): CanActivateFn {
+  return () => {
+    const auth = inject(AuthService);
+    const router = inject(Router);
+    if (auth.usuario()?.rol !== rol) {
+      router.navigate(['/login']);
+      return false;
+    }
+    if (auth.usuario()?.debeCambiarPassword) {
+      router.navigate(['/cambiar-password']);
+      return false;
+    }
+    return true;
+  };
+}
 
-export const postulanteGuard: CanActivateFn = () => {
-  const auth = inject(AuthService);
-  const router = inject(Router);
-  if (!auth.esPostulante()) {
-    router.navigate(['/login']);
-    return false;
-  }
-  if (auth.usuario()?.debeCambiarPassword) {
-    router.navigate(['/cambiar-password']);
-    return false;
-  }
-  return true;
-};
-
-export const evaluadorGuard: CanActivateFn = () => {
-  const auth = inject(AuthService);
-  const router = inject(Router);
-  if (!auth.esEvaluador()) {
-    router.navigate(['/login']);
-    return false;
-  }
-  if (auth.usuario()?.debeCambiarPassword) {
-    router.navigate(['/cambiar-password']);
-    return false;
-  }
-  return true;
-};
+export const adminGuard: CanActivateFn = roleGuard('ADMIN');
+export const postulanteGuard: CanActivateFn = roleGuard('POSTULANTE');
+export const evaluadorGuard: CanActivateFn = roleGuard('EVALUADOR');

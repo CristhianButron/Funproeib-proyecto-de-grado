@@ -4,6 +4,7 @@ import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.Pattern;
 import jakarta.validation.constraints.Size;
 import lombok.Data;
+import org.certificaciones.funproeibbackend.util.ValidacionConstantes;
 
 @Data
 public class RestablecerPasswordRequest {
@@ -13,7 +14,7 @@ public class RestablecerPasswordRequest {
 
     @NotBlank(message = "La nueva contraseña es obligatoria")
     @Size(min = 8, message = "La nueva contraseña debe tener al menos 8 caracteres")
-    @Pattern(regexp = "^(?=.*[A-Z])(?=.*\\d)(?=.*[^A-Za-z0-9\\s]).*$",
-            message = "La nueva contraseña debe combinar mayúscula, número y símbolo")
+    @Pattern(regexp = ValidacionConstantes.REGEX_PASSWORD_SEGURA,
+            message = ValidacionConstantes.MENSAJE_PASSWORD_SEGURA)
     private String contrasenaNueva;
 }

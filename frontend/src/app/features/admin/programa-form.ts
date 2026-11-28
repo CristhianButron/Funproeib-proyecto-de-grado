@@ -1,4 +1,4 @@
-import { Component, OnInit, signal, computed } from '@angular/core';
+import { Component, OnInit, Signal, signal, computed } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { ActivatedRoute, Router, RouterLink } from '@angular/router';
 import { ProgramaService } from '../../core/services/programa.service';
@@ -6,7 +6,9 @@ import { CriterioService } from '../../core/services/criterio.service';
 import { ReqDocumentoService } from '../../core/services/reqdoc.service';
 import { PreguntaService } from '../../core/services/pregunta.service';
 import { ConfirmDialogService } from '../../core/services/confirm-dialog.service';
+import { ToastService } from '../../core/services/toast.service';
 import { ProgramaResponse, ProgramaRequest } from '../../core/models/programa.model';
+import { badgePrograma } from '../../core/utils/estado-colores';
 import { CriterioEvaluacionResponse } from '../../core/models/evaluacion.model';
 import { ReqDocumentoResponse } from '../../core/models/documento.model';
 import { PreguntaResponse } from '../../core/models/pregunta.model';
@@ -40,13 +42,6 @@ type SeccionId = 'datos' | 'descripcion' | 'requisitos' | 'preguntas' | 'criteri
         </div>
       </div>
     </div>
-
-    @if (mensaje()) {
-      <div class="fixed top-5 left-1/2 -translate-x-1/2 z-[100] max-w-md w-[90vw] p-3 rounded-lg text-sm font-semibold shadow-xl flex items-center gap-2" [class]="mensajeError() ? 'bg-error-container text-on-error-container' : 'bg-secondary-light text-on-secondary-container'">
-        <span class="material-symbols-outlined text-[20px]">{{ mensajeError() ? 'error' : 'check_circle' }}</span>
-        {{ mensaje() }}
-      </div>
-    }
 
     @if (cargando()) {
       <p class="text-on-surface-variant py-10 text-center">Cargando...</p>
@@ -357,8 +352,8 @@ export class ProgramaFormComponent implements OnInit {
   guardandoCriterio = signal(false);
   nombreCriterioInvalido = signal(false);
 
-  mensaje = signal<string | null>(null);
-  mensajeError = signal(false);
+  readonly mensaje: Signal<string | null>;
+  readonly mensajeError: Signal<boolean>;
 
   constructor(
     private route: ActivatedRoute,
@@ -368,7 +363,11 @@ export class ProgramaFormComponent implements OnInit {
     private reqDocService: ReqDocumentoService,
     private preguntaService: PreguntaService,
     private confirmDialog: ConfirmDialogService,
-  ) {}
+    private toast: ToastService,
+  ) {
+    this.mensaje = toast.mensaje;
+    this.mensajeError = toast.esError;
+  }
 
   ngOnInit(): void {
     this.criterioService.listarTodos().subscribe(c => this.criterios.set(c));
@@ -400,15 +399,7 @@ export class ProgramaFormComponent implements OnInit {
     this.preguntaService.listarPorPrograma(id).subscribe(q => this.preguntas.set(q));
   }
 
-  badgeEstado(estado: string): string {
-    const map: Record<string, string> = {
-      BORRADOR: 'bg-surface-high text-on-surface-variant',
-      ACTIVO: 'bg-primary-fixed text-primary',
-      ABIERTO: 'bg-secondary-light text-on-secondary-container',
-      CERRADO: 'bg-error-container text-on-error-container',
-    };
-    return map[estado] ?? '';
-  }
+  badgeEstado = badgePrograma;
 
   irASeccion(id: SeccionId): void {
     const s = this.secciones.find(x => x.id === id);
@@ -588,7 +579,6 @@ export class ProgramaFormComponent implements OnInit {
   }
 
   private notificar(msg: string, error: boolean): void {
-    this.mensaje.set(msg); this.mensajeError.set(error);
-    setTimeout(() => this.mensaje.set(null), 4000);
+    this.toast.notificar(msg, error);
   }
 }

@@ -4,6 +4,7 @@ import { ProgramaService } from '../../core/services/programa.service';
 import { UsuarioService } from '../../core/services/usuario.service';
 import { ProgramaResponse } from '../../core/models/programa.model';
 import { UsuarioResponse } from '../../core/models/usuario.model';
+import { badgePrograma } from '../../core/utils/estado-colores';
 
 @Component({
   selector: 'app-admin-dashboard',
@@ -149,13 +150,5 @@ export class AdminDashboardComponent implements OnInit {
     });
   }
 
-  badge(estado: string): string {
-    const map: Record<string, string> = {
-      BORRADOR: 'bg-surface-high text-on-surface-variant',
-      ACTIVO: 'bg-primary-fixed text-primary',
-      ABIERTO: 'bg-secondary-light text-on-secondary-container',
-      CERRADO: 'bg-error-container text-on-error-container',
-    };
-    return map[estado] ?? 'bg-surface-high text-on-surface-variant';
-  }
+  badge = badgePrograma;
 }

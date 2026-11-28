@@ -1,11 +1,13 @@
-import { Component, OnInit, signal } from '@angular/core';
+import { Component, OnInit, Signal, signal } from '@angular/core';
 import { ActivatedRoute, Router, RouterLink } from '@angular/router';
 import { ProgramaService } from '../../core/services/programa.service';
 import { PostulacionService } from '../../core/services/postulacion.service';
 import { ReqDocumentoService } from '../../core/services/reqdoc.service';
 import { AuthService } from '../../core/services/auth.service';
+import { ToastService } from '../../core/services/toast.service';
 import { ProgramaResponse } from '../../core/models/programa.model';
 import { ReqDocumentoResponse } from '../../core/models/documento.model';
+import { badgePrograma } from '../../core/utils/estado-colores';
 
 @Component({
   selector: 'app-convocatoria-detalle',
@@ -23,13 +25,6 @@ import { ReqDocumentoResponse } from '../../core/models/documento.model';
         </a>
       </div>
     </header>
-
-    @if (mensaje()) {
-      <div class="fixed top-5 left-1/2 -translate-x-1/2 z-[100] max-w-md w-[90vw] p-3 rounded-lg text-sm font-semibold shadow-xl flex items-center gap-2" [class]="mensajeError() ? 'bg-error-container text-on-error-container' : 'bg-secondary-light text-on-secondary-container'">
-        <span class="material-symbols-outlined text-[20px]">{{ mensajeError() ? 'error' : 'check_circle' }}</span>
-        {{ mensaje() }}
-      </div>
-    }
 
     <div class="max-w-4xl mx-auto px-6 py-10">
       @if (cargando()) {
@@ -133,8 +128,8 @@ export class ConvocatoriaDetalleComponent implements OnInit {
   cargando = signal(true);
   noEncontrado = signal(false);
   enviando = signal(false);
-  mensaje = signal<string | null>(null);
-  mensajeError = signal(false);
+  readonly mensaje: Signal<string | null>;
+  readonly mensajeError: Signal<boolean>;
 
   constructor(
     private route: ActivatedRoute,
@@ -143,7 +138,11 @@ export class ConvocatoriaDetalleComponent implements OnInit {
     private postulacionService: PostulacionService,
     private reqDocService: ReqDocumentoService,
     public auth: AuthService,
-  ) {}
+    private toast: ToastService,
+  ) {
+    this.mensaje = toast.mensaje;
+    this.mensajeError = toast.esError;
+  }
 
   ngOnInit(): void {
     const id = Number(this.route.snapshot.paramMap.get('id'));
@@ -177,18 +176,9 @@ export class ConvocatoriaDetalleComponent implements OnInit {
     return map[tipo] ?? 'school';
   }
 
-  badge(estado: string): string {
-    const map: Record<string, string> = {
-      BORRADOR: 'bg-surface-high text-on-surface-variant',
-      ACTIVO: 'bg-primary-fixed text-primary',
-      ABIERTO: 'bg-secondary-light text-on-secondary-container',
-      CERRADO: 'bg-error-container text-on-error-container',
-    };
-    return map[estado] ?? '';
-  }
+  badge = badgePrograma;
 
   private notificar(msg: string, error: boolean): void {
-    this.mensaje.set(msg); this.mensajeError.set(error);
-    setTimeout(() => this.mensaje.set(null), error ? 10000 : 5000);
+    this.toast.notificar(msg, error, error ? 10000 : 5000);
   }
 }

@@ -22,6 +22,8 @@ import java.util.ArrayList;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
+import java.util.stream.Collectors;
 
 @Service
 @RequiredArgsConstructor
@@ -75,8 +77,19 @@ public class ListaNegraServiceImpl implements ListaNegraService {
     @Override
     @Transactional(readOnly = true)
     public List<ListaNegraResponse> listarActivos() {
-        return listaNegraRepository.findByActivoTrue().stream()
-                .map(this::mapToResponse)
+        List<ListaNegra> activos = listaNegraRepository.findByActivoTrue();
+        if (activos.isEmpty()) {
+            return List.of();
+        }
+
+        // Una sola consulta por todos los CI (en vez de una por fila) para
+        // resolver el nombre del postulante.
+        List<String> cis = activos.stream().map(ListaNegra::getCiPostulante).toList();
+        Map<String, String> nombrePorCi = usuarioRepository.findByCiIn(cis).stream()
+                .collect(Collectors.toMap(Usuario::getCi, Usuario::getNombreCompleto));
+
+        return activos.stream()
+                .map(ln -> mapToResponse(ln, nombrePorCi.get(ln.getCiPostulante())))
                 .toList();
     }
 
@@ -97,12 +110,19 @@ public class ListaNegraServiceImpl implements ListaNegraService {
     @Override
     @Transactional(readOnly = true)
     public List<ListaNegraCandidatoResponse> listarCandidatosAbandono() {
+        // La lista negra activa es corta (son personas bloqueadas, no todos
+        // los usuarios): traerla una sola vez y consultar en memoria evita
+        // una consulta "exists" por cada postulación con abandono.
+        Set<String> ciEnListaNegra = listaNegraRepository.findByActivoTrue().stream()
+                .map(ListaNegra::getCiPostulante)
+                .collect(Collectors.toSet());
+
         Map<Long, ListaNegraCandidatoResponse.ListaNegraCandidatoResponseBuilder> candidatos = new LinkedHashMap<>();
         Map<Long, List<String>> programasPorUsuario = new LinkedHashMap<>();
 
         for (Postulacion p : postulacionRepository.findConAbandono()) {
             Usuario u = p.getUsuario();
-            if (listaNegraRepository.existsByCiPostulanteAndActivoTrue(u.getCi())) {
+            if (ciEnListaNegra.contains(u.getCi())) {
                 continue;
             }
             candidatos.computeIfAbsent(u.getId(), id -> ListaNegraCandidatoResponse.builder()
@@ -120,7 +140,10 @@ public class ListaNegraServiceImpl implements ListaNegraService {
         String nombrePostulante = usuarioRepository.findByCi(ln.getCiPostulante())
                 .map(Usuario::getNombreCompleto)
                 .orElse(null);
+        return mapToResponse(ln, nombrePostulante);
+    }
 
+    private ListaNegraResponse mapToResponse(ListaNegra ln, String nombrePostulante) {
         return ListaNegraResponse.builder()
                 .id(ln.getId())
                 .ciPostulante(ln.getCiPostulante())

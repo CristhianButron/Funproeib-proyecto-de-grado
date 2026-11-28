@@ -19,6 +19,8 @@ import org.springframework.transaction.annotation.Transactional;
 import java.time.LocalDate;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
+import java.util.stream.Collectors;
 
 @Service
 @RequiredArgsConstructor
@@ -32,12 +34,8 @@ public class ProgramaServiceImpl implements ProgramaService {
     @Override
     @Transactional
     public ProgramaResponse crear(ProgramaRequest request) {
-        if (request.getFechaFin().isBefore(request.getFechaInicio())) {
-            throw new BusinessException("La fecha de fin no puede ser anterior a la fecha de inicio");
-        }
-        if (request.getFechaFin().isBefore(LocalDate.now())) {
-            throw new BusinessException("La fecha de fin no puede ser anterior a hoy: no tiene sentido crear un programa que ya terminó");
-        }
+        validarFechas(request.getFechaInicio(), request.getFechaFin(),
+                "La fecha de fin no puede ser anterior a hoy: no tiene sentido crear un programa que ya terminó");
 
         Programa programa = Programa.builder()
                 .nombre(request.getNombre())
@@ -63,9 +61,27 @@ public class ProgramaServiceImpl implements ProgramaService {
     @Override
     @Transactional(readOnly = true)
     public List<ProgramaResponse> listarTodos() {
-        return programaRepository.findAll().stream()
-                .map(this::mapToResponse)
+        List<Programa> programas = programaRepository.findAll();
+        if (programas.isEmpty()) {
+            return List.of();
+        }
+
+        // Una consulta agrupada por cada conteo (en vez de 2 por programa):
+        // evita el N+1 que tenía mapToResponse al llamarse una vez por fila.
+        List<Long> ids = programas.stream().map(Programa::getId).toList();
+        Map<Long, Long> totalPostulantes = agruparPorPrograma(postulacionRepository.contarPorPrograma(ids));
+        Map<Long, Long> totalBeneficiarios = agruparPorPrograma(
+                postulacionRepository.contarPorProgramaYEstado(ids, EstadoPostulacion.ACEPTADA));
+
+        return programas.stream()
+                .map(p -> mapToResponse(p,
+                        totalPostulantes.getOrDefault(p.getId(), 0L),
+                        totalBeneficiarios.getOrDefault(p.getId(), 0L)))
                 .toList();
+    }
+
+    private Map<Long, Long> agruparPorPrograma(List<Object[]> filas) {
+        return filas.stream().collect(Collectors.toMap(fila -> (Long) fila[0], fila -> (Long) fila[1]));
     }
 
     @Override
@@ -73,12 +89,7 @@ public class ProgramaServiceImpl implements ProgramaService {
     public ProgramaResponse actualizar(Long id, ProgramaRequest request) {
         Programa programa = buscarPrograma(id);
 
-        if (request.getFechaFin().isBefore(request.getFechaInicio())) {
-            throw new BusinessException("La fecha de fin no puede ser anterior a la fecha de inicio");
-        }
-        if (request.getFechaFin().isBefore(LocalDate.now())) {
-            throw new BusinessException("La fecha de fin no puede ser anterior a hoy");
-        }
+        validarFechas(request.getFechaInicio(), request.getFechaFin(), "La fecha de fin no puede ser anterior a hoy");
 
         programa.setNombre(request.getNombre());
         programa.setTipo(request.getTipo());
@@ -130,7 +141,22 @@ public class ProgramaServiceImpl implements ProgramaService {
                 .orElseThrow(() -> new ResourceNotFoundException("Programa no encontrado con id: " + id));
     }
 
+    private void validarFechas(LocalDate fechaInicio, LocalDate fechaFin, String mensajeFechaFinPasada) {
+        if (fechaFin.isBefore(fechaInicio)) {
+            throw new BusinessException("La fecha de fin no puede ser anterior a la fecha de inicio");
+        }
+        if (fechaFin.isBefore(LocalDate.now())) {
+            throw new BusinessException(mensajeFechaFinPasada);
+        }
+    }
+
     private ProgramaResponse mapToResponse(Programa programa) {
+        return mapToResponse(programa,
+                postulacionRepository.countByProgramaId(programa.getId()),
+                postulacionRepository.countByProgramaIdAndEstado(programa.getId(), EstadoPostulacion.ACEPTADA));
+    }
+
+    private ProgramaResponse mapToResponse(Programa programa, long totalPostulantes, long totalBeneficiarios) {
         return ProgramaResponse.builder()
                 .id(programa.getId())
                 .nombre(programa.getNombre())
@@ -142,8 +168,8 @@ public class ProgramaServiceImpl implements ProgramaService {
                 .estado(programa.getEstado())
                 .descripcion(programa.getDescripcion())
                 .modulos(List.copyOf(programa.getModulos()))
-                .totalPostulantes(postulacionRepository.countByProgramaId(programa.getId()))
-                .totalBeneficiarios(postulacionRepository.countByProgramaIdAndEstado(programa.getId(), EstadoPostulacion.ACEPTADA))
+                .totalPostulantes(totalPostulantes)
+                .totalBeneficiarios(totalBeneficiarios)
                 .build();
     }
 }

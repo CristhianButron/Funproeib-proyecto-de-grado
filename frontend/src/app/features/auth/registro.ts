@@ -6,6 +6,7 @@ import { UbicacionService } from '../../core/services/ubicacion.service';
 import { CiudadResponse, PaisResponse } from '../../core/models/ubicacion.model';
 import { UsuarioRegistroRequest } from '../../core/models/usuario.model';
 import { CARRERAS } from '../../core/constants/carreras';
+import { requiereCarrera } from '../../core/utils/nivel-educativo';
 import { SelectBuscableComponent } from '../../core/components/select-buscable.component';
 import { TelefonoInputComponent } from '../../core/components/telefono-input.component';
 
@@ -359,8 +360,7 @@ export class RegistroComponent implements OnInit {
   }
 
   nivelRequiereCarrera(): boolean {
-    const nivel = this.form.get('nivelEducativo')?.value;
-    return !!nivel && nivel !== 'SECUNDARIA';
+    return requiereCarrera(this.form.get('nivelEducativo')?.value);
   }
 
   onCarreraChange(id: number | null): void {

@@ -26,12 +26,11 @@ import org.certificaciones.funproeibbackend.repository.UsuarioRepository;
 import org.certificaciones.funproeibbackend.security.JwtService;
 import org.certificaciones.funproeibbackend.service.EmailService;
 import org.certificaciones.funproeibbackend.service.UsuarioService;
+import org.certificaciones.funproeibbackend.util.ArchivoUtil;
 import org.certificaciones.funproeibbackend.util.CorreoDesechableValidator;
 import org.certificaciones.funproeibbackend.util.TipoArchivoValidator;
 import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Value;
-import org.springframework.core.io.Resource;
-import org.springframework.core.io.UrlResource;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -98,10 +97,7 @@ public class UsuarioServiceImpl implements UsuarioService {
         if (usuarioRepository.existsByCi(request.getCi())) {
             throw new BusinessException("Ya existe un usuario registrado con ese CI");
         }
-        if (request.getNivelEducativo() != NivelEducativo.SECUNDARIA
-                && (request.getCarreras() == null || request.getCarreras().isEmpty())) {
-            throw new BusinessException("Debe indicar al menos una carrera o profesión");
-        }
+        validarCarrerasRequeridas(request.getNivelEducativo(), request.getCarreras());
 
         Ciudad ciudad = ciudadRepository.findById(request.getIdCiudad())
                 .orElseThrow(() -> new ResourceNotFoundException("Ciudad no encontrada con id: " + request.getIdCiudad()));
@@ -192,7 +188,7 @@ public class UsuarioServiceImpl implements UsuarioService {
         }
         String nombreOriginal = StringUtils.cleanPath(
                 archivo.getOriginalFilename() == null ? "" : archivo.getOriginalFilename());
-        String extension = obtenerExtension(nombreOriginal);
+        String extension = ArchivoUtil.obtenerExtension(nombreOriginal);
         if (!EXTENSIONES_IMAGEN.containsKey(extension)) {
             throw new BusinessException("La foto del " + lado + " del carnet debe ser una imagen JPG o PNG");
         }
@@ -215,7 +211,7 @@ public class UsuarioServiceImpl implements UsuarioService {
             Path carpetaUsuario = Paths.get(uploadsDir, "usuario-" + idUsuario).toAbsolutePath().normalize();
             Files.createDirectories(carpetaUsuario);
 
-            String extension = obtenerExtension(StringUtils.cleanPath(archivo.getOriginalFilename()));
+            String extension = ArchivoUtil.obtenerExtension(StringUtils.cleanPath(archivo.getOriginalFilename()));
             String nombreGuardado = "carnet-" + lado + "." + extension;
             Path destino = carpetaUsuario.resolve(nombreGuardado).normalize();
             if (!destino.startsWith(carpetaUsuario)) {
@@ -227,13 +223,6 @@ public class UsuarioServiceImpl implements UsuarioService {
         } catch (IOException e) {
             throw new UncheckedIOException("No se pudo guardar la foto del carnet", e);
         }
-    }
-
-    private String obtenerExtension(String nombreArchivo) {
-        int punto = nombreArchivo.lastIndexOf('.');
-        return punto >= 0 && punto < nombreArchivo.length() - 1
-                ? nombreArchivo.substring(punto + 1).toLowerCase()
-                : "";
     }
 
     @Override
@@ -277,10 +266,7 @@ public class UsuarioServiceImpl implements UsuarioService {
         if (!usuario.getCi().equals(request.getCi()) && usuarioRepository.existsByCi(request.getCi())) {
             throw new BusinessException("Ya existe un usuario registrado con ese CI");
         }
-        if (request.getNivelEducativo() != NivelEducativo.SECUNDARIA
-                && (request.getCarreras() == null || request.getCarreras().isEmpty())) {
-            throw new BusinessException("Debe indicar al menos una carrera o profesión");
-        }
+        validarCarrerasRequeridas(request.getNivelEducativo(), request.getCarreras());
 
         Ciudad ciudad = ciudadRepository.findById(request.getIdCiudad())
                 .orElseThrow(() -> new ResourceNotFoundException("Ciudad no encontrada con id: " + request.getIdCiudad()));
@@ -330,7 +316,7 @@ public class UsuarioServiceImpl implements UsuarioService {
     @Override
     @Transactional(readOnly = true)
     public List<UsuarioResponse> listarTodos() {
-        return usuarioRepository.findAll().stream()
+        return usuarioRepository.findAllConUbicacion().stream()
                 .map(this::mapToResponse)
                 .toList();
     }
@@ -473,24 +459,9 @@ public class UsuarioServiceImpl implements UsuarioService {
             throw new ResourceNotFoundException("Este usuario no tiene foto de carnet (" + (anverso ? "anverso" : "reverso") + ") cargada");
         }
 
-        try {
-            Path raiz = Paths.get(uploadsDir).toAbsolutePath().normalize();
-            Path destino = raiz.resolve(ruta).normalize();
-            if (!destino.startsWith(raiz) || !Files.exists(destino)) {
-                throw new ResourceNotFoundException("La foto del carnet ya no está disponible en el servidor");
-            }
-
-            String contentType = Files.probeContentType(destino);
-            Resource recurso = new UrlResource(destino.toUri());
-
-            return ArchivoDescargable.builder()
-                    .recurso(recurso)
-                    .contentType(contentType != null ? contentType : "application/octet-stream")
-                    .nombreArchivo(destino.getFileName().toString())
-                    .build();
-        } catch (IOException e) {
-            throw new UncheckedIOException("No se pudo leer la foto del carnet", e);
-        }
+        String nombreArchivo = Paths.get(ruta).getFileName().toString();
+        return ArchivoUtil.resolverDescargable(uploadsDir, ruta, nombreArchivo,
+                "La foto del carnet ya no está disponible en el servidor", "No se pudo leer la foto del carnet");
     }
 
     // Filtra en memoria en vez de con una consulta derivada
@@ -501,7 +472,7 @@ public class UsuarioServiceImpl implements UsuarioService {
     @Override
     @Transactional(readOnly = true)
     public List<UsuarioResponse> listarPendientesIdentidad() {
-        return usuarioRepository.findAll().stream()
+        return usuarioRepository.findAllConUbicacion().stream()
                 .filter(u -> !Boolean.TRUE.equals(u.getIdentidadVerificada()))
                 .map(this::mapToResponse)
                 .toList();
@@ -583,6 +554,15 @@ public class UsuarioServiceImpl implements UsuarioService {
     private Usuario buscarUsuario(Long id) {
         return usuarioRepository.findById(id)
                 .orElseThrow(() -> new ResourceNotFoundException("Usuario no encontrado con id: " + id));
+    }
+
+    // Solo quien cursó/cursa secundaria puede no tener carrera todavía; para
+    // cualquier otro nivel educativo, al menos una carrera u ocupación es
+    // obligatoria (usado tanto al registrarse como al editar el perfil).
+    private void validarCarrerasRequeridas(NivelEducativo nivelEducativo, List<String> carreras) {
+        if (nivelEducativo != NivelEducativo.SECUNDARIA && (carreras == null || carreras.isEmpty())) {
+            throw new BusinessException("Debe indicar al menos una carrera o profesión");
+        }
     }
 
     // Todo dato de texto del postulante se guarda en mayúsculas -salvo el

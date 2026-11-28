@@ -1,8 +1,10 @@
-import { Component, OnInit, signal, computed } from '@angular/core';
+import { Component, OnInit, Signal, signal, computed } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { RouterLink } from '@angular/router';
 import { ProgramaService } from '../../core/services/programa.service';
+import { ToastService } from '../../core/services/toast.service';
 import { ProgramaResponse, EstadoPrograma } from '../../core/models/programa.model';
+import { badgePrograma, colorBordePrograma, colorTextoPrograma } from '../../core/utils/estado-colores';
 
 @Component({
   selector: 'app-programas-admin',
@@ -18,13 +20,6 @@ import { ProgramaResponse, EstadoPrograma } from '../../core/models/programa.mod
         <span class="material-symbols-outlined">add</span> Crear programa
       </a>
     </div>
-
-    @if (mensaje()) {
-      <div class="fixed top-5 left-1/2 -translate-x-1/2 z-[100] max-w-md w-[90vw] p-3 rounded-lg text-sm font-semibold shadow-xl flex items-center gap-2" [class]="mensajeError() ? 'bg-error-container text-on-error-container' : 'bg-secondary-light text-on-secondary-container'">
-        <span class="material-symbols-outlined text-[20px]">{{ mensajeError() ? 'error' : 'check_circle' }}</span>
-        {{ mensaje() }}
-      </div>
-    }
 
     <!-- Búsqueda y orden -->
     <div class="bg-white rounded-xl shadow-card border border-outline-variant p-3 mb-4 flex items-center gap-3 flex-wrap">
@@ -129,10 +124,13 @@ export class ProgramasAdminComponent implements OnInit {
   });
 
   cargando = signal(true);
-  mensaje = signal<string | null>(null);
-  mensajeError = signal(false);
+  readonly mensaje: Signal<string | null>;
+  readonly mensajeError: Signal<boolean>;
 
-  constructor(private programaService: ProgramaService) {}
+  constructor(private programaService: ProgramaService, private toast: ToastService) {
+    this.mensaje = toast.mensaje;
+    this.mensajeError = toast.esError;
+  }
 
   ngOnInit(): void {
     this.cargar();
@@ -153,35 +151,9 @@ export class ProgramasAdminComponent implements OnInit {
     });
   }
 
-  badge(estado: string): string {
-    const map: Record<string, string> = {
-      BORRADOR: 'bg-surface-high text-on-surface-variant',
-      ACTIVO: 'bg-primary-fixed text-primary',
-      ABIERTO: 'bg-secondary-light text-on-secondary-container',
-      CERRADO: 'bg-error-container text-on-error-container',
-    };
-    return map[estado] ?? '';
-  }
-
-  colorBorde(estado: string): string {
-    const map: Record<string, string> = {
-      BORRADOR: 'border-outline-variant',
-      ACTIVO: 'border-primary',
-      ABIERTO: 'border-secondary',
-      CERRADO: 'border-error',
-    };
-    return map[estado] ?? 'border-outline-variant';
-  }
-
-  colorTexto(estado: string): string {
-    const map: Record<string, string> = {
-      BORRADOR: 'text-on-surface-variant',
-      ACTIVO: 'text-primary',
-      ABIERTO: 'text-secondary',
-      CERRADO: 'text-error',
-    };
-    return map[estado] ?? 'text-on-surface-variant';
-  }
+  badge = badgePrograma;
+  colorBorde = colorBordePrograma;
+  colorTexto = colorTextoPrograma;
 
   iconoTipo(tipo: string): string {
     const map: Record<string, string> = {
@@ -208,7 +180,6 @@ export class ProgramasAdminComponent implements OnInit {
   }
 
   private notificar(msg: string, error: boolean): void {
-    this.mensaje.set(msg); this.mensajeError.set(error);
-    setTimeout(() => this.mensaje.set(null), 4000);
+    this.toast.notificar(msg, error);
   }
 }

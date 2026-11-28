@@ -1,9 +1,10 @@
-import { Component, OnInit, signal } from '@angular/core';
+import { Component, OnInit, Signal, signal } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { RouterLink } from '@angular/router';
 import { UsuarioService } from '../../core/services/usuario.service';
 import { AuthService } from '../../core/services/auth.service';
 import { ConfirmDialogService } from '../../core/services/confirm-dialog.service';
+import { ToastService } from '../../core/services/toast.service';
 import { RolUsuario, UsuarioCrearRequest, UsuarioEditarBasicoRequest, UsuarioResponse } from '../../core/models/usuario.model';
 
 @Component({
@@ -20,13 +21,6 @@ import { RolUsuario, UsuarioCrearRequest, UsuarioEditarBasicoRequest, UsuarioRes
         <span class="material-symbols-outlined">person_add</span> Crear usuario
       </button>
     </div>
-
-    @if (mensaje()) {
-      <div class="fixed top-5 left-1/2 -translate-x-1/2 z-[100] max-w-md w-[90vw] p-3 rounded-lg text-sm font-semibold shadow-xl flex items-center gap-2" [class]="mensajeError() ? 'bg-error-container text-on-error-container' : 'bg-secondary-light text-on-secondary-container'">
-        <span class="material-symbols-outlined text-[20px]">{{ mensajeError() ? 'error' : 'check_circle' }}</span>
-        {{ mensaje() }}
-      </div>
-    }
 
     <div class="bg-white rounded-xl shadow-card border border-outline-variant p-4 mb-6 flex flex-wrap items-center gap-3">
       <span class="material-symbols-outlined text-primary">search</span>
@@ -226,8 +220,8 @@ export class UsuariosAdminComponent implements OnInit {
   usuarios = signal<UsuarioResponse[]>([]);
   cargando = signal(true);
   guardando = signal(false);
-  mensaje = signal<string | null>(null);
-  mensajeError = signal(false);
+  readonly mensaje: Signal<string | null>;
+  readonly mensajeError: Signal<boolean>;
 
   modalCrear = signal(false);
   formCrear: UsuarioCrearRequest = this.crearVacio();
@@ -254,7 +248,11 @@ export class UsuariosAdminComponent implements OnInit {
     private usuarioService: UsuarioService,
     private auth: AuthService,
     private confirmDialog: ConfirmDialogService,
-  ) {}
+    private toast: ToastService,
+  ) {
+    this.mensaje = toast.mensaje;
+    this.mensajeError = toast.esError;
+  }
 
   ngOnInit(): void { this.cargar(); }
 
@@ -376,7 +374,6 @@ export class UsuariosAdminComponent implements OnInit {
   }
 
   private notificar(msg: string, error: boolean): void {
-    this.mensaje.set(msg); this.mensajeError.set(error);
-    setTimeout(() => this.mensaje.set(null), 4000);
+    this.toast.notificar(msg, error);
   }
 }

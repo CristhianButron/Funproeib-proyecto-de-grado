@@ -1,8 +1,9 @@
-import { Component, OnInit, signal } from '@angular/core';
+import { Component, OnInit, Signal, signal } from '@angular/core';
 import { Router, RouterLink } from '@angular/router';
 import { ProgramaService } from '../../core/services/programa.service';
 import { PostulacionService } from '../../core/services/postulacion.service';
 import { AuthService } from '../../core/services/auth.service';
+import { ToastService } from '../../core/services/toast.service';
 import { ProgramaResponse } from '../../core/models/programa.model';
 
 @Component({
@@ -14,16 +15,6 @@ import { ProgramaResponse } from '../../core/models/programa.model';
       <h1 class="text-3xl font-extrabold text-primary-dark">Programas disponibles</h1>
       <p class="text-on-surface-variant">Hola {{ auth.usuario()?.nombreCompleto }}, postula a las convocatorias abiertas.</p>
     </div>
-
-    @if (mensaje()) {
-      <div class="fixed top-5 left-1/2 -translate-x-1/2 z-[100] max-w-md w-[90vw] p-3 rounded-lg text-sm font-semibold shadow-xl flex items-center gap-2" [class]="mensajeError() ? 'bg-error-container text-on-error-container' : 'bg-secondary-light text-on-secondary-container'">
-        <span class="material-symbols-outlined text-[20px]">{{ mensajeError() ? 'error' : 'check_circle' }}</span>
-        <span class="flex-1">{{ mensaje() }}</span>
-        <button (click)="mensaje.set(null)" class="shrink-0 opacity-70 hover:opacity-100">
-          <span class="material-symbols-outlined text-[18px]">close</span>
-        </button>
-      </div>
-    }
 
     @if (cargando()) {
       <p class="text-on-surface-variant py-10 text-center">Cargando...</p>
@@ -65,15 +56,19 @@ export class PortalProgramasComponent implements OnInit {
   abiertos = signal<ProgramaResponse[]>([]);
   cargando = signal(true);
   enviando = signal(false);
-  mensaje = signal<string | null>(null);
-  mensajeError = signal(false);
+  readonly mensaje: Signal<string | null>;
+  readonly mensajeError: Signal<boolean>;
 
   constructor(
     private programaService: ProgramaService,
     private postulacionService: PostulacionService,
     public auth: AuthService,
     private router: Router,
-  ) {}
+    private toast: ToastService,
+  ) {
+    this.mensaje = toast.mensaje;
+    this.mensajeError = toast.esError;
+  }
 
   ngOnInit(): void {
     this.programaService.listarTodos().subscribe({
@@ -97,7 +92,6 @@ export class PortalProgramasComponent implements OnInit {
   }
 
   private notificar(msg: string, error: boolean): void {
-    this.mensaje.set(msg); this.mensajeError.set(error);
-    setTimeout(() => this.mensaje.set(null), error ? 10000 : 5000);
+    this.toast.notificar(msg, error, error ? 10000 : 5000);
   }
 }

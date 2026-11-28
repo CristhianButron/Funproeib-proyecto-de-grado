@@ -1,4 +1,4 @@
-import { Component, OnInit, signal } from '@angular/core';
+import { Component, OnInit, Signal, signal } from '@angular/core';
 import { Location } from '@angular/common';
 import { ActivatedRoute, RouterLink } from '@angular/router';
 import { PostulacionService } from '../../core/services/postulacion.service';
@@ -6,10 +6,12 @@ import { DocumentoService } from '../../core/services/documento.service';
 import { UsuarioService } from '../../core/services/usuario.service';
 import { ProgramaService } from '../../core/services/programa.service';
 import { ConfirmDialogService } from '../../core/services/confirm-dialog.service';
+import { ToastService } from '../../core/services/toast.service';
 import { PostulacionResponse, EstadoAprovechamiento } from '../../core/models/postulacion.model';
 import { DocumentoResponse } from '../../core/models/documento.model';
 import { UsuarioResponse } from '../../core/models/usuario.model';
 import { ProgramaResponse } from '../../core/models/programa.model';
+import { badgeAprovechamiento } from '../../core/utils/estado-colores';
 
 const LABEL_APROVECHAMIENTO: Record<EstadoAprovechamiento, string> = {
   PENDIENTE: 'Pendiente', APROBADO: 'Aprobado', REPROBADO: 'Reprobado', ABANDONO: 'Abandono',
@@ -36,13 +38,6 @@ const LABEL_APROVECHAMIENTO: Record<EstadoAprovechamiento, string> = {
         <span class="material-symbols-outlined text-[18px]">arrow_back</span> Volver
       </button>
     </div>
-
-    @if (mensaje()) {
-      <div class="fixed top-5 left-1/2 -translate-x-1/2 z-[100] max-w-md w-[90vw] p-3 rounded-lg text-sm font-semibold shadow-xl flex items-center gap-2" [class]="mensajeError() ? 'bg-error-container text-on-error-container' : 'bg-secondary-light text-on-secondary-container'">
-        <span class="material-symbols-outlined text-[20px]">{{ mensajeError() ? 'error' : 'check_circle' }}</span>
-        {{ mensaje() }}
-      </div>
-    }
 
     @if (cargando()) {
       <p class="text-on-surface-variant py-10 text-center">Cargando...</p>
@@ -156,8 +151,8 @@ export class FichaBeneficiarioComponent implements OnInit {
   documentos = signal<DocumentoResponse[]>([]);
   programaSel = signal<ProgramaResponse | null>(null);
 
-  mensaje = signal<string | null>(null);
-  mensajeError = signal(false);
+  readonly mensaje: Signal<string | null>;
+  readonly mensajeError: Signal<boolean>;
 
   constructor(
     private route: ActivatedRoute,
@@ -167,7 +162,11 @@ export class FichaBeneficiarioComponent implements OnInit {
     private usuarioService: UsuarioService,
     private programaService: ProgramaService,
     private confirmDialog: ConfirmDialogService,
-  ) {}
+    private toast: ToastService,
+  ) {
+    this.mensaje = toast.mensaje;
+    this.mensajeError = toast.esError;
+  }
 
   ngOnInit(): void {
     const id = Number(this.route.snapshot.paramMap.get('id'));
@@ -243,22 +242,13 @@ export class FichaBeneficiarioComponent implements OnInit {
     });
   }
 
-  badgeAprovechamiento(estado: string): string {
-    const map: Record<string, string> = {
-      PENDIENTE: 'bg-amber-100 text-amber-800',
-      APROBADO: 'bg-secondary-light text-on-secondary-container',
-      REPROBADO: 'bg-error-container text-on-error-container',
-      ABANDONO: 'bg-orange-100 text-orange-800',
-    };
-    return map[estado] ?? 'bg-surface-high text-on-surface-variant';
-  }
+  badgeAprovechamiento = badgeAprovechamiento;
 
   volver(): void {
     this.location.back();
   }
 
   private notificar(msg: string, error: boolean): void {
-    this.mensaje.set(msg); this.mensajeError.set(error);
-    setTimeout(() => this.mensaje.set(null), 4000);
+    this.toast.notificar(msg, error);
   }
 }

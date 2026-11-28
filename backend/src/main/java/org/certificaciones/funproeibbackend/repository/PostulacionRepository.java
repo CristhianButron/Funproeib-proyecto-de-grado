@@ -15,11 +15,18 @@ import java.util.Optional;
 
 public interface PostulacionRepository extends JpaRepository<Postulacion, Long> {
 
-    List<Postulacion> findByProgramaId(Long idPrograma);
+    // JOIN FETCH usuario+programa: estas tres alimentan las listas de
+    // Postulantes/Beneficiarios/Evaluaciones, donde mapToResponse siempre lee
+    // nombreCompleto del usuario y nombre del programa (ambos LAZY). Sin el
+    // fetch, cada fila dispara 2 consultas extra (N+1).
+    @Query("SELECT p FROM Postulacion p JOIN FETCH p.usuario JOIN FETCH p.programa WHERE p.programa.id = :idPrograma")
+    List<Postulacion> findByProgramaId(@Param("idPrograma") Long idPrograma);
 
-    List<Postulacion> findByUsuarioId(Long idUsuario);
+    @Query("SELECT p FROM Postulacion p JOIN FETCH p.usuario JOIN FETCH p.programa WHERE p.usuario.id = :idUsuario")
+    List<Postulacion> findByUsuarioId(@Param("idUsuario") Long idUsuario);
 
-    List<Postulacion> findByEstado(EstadoPostulacion estado);
+    @Query("SELECT p FROM Postulacion p JOIN FETCH p.usuario JOIN FETCH p.programa WHERE p.estado = :estado")
+    List<Postulacion> findByEstado(@Param("estado") EstadoPostulacion estado);
 
     @Query("SELECT p FROM Postulacion p JOIN FETCH p.usuario u JOIN FETCH p.programa pr " +
             "WHERE p.estadoAprovechamiento = 'ABANDONO'")
@@ -37,6 +44,15 @@ public interface PostulacionRepository extends JpaRepository<Postulacion, Long> 
     long countByProgramaId(Long idPrograma);
 
     long countByProgramaIdAndEstado(Long idPrograma, EstadoPostulacion estado);
+
+    // Versión en lote de las dos de arriba, para listarTodos(): una sola
+    // consulta agrupada para todos los programas en vez de 2 consultas por
+    // programa (N+1).
+    @Query("SELECT p.programa.id, COUNT(p) FROM Postulacion p WHERE p.programa.id IN :idsProgramas GROUP BY p.programa.id")
+    List<Object[]> contarPorPrograma(@Param("idsProgramas") List<Long> idsProgramas);
+
+    @Query("SELECT p.programa.id, COUNT(p) FROM Postulacion p WHERE p.programa.id IN :idsProgramas AND p.estado = :estado GROUP BY p.programa.id")
+    List<Object[]> contarPorProgramaYEstado(@Param("idsProgramas") List<Long> idsProgramas, @Param("estado") EstadoPostulacion estado);
 
     @Query("SELECT p FROM Postulacion p " +
             "JOIN FETCH p.programa pr " +

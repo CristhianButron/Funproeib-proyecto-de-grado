@@ -14,11 +14,10 @@ import org.certificaciones.funproeibbackend.repository.PostulacionRepository;
 import org.certificaciones.funproeibbackend.repository.ReqDocumentoRepository;
 import org.certificaciones.funproeibbackend.service.DocumentoService;
 import org.certificaciones.funproeibbackend.service.PostulacionCompletitudService;
+import org.certificaciones.funproeibbackend.util.ArchivoUtil;
 import org.certificaciones.funproeibbackend.util.TipoArchivoValidator;
 import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Value;
-import org.springframework.core.io.Resource;
-import org.springframework.core.io.UrlResource;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.util.StringUtils;
@@ -109,7 +108,7 @@ public class DocumentoServiceImpl implements DocumentoService {
         String nombreOriginal = StringUtils.cleanPath(
                 archivo.getOriginalFilename() == null || archivo.getOriginalFilename().isBlank()
                         ? "archivo" : archivo.getOriginalFilename());
-        String extension = obtenerExtension(nombreOriginal);
+        String extension = ArchivoUtil.obtenerExtension(nombreOriginal);
         if (!EXTENSIONES_PERMITIDAS.containsKey(extension)) {
             throw new BusinessException("Tipo de archivo no permitido. Formatos aceptados: PDF, DOC, DOCX, PNG, JPG");
         }
@@ -163,29 +162,13 @@ public class DocumentoServiceImpl implements DocumentoService {
             throw new BusinessException("Este documento no tiene un archivo para descargar; es un enlace");
         }
 
-        try {
-            Path raiz = Paths.get(uploadsDir).toAbsolutePath().normalize();
-            Path ruta = raiz.resolve(documento.getRutaArchivo()).normalize();
-            if (!ruta.startsWith(raiz) || !Files.exists(ruta)) {
-                throw new ResourceNotFoundException("El archivo ya no está disponible en el servidor");
-            }
+        int separador = documento.getRutaArchivo().indexOf("__");
+        String nombreOriginal = separador >= 0
+                ? documento.getRutaArchivo().substring(separador + 2)
+                : documento.getRutaArchivo();
 
-            int separador = documento.getRutaArchivo().indexOf("__");
-            String nombreOriginal = separador >= 0
-                    ? documento.getRutaArchivo().substring(separador + 2)
-                    : documento.getRutaArchivo();
-
-            String contentType = Files.probeContentType(ruta);
-            Resource recurso = new UrlResource(ruta.toUri());
-
-            return ArchivoDescargable.builder()
-                    .recurso(recurso)
-                    .contentType(contentType != null ? contentType : "application/octet-stream")
-                    .nombreArchivo(nombreOriginal)
-                    .build();
-        } catch (IOException e) {
-            throw new UncheckedIOException("No se pudo leer el archivo", e);
-        }
+        return ArchivoUtil.resolverDescargable(uploadsDir, documento.getRutaArchivo(), nombreOriginal,
+                "El archivo ya no está disponible en el servidor", "No se pudo leer el archivo");
     }
 
     @Override
@@ -250,13 +233,6 @@ public class DocumentoServiceImpl implements DocumentoService {
         }
         documentos.forEach(d -> d.setVerificado(true));
         documentoRepository.saveAll(documentos);
-    }
-
-    private String obtenerExtension(String nombreArchivo) {
-        int punto = nombreArchivo.lastIndexOf('.');
-        return punto >= 0 && punto < nombreArchivo.length() - 1
-                ? nombreArchivo.substring(punto + 1).toLowerCase()
-                : "";
     }
 
     private String sanitizar(String nombreArchivo) {

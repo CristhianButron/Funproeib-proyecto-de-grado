@@ -6,6 +6,7 @@ import { PostulacionService } from '../../core/services/postulacion.service';
 import { SelectBuscableComponent } from '../../core/components/select-buscable.component';
 import { ProgramaResponse } from '../../core/models/programa.model';
 import { PostulacionResponse } from '../../core/models/postulacion.model';
+import { badgePostulacion, colorBordePostulacion, colorTextoPostulacion } from '../../core/utils/estado-colores';
 
 @Component({
   selector: 'app-postulantes',
@@ -148,39 +149,7 @@ export class PostulantesComponent implements OnInit {
     });
   }
 
-  badge(estado: string): string {
-    const map: Record<string, string> = {
-      INCOMPLETA: 'bg-surface-high text-on-surface-variant',
-      PENDIENTE: 'bg-amber-100 text-amber-800',
-      EVALUADA: 'bg-blue-100 text-blue-800',
-      ACEPTADA: 'bg-secondary-light text-on-secondary-container',
-      RECHAZADA: 'bg-error-container text-on-error-container',
-      BLOQUEADA: 'bg-on-surface text-white',
-    };
-    return map[estado] ?? 'bg-surface-high text-on-surface-variant';
-  }
-
-  colorBorde(estado: string): string {
-    const map: Record<string, string> = {
-      INCOMPLETA: 'border-outline-variant',
-      PENDIENTE: 'border-amber-500',
-      EVALUADA: 'border-blue-500',
-      ACEPTADA: 'border-secondary',
-      RECHAZADA: 'border-error',
-      BLOQUEADA: 'border-on-surface',
-    };
-    return map[estado] ?? 'border-outline-variant';
-  }
-
-  colorTexto(estado: string): string {
-    const map: Record<string, string> = {
-      INCOMPLETA: 'text-on-surface-variant',
-      PENDIENTE: 'text-amber-700',
-      EVALUADA: 'text-blue-700',
-      ACEPTADA: 'text-secondary',
-      RECHAZADA: 'text-error',
-      BLOQUEADA: 'text-on-surface',
-    };
-    return map[estado] ?? 'text-on-surface-variant';
-  }
+  badge = badgePostulacion;
+  colorBorde = colorBordePostulacion;
+  colorTexto = colorTextoPostulacion;
 }

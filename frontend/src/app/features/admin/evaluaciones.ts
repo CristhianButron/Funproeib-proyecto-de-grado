@@ -1,4 +1,4 @@
-import { Component, OnInit, computed, signal } from '@angular/core';
+import { Component, OnInit, Signal, computed, signal } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { ActivatedRoute } from '@angular/router';
 import { ProgramaService } from '../../core/services/programa.service';
@@ -9,12 +9,14 @@ import { RespuestaService } from '../../core/services/pregunta.service';
 import { DocumentoService } from '../../core/services/documento.service';
 import { ReqDocumentoService } from '../../core/services/reqdoc.service';
 import { AuthService } from '../../core/services/auth.service';
+import { ToastService } from '../../core/services/toast.service';
 import { SelectBuscableComponent } from '../../core/components/select-buscable.component';
 import { ProgramaResponse } from '../../core/models/programa.model';
 import { PostulacionResponse, EstadoPostulacion } from '../../core/models/postulacion.model';
 import { CriterioEvaluacionResponse, EvaluacionResponse } from '../../core/models/evaluacion.model';
 import { RespuestaResponse } from '../../core/models/pregunta.model';
 import { DocumentoResponse, ReqDocumentoResponse } from '../../core/models/documento.model';
+import { badgePostulacion, colorBordePostulacion, colorTextoPostulacion, iconoPostulacion } from '../../core/utils/estado-colores';
 
 @Component({
   selector: 'app-evaluaciones',
@@ -42,13 +44,6 @@ import { DocumentoResponse, ReqDocumentoResponse } from '../../core/models/docum
             <p class="text-2xl font-extrabold" [class]="colorTexto(e.estado)">{{ e.cantidad }}</p>
           </div>
         }
-      </div>
-    }
-
-    @if (mensaje()) {
-      <div class="fixed top-5 left-1/2 -translate-x-1/2 z-[100] max-w-md w-[90vw] p-3 rounded-lg text-sm font-semibold shadow-xl flex items-center gap-2" [class]="mensajeError() ? 'bg-error-container text-on-error-container' : 'bg-secondary-light text-on-secondary-container'">
-        <span class="material-symbols-outlined text-[20px]">{{ mensajeError() ? 'error' : 'check_circle' }}</span>
-        {{ mensaje() }}
       </div>
     }
 
@@ -200,8 +195,8 @@ export class EvaluacionesComponent implements OnInit {
   postulacionSel = signal<PostulacionResponse | null>(null);
   evaluacionExistente = signal<EvaluacionResponse | null>(null);
   guardando = signal(false);
-  mensaje = signal<string | null>(null);
-  mensajeError = signal(false);
+  readonly mensaje: Signal<string | null>;
+  readonly mensajeError: Signal<boolean>;
 
   puntajes: Record<number, number> = {};
   observaciones = '';
@@ -216,7 +211,11 @@ export class EvaluacionesComponent implements OnInit {
     private reqDocService: ReqDocumentoService,
     private auth: AuthService,
     private route: ActivatedRoute,
-  ) {}
+    private toast: ToastService,
+  ) {
+    this.mensaje = toast.mensaje;
+    this.mensajeError = toast.esError;
+  }
 
   ngOnInit(): void {
     this.programaService.listarTodos().subscribe(d => this.programas.set(d));
@@ -316,56 +315,13 @@ export class EvaluacionesComponent implements OnInit {
     if (sel?.id === id) this.postulacionSel.set({ ...sel, estado });
   }
 
-  badge(estado: string): string {
-    const map: Record<string, string> = {
-      INCOMPLETA: 'bg-surface-high text-on-surface-variant',
-      PENDIENTE: 'bg-amber-100 text-amber-800',
-      EVALUADA: 'bg-blue-100 text-blue-800',
-      ACEPTADA: 'bg-secondary-light text-on-secondary-container',
-      RECHAZADA: 'bg-error-container text-on-error-container',
-      BLOQUEADA: 'bg-on-surface text-white',
-    };
-    return map[estado] ?? 'bg-surface-high text-on-surface-variant';
-  }
-
-  colorBorde(estado: string): string {
-    const map: Record<string, string> = {
-      INCOMPLETA: 'border-outline-variant',
-      PENDIENTE: 'border-amber-500',
-      EVALUADA: 'border-blue-500',
-      ACEPTADA: 'border-secondary',
-      RECHAZADA: 'border-error',
-      BLOQUEADA: 'border-on-surface',
-    };
-    return map[estado] ?? 'border-outline-variant';
-  }
+  badge = badgePostulacion;
+  colorBorde = colorBordePostulacion;
+  colorTexto = colorTextoPostulacion;
+  iconoEstado = iconoPostulacion;
 
   colorBordeResumen(estado: string): string {
     return this.colorBorde(estado);
-  }
-
-  colorTexto(estado: string): string {
-    const map: Record<string, string> = {
-      INCOMPLETA: 'text-on-surface-variant',
-      PENDIENTE: 'text-amber-700',
-      EVALUADA: 'text-blue-700',
-      ACEPTADA: 'text-secondary',
-      RECHAZADA: 'text-error',
-      BLOQUEADA: 'text-on-surface',
-    };
-    return map[estado] ?? 'text-on-surface-variant';
-  }
-
-  iconoEstado(estado: string): string {
-    const map: Record<string, string> = {
-      INCOMPLETA: 'edit_note',
-      PENDIENTE: 'hourglass_top',
-      EVALUADA: 'fact_check',
-      ACEPTADA: 'check_circle',
-      RECHAZADA: 'cancel',
-      BLOQUEADA: 'block',
-    };
-    return map[estado] ?? 'help';
   }
 
   postulacionesOrdenadas = computed(() => {
@@ -384,7 +340,6 @@ export class EvaluacionesComponent implements OnInit {
   );
 
   private notificar(msg: string, error: boolean): void {
-    this.mensaje.set(msg); this.mensajeError.set(error);
-    setTimeout(() => this.mensaje.set(null), 5000);
+    this.toast.notificar(msg, error, 5000);
   }
 }

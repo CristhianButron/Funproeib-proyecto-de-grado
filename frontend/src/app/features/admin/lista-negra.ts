@@ -1,10 +1,11 @@
-import { Component, OnInit, computed, signal } from '@angular/core';
+import { Component, OnInit, Signal, computed, signal } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { ListaNegraService, ListaNegraResponse, ListaNegraCandidatoResponse, MotivoListaNegra } from '../../core/services/listanegra.service';
 import { UsuarioService } from '../../core/services/usuario.service';
 import { UsuarioResponse } from '../../core/models/usuario.model';
 import { AuthService } from '../../core/services/auth.service';
 import { ConfirmDialogService } from '../../core/services/confirm-dialog.service';
+import { ToastService } from '../../core/services/toast.service';
 import { SelectBuscableComponent, OpcionBuscable } from '../../core/components/select-buscable.component';
 
 @Component({
@@ -16,13 +17,6 @@ import { SelectBuscableComponent, OpcionBuscable } from '../../core/components/s
       <h1 class="text-3xl font-extrabold text-primary-dark">Lista negra</h1>
       <p class="text-on-surface-variant">Postulantes bloqueados. No podrán postularse mientras estén activos.</p>
     </div>
-
-    @if (mensaje()) {
-      <div class="fixed top-5 left-1/2 -translate-x-1/2 z-[100] max-w-md w-[90vw] p-3 rounded-lg text-sm font-semibold shadow-xl flex items-center gap-2" [class]="mensajeError() ? 'bg-error-container text-on-error-container' : 'bg-secondary-light text-on-secondary-container'">
-        <span class="material-symbols-outlined text-[20px]">{{ mensajeError() ? 'error' : 'check_circle' }}</span>
-        {{ mensaje() }}
-      </div>
-    }
 
     <!-- Agregar -->
     <div class="bg-white rounded-xl shadow-card border border-outline-variant p-4 mb-6">
@@ -138,8 +132,8 @@ export class ListaNegraComponent implements OnInit {
   candidatos = signal<ListaNegraCandidatoResponse[]>([]);
   usuarios = signal<UsuarioResponse[]>([]);
   cargando = signal(true);
-  mensaje = signal<string | null>(null);
-  mensajeError = signal(false);
+  readonly mensaje: Signal<string | null>;
+  readonly mensajeError: Signal<boolean>;
   personaInvalida = signal(false);
 
   idSeleccionado = signal<number | null>(null);
@@ -158,7 +152,11 @@ export class ListaNegraComponent implements OnInit {
     private usuarioService: UsuarioService,
     private auth: AuthService,
     private confirmDialog: ConfirmDialogService,
-  ) {}
+    private toast: ToastService,
+  ) {
+    this.mensaje = toast.mensaje;
+    this.mensajeError = toast.esError;
+  }
 
   ngOnInit(): void {
     this.cargar();
@@ -250,7 +248,6 @@ export class ListaNegraComponent implements OnInit {
   }
 
   private notificar(msg: string, error: boolean): void {
-    this.mensaje.set(msg); this.mensajeError.set(error);
-    setTimeout(() => this.mensaje.set(null), 4000);
+    this.toast.notificar(msg, error);
   }
 }

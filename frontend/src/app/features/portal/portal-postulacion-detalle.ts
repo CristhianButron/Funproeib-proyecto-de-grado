@@ -1,4 +1,4 @@
-import { Component, OnInit, signal } from '@angular/core';
+import { Component, OnInit, Signal, signal } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { ActivatedRoute, Router, RouterLink } from '@angular/router';
 import { PostulacionService } from '../../core/services/postulacion.service';
@@ -11,6 +11,8 @@ import { PostulacionResponse } from '../../core/models/postulacion.model';
 import { DocumentoResponse, ReqDocumentoResponse, TipoDocumento } from '../../core/models/documento.model';
 import { PreguntaResponse, RespuestaResponse } from '../../core/models/pregunta.model';
 import { EvaluacionResponse } from '../../core/models/evaluacion.model';
+import { ToastService } from '../../core/services/toast.service';
+import { badgePostulacion } from '../../core/utils/estado-colores';
 
 @Component({
   selector: 'app-portal-postulacion-detalle',
@@ -22,13 +24,6 @@ import { EvaluacionResponse } from '../../core/models/evaluacion.model';
       <span class="material-symbols-outlined text-[14px]">chevron_right</span>
       <span class="font-semibold text-on-surface truncate">{{ postulacion()?.nombrePrograma || '...' }}</span>
     </nav>
-
-    @if (mensaje()) {
-      <div class="fixed top-5 left-1/2 -translate-x-1/2 z-[100] max-w-md w-[90vw] p-3 rounded-lg text-sm font-semibold shadow-xl flex items-center gap-2" [class]="mensajeError() ? 'bg-error-container text-on-error-container' : 'bg-secondary-light text-on-secondary-container'">
-        <span class="material-symbols-outlined text-[20px]">{{ mensajeError() ? 'error' : 'check_circle' }}</span>
-        {{ mensaje() }}
-      </div>
-    }
 
     @if (cargando()) {
       <p class="text-on-surface-variant py-10 text-center">Cargando...</p>
@@ -180,8 +175,8 @@ import { EvaluacionResponse } from '../../core/models/evaluacion.model';
 export class PortalPostulacionDetalleComponent implements OnInit {
   postulacion = signal<PostulacionResponse | null>(null);
   cargando = signal(true);
-  mensaje = signal<string | null>(null);
-  mensajeError = signal(false);
+  readonly mensaje: Signal<string | null>;
+  readonly mensajeError: Signal<boolean>;
 
   requisitos = signal<ReqDocumentoResponse[]>([]);
   documentos = signal<DocumentoResponse[]>([]);
@@ -208,7 +203,11 @@ export class PortalPostulacionDetalleComponent implements OnInit {
     private respuestaService: RespuestaService,
     private evaluacionService: EvaluacionService,
     private confirmDialog: ConfirmDialogService,
-  ) {}
+    private toast: ToastService,
+  ) {
+    this.mensaje = toast.mensaje;
+    this.mensajeError = toast.esError;
+  }
 
   ngOnInit(): void {
     const idParam = Number(this.route.snapshot.paramMap.get('id'));
@@ -389,20 +388,9 @@ export class PortalPostulacionDetalleComponent implements OnInit {
       this.postulacion.update(p => p ? { ...p, estado: actual.estado } : p));
   }
 
-  badge(estado: string): string {
-    const map: Record<string, string> = {
-      INCOMPLETA: 'bg-surface-high text-on-surface-variant',
-      PENDIENTE: 'bg-amber-100 text-amber-800',
-      EVALUADA: 'bg-blue-100 text-blue-800',
-      ACEPTADA: 'bg-secondary-light text-on-secondary-container',
-      RECHAZADA: 'bg-error-container text-on-error-container',
-      BLOQUEADA: 'bg-on-surface text-white',
-    };
-    return map[estado] ?? 'bg-surface-high text-on-surface-variant';
-  }
+  badge = badgePostulacion;
 
   private notificar(msg: string, error: boolean): void {
-    this.mensaje.set(msg); this.mensajeError.set(error);
-    setTimeout(() => this.mensaje.set(null), 4000);
+    this.toast.notificar(msg, error);
   }
 }

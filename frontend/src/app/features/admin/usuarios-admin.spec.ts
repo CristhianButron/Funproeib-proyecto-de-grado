@@ -1,5 +1,6 @@
 import { of, throwError } from 'rxjs';
 import { UsuariosAdminComponent } from './usuarios-admin';
+import { ToastService } from '../../core/services/toast.service';
 import { UsuarioResponse } from '../../core/models/usuario.model';
 
 function usuarioFake(overrides: Partial<UsuarioResponse> = {}): UsuarioResponse {
@@ -33,7 +34,7 @@ describe('UsuariosAdminComponent', () => {
     };
     authFake = { usuario: () => usuarioFake({ id: 3 }) };
     confirmDialogFake = { confirmar: vi.fn() };
-    component = new UsuariosAdminComponent(usuarioServiceFake, authFake, confirmDialogFake);
+    component = new UsuariosAdminComponent(usuarioServiceFake, authFake, confirmDialogFake, new ToastService());
     component.ngOnInit();
   });
 
