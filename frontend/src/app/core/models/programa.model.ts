@@ -8,6 +8,9 @@ export interface ProgramaRequest {
   fechaInicio: string;
   fechaFin: string;
   cuposDisponibles: number;
+  descripcion?: string;
+  modulos?: string[];
+  requisitosGenerales?: string[];
 }
 
 export interface ProgramaResponse {
@@ -19,4 +22,7 @@ export interface ProgramaResponse {
   fechaFin: string;
   cuposDisponibles: number;
   estado: EstadoPrograma;
+  descripcion?: string;
+  modulos: string[];
+  requisitosGenerales: string[];
 }

@@ -4,6 +4,7 @@ import org.certificaciones.funproeibbackend.model.enums.TipoPrograma;
 import jakarta.validation.constraints.*;
 import lombok.Data;
 import java.time.LocalDate;
+import java.util.List;
 
 @Data
 public class ProgramaRequest {
@@ -27,4 +28,11 @@ public class ProgramaRequest {
     @NotNull
     @Min(1)
     private Integer cuposDisponibles;
+
+    @Size(max = 4000)
+    private String descripcion;
+
+    private List<@Size(max = 255) String> modulos;
+
+    private List<@Size(max = 255) String> requisitosGenerales;
 }

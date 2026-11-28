@@ -15,6 +15,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDate;
+import java.util.ArrayList;
 import java.util.List;
 
 @Service
@@ -43,17 +44,22 @@ public class ProgramaServiceImpl implements ProgramaService {
                 .fechaFin(request.getFechaFin())
                 .cuposDisponibles(request.getCuposDisponibles())
                 .estado(EstadoPrograma.BORRADOR) // todo programa nace en borrador
+                .descripcion(request.getDescripcion())
+                .modulos(request.getModulos() != null ? new ArrayList<>(request.getModulos()) : new ArrayList<>())
+                .requisitosGenerales(request.getRequisitosGenerales() != null ? new ArrayList<>(request.getRequisitosGenerales()) : new ArrayList<>())
                 .build();
 
         return mapToResponse(programaRepository.save(programa));
     }
 
     @Override
+    @Transactional(readOnly = true)
     public ProgramaResponse obtenerPorId(Long id) {
         return mapToResponse(buscarPrograma(id));
     }
 
     @Override
+    @Transactional(readOnly = true)
     public List<ProgramaResponse> listarTodos() {
         return programaRepository.findAll().stream()
                 .map(this::mapToResponse)
@@ -78,6 +84,9 @@ public class ProgramaServiceImpl implements ProgramaService {
         programa.setFechaInicio(request.getFechaInicio());
         programa.setFechaFin(request.getFechaFin());
         programa.setCuposDisponibles(request.getCuposDisponibles());
+        programa.setDescripcion(request.getDescripcion());
+        programa.setModulos(request.getModulos() != null ? new ArrayList<>(request.getModulos()) : new ArrayList<>());
+        programa.setRequisitosGenerales(request.getRequisitosGenerales() != null ? new ArrayList<>(request.getRequisitosGenerales()) : new ArrayList<>());
 
         return mapToResponse(programaRepository.save(programa));
     }
@@ -130,6 +139,9 @@ public class ProgramaServiceImpl implements ProgramaService {
                 .fechaFin(programa.getFechaFin())
                 .cuposDisponibles(programa.getCuposDisponibles())
                 .estado(programa.getEstado())
+                .descripcion(programa.getDescripcion())
+                .modulos(List.copyOf(programa.getModulos()))
+                .requisitosGenerales(List.copyOf(programa.getRequisitosGenerales()))
                 .build();
     }
 }

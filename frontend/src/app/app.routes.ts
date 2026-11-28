@@ -3,6 +3,7 @@ import { adminGuard, authGuard, evaluadorGuard, postulanteGuard } from './core/g
 
 export const routes: Routes = [
   { path: '', loadComponent: () => import('./features/landing/landing').then(m => m.LandingComponent) },
+  { path: 'programas/:id', loadComponent: () => import('./features/convocatoria/convocatoria-detalle').then(m => m.ConvocatoriaDetalleComponent) },
   { path: 'login', loadComponent: () => import('./features/auth/login').then(m => m.LoginComponent) },
   { path: 'registro', loadComponent: () => import('./features/auth/registro').then(m => m.RegistroComponent) },
   { path: 'verificar-correo', loadComponent: () => import('./features/auth/verificar-correo').then(m => m.VerificarCorreoComponent) },

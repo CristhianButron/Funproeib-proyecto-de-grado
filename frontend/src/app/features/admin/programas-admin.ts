@@ -105,7 +105,7 @@ import { PreguntaResponse } from '../../core/models/pregunta.model';
   <!-- Modal crear/editar -->
   @if (modalForm()) {
     <div class="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4" (click)="modalForm.set(false)">
-      <div class="bg-white w-full max-w-xl rounded-2xl shadow-xl overflow-hidden" (click)="$event.stopPropagation()">
+      <div class="bg-white w-full max-w-xl rounded-2xl shadow-xl overflow-hidden max-h-[90vh] flex flex-col" (click)="$event.stopPropagation()">
         <div class="bg-primary text-white px-6 py-4 flex items-center justify-between">
           <h2 class="font-bold text-lg flex items-center gap-2">
             <span class="material-symbols-outlined">{{ editandoId() ? 'edit' : 'add_circle' }}</span>
@@ -113,7 +113,23 @@ import { PreguntaResponse } from '../../core/models/pregunta.model';
           </h2>
           <button (click)="modalForm.set(false)" aria-label="Cerrar"><span class="material-symbols-outlined">close</span></button>
         </div>
-        <div class="p-6 space-y-4">
+
+        <!-- Indicador de pasos -->
+        <div class="flex items-center px-6 pt-5 pb-2 bg-surface-low border-b border-outline-variant">
+          @for (paso of pasosForm; track paso.titulo; let i = $index; let last = $last) {
+            <button (click)="pasoForm.set(i)" class="flex items-center gap-2 shrink-0" [attr.aria-current]="pasoForm() === i ? 'step' : null">
+              <span class="w-7 h-7 rounded-full flex items-center justify-center text-xs font-bold shrink-0"
+                [class]="pasoForm() === i ? 'bg-primary text-white' : (pasoForm() > i ? 'bg-secondary-light text-on-secondary-container' : 'bg-surface-high text-on-surface-variant')">
+                @if (pasoForm() > i) { <span class="material-symbols-outlined text-[16px]">check</span> } @else { {{ i + 1 }} }
+              </span>
+              <span class="text-sm font-semibold" [class]="pasoForm() === i ? 'text-primary-dark' : 'text-on-surface-variant'">{{ paso.titulo }}</span>
+            </button>
+            @if (!last) { <div class="flex-1 h-0.5 mx-2" [class]="pasoForm() > i ? 'bg-secondary' : 'bg-outline-variant'"></div> }
+          }
+        </div>
+
+        <div class="p-6 space-y-4 overflow-y-auto custom-scrollbar">
+          @if (pasoForm() === 0) {
           <div>
             <label class="block text-sm font-semibold mb-1">Nombre del programa *</label>
             <input [(ngModel)]="form.nombre" class="campo" placeholder="Ej: Diplomado en Educación Intercultural" />
@@ -144,12 +160,66 @@ import { PreguntaResponse } from '../../core/models/pregunta.model';
               <input type="number" min="1" [(ngModel)]="form.cuposDisponibles" class="campo" placeholder="30" />
             </div>
           </div>
+          }
+
+          @if (pasoForm() === 1) {
+          <section>
+            <p class="text-xs text-on-surface-variant mb-4">
+              Esto es lo que verá cualquier visitante en la pantalla de "convocatoria completa" antes de postularse.
+            </p>
+            <div class="mb-4">
+              <label class="block text-sm font-semibold mb-1">Descripción general</label>
+              <textarea [(ngModel)]="form.descripcion" rows="4" class="campo w-full" placeholder="Describe de qué se trata el programa, a quién está dirigido, etc."></textarea>
+            </div>
+
+            <div class="mb-4">
+              <label class="block text-sm font-semibold mb-2">Módulos</label>
+              <div class="space-y-1 mb-2">
+                @for (m of form.modulos; track $index; let i = $index) {
+                  <div class="flex items-center justify-between bg-surface-low rounded-lg px-3 py-1.5">
+                    <span class="text-sm">{{ m }}</span>
+                    <button (click)="quitarModulo(i)" class="text-error hover:bg-error-container rounded p-1" title="Quitar" aria-label="Quitar módulo"><span class="material-symbols-outlined text-[16px]">close</span></button>
+                  </div>
+                } @empty { <p class="text-xs text-on-surface-variant">Sin módulos aún.</p> }
+              </div>
+              <div class="flex gap-2">
+                <input [(ngModel)]="nuevoModulo" (keydown.enter)="$event.preventDefault(); agregarModulo()" class="campo flex-1" placeholder="Ej: Módulo 1: Fundamentos" />
+                <button (click)="agregarModulo()" class="px-3 rounded-lg bg-primary text-white font-semibold hover:bg-primary-dark transition-colors text-sm">+</button>
+              </div>
+            </div>
+
+            <div>
+              <label class="block text-sm font-semibold mb-2">Requisitos generales</label>
+              <div class="space-y-1 mb-2">
+                @for (r of form.requisitosGenerales; track $index; let i = $index) {
+                  <div class="flex items-center justify-between bg-surface-low rounded-lg px-3 py-1.5">
+                    <span class="text-sm">{{ r }}</span>
+                    <button (click)="quitarRequisito(i)" class="text-error hover:bg-error-container rounded p-1" title="Quitar" aria-label="Quitar requisito"><span class="material-symbols-outlined text-[16px]">close</span></button>
+                  </div>
+                } @empty { <p class="text-xs text-on-surface-variant">Sin requisitos aún.</p> }
+              </div>
+              <div class="flex gap-2">
+                <input [(ngModel)]="nuevoRequisito" (keydown.enter)="$event.preventDefault(); agregarRequisito()" class="campo flex-1" placeholder="Ej: Ser mayor de 18 años" />
+                <button (click)="agregarRequisito()" class="px-3 rounded-lg bg-primary text-white font-semibold hover:bg-primary-dark transition-colors text-sm">+</button>
+              </div>
+            </div>
+          </section>
+          }
         </div>
-        <div class="bg-surface-low px-6 py-4 flex justify-end gap-3">
-          <button (click)="modalForm.set(false)" class="px-5 py-2 rounded-lg font-semibold text-on-surface-variant hover:bg-surface-high transition-colors">Cancelar</button>
-          <button (click)="guardar()" [disabled]="guardando()" class="px-5 py-2 rounded-lg font-bold bg-primary text-white hover:bg-primary-dark transition-colors disabled:opacity-50">
-            {{ guardando() ? 'Guardando...' : (editandoId() ? 'Guardar cambios' : 'Guardar programa') }}
-          </button>
+        <div class="bg-surface-low px-6 py-4 flex items-center justify-between border-t border-outline-variant">
+          @if (pasoForm() === 0) {
+            <button (click)="modalForm.set(false)" class="px-5 py-2 rounded-lg font-semibold text-on-surface-variant hover:bg-surface-high transition-colors">Cancelar</button>
+            <button (click)="pasoForm.set(1)" class="px-5 py-2 rounded-lg font-bold bg-primary text-white hover:bg-primary-dark transition-colors flex items-center gap-1">
+              Siguiente <span class="material-symbols-outlined text-[18px]">arrow_forward</span>
+            </button>
+          } @else {
+            <button (click)="pasoForm.set(0)" class="px-4 py-2 rounded-lg font-semibold text-on-surface-variant hover:bg-surface-high transition-colors flex items-center gap-1">
+              <span class="material-symbols-outlined text-[18px]">arrow_back</span> Atrás
+            </button>
+            <button (click)="guardar()" [disabled]="guardando()" class="px-5 py-2 rounded-lg font-bold bg-primary text-white hover:bg-primary-dark transition-colors disabled:opacity-50">
+              {{ guardando() ? 'Guardando...' : (editandoId() ? 'Guardar cambios' : 'Guardar programa') }}
+            </button>
+          }
         </div>
       </div>
     </div>
@@ -323,6 +393,10 @@ export class ProgramasAdminComponent implements OnInit {
   guardando = signal(false);
   modalForm = signal(false);
   editandoId = signal<number | null>(null);
+  pasoForm = signal(0);
+  pasosForm = [{ titulo: 'Datos generales' }, { titulo: 'Descripción pública' }];
+  nuevoModulo = '';
+  nuevoRequisito = '';
   programaConfig = signal<ProgramaResponse | null>(null);
   pasoConfig = signal(0);
   pasosConfig = [{ titulo: 'Requisitos' }, { titulo: 'Preguntas' }, { titulo: 'Criterios' }];
@@ -370,15 +444,46 @@ export class ProgramasAdminComponent implements OnInit {
   }
 
   vacio(): ProgramaRequest {
-    return { nombre: '', tipo: 'DIPLOMADO', edicion: '', fechaInicio: '', fechaFin: '', cuposDisponibles: 30 };
+    return { nombre: '', tipo: 'DIPLOMADO', edicion: '', fechaInicio: '', fechaFin: '', cuposDisponibles: 30, descripcion: '', modulos: [], requisitosGenerales: [] };
   }
 
-  abrirCrear(): void { this.form = this.vacio(); this.editandoId.set(null); this.modalForm.set(true); }
+  abrirCrear(): void {
+    this.form = this.vacio(); this.editandoId.set(null); this.pasoForm.set(0);
+    this.nuevoModulo = ''; this.nuevoRequisito = '';
+    this.modalForm.set(true);
+  }
 
   abrirEditar(p: ProgramaResponse): void {
-    this.form = { nombre: p.nombre, tipo: p.tipo, edicion: p.edicion ?? '', fechaInicio: p.fechaInicio, fechaFin: p.fechaFin, cuposDisponibles: p.cuposDisponibles };
+    this.form = {
+      nombre: p.nombre, tipo: p.tipo, edicion: p.edicion ?? '', fechaInicio: p.fechaInicio, fechaFin: p.fechaFin, cuposDisponibles: p.cuposDisponibles,
+      descripcion: p.descripcion ?? '', modulos: [...(p.modulos ?? [])], requisitosGenerales: [...(p.requisitosGenerales ?? [])],
+    };
     this.editandoId.set(p.id);
+    this.pasoForm.set(0);
+    this.nuevoModulo = ''; this.nuevoRequisito = '';
     this.modalForm.set(true);
+  }
+
+  agregarModulo(): void {
+    const v = this.nuevoModulo.trim();
+    if (!v) return;
+    this.form.modulos = [...(this.form.modulos ?? []), v];
+    this.nuevoModulo = '';
+  }
+
+  quitarModulo(i: number): void {
+    this.form.modulos = (this.form.modulos ?? []).filter((_, idx) => idx !== i);
+  }
+
+  agregarRequisito(): void {
+    const v = this.nuevoRequisito.trim();
+    if (!v) return;
+    this.form.requisitosGenerales = [...(this.form.requisitosGenerales ?? []), v];
+    this.nuevoRequisito = '';
+  }
+
+  quitarRequisito(i: number): void {
+    this.form.requisitosGenerales = (this.form.requisitosGenerales ?? []).filter((_, idx) => idx !== i);
   }
 
   guardar(): void {

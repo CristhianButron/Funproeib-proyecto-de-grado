@@ -5,6 +5,7 @@ import org.certificaciones.funproeibbackend.model.enums.TipoPrograma;
 import lombok.Builder;
 import lombok.Data;
 import java.time.LocalDate;
+import java.util.List;
 
 @Data
 @Builder
@@ -17,4 +18,7 @@ public class ProgramaResponse {
     private LocalDate fechaFin;
     private Integer cuposDisponibles;
     private EstadoPrograma estado;
+    private String descripcion;
+    private List<String> modulos;
+    private List<String> requisitosGenerales;
 }

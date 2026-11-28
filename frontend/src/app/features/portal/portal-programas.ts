@@ -1,5 +1,5 @@
 import { Component, OnInit, signal } from '@angular/core';
-import { Router } from '@angular/router';
+import { Router, RouterLink } from '@angular/router';
 import { ProgramaService } from '../../core/services/programa.service';
 import { PostulacionService } from '../../core/services/postulacion.service';
 import { AuthService } from '../../core/services/auth.service';
@@ -7,6 +7,7 @@ import { ProgramaResponse } from '../../core/models/programa.model';
 
 @Component({
   selector: 'app-portal-programas',
+  imports: [RouterLink],
   template: `
   <div>
     <div class="mb-6">
@@ -43,10 +44,16 @@ import { ProgramaResponse } from '../../core/models/programa.model';
                 <p class="flex items-center gap-2"><span class="material-symbols-outlined text-[18px] text-primary">event</span>{{ p.fechaInicio }} → {{ p.fechaFin }}</p>
                 <p class="flex items-center gap-2"><span class="material-symbols-outlined text-[18px] text-primary">groups</span>{{ p.cuposDisponibles }} cupos</p>
               </div>
-              <button (click)="postular(p)" [disabled]="enviando()"
-                class="mt-5 w-full px-4 py-2 rounded-lg font-semibold bg-primary text-white hover:bg-primary-dark transition-colors disabled:opacity-50 flex items-center justify-center gap-2">
-                <span class="material-symbols-outlined text-[18px]">send</span> Postularme
-              </button>
+              <div class="mt-5 flex gap-2">
+                <a [routerLink]="['/programas', p.id]"
+                  class="flex-1 text-center px-4 py-2 rounded-lg font-semibold border-2 border-primary text-primary hover:bg-primary hover:text-white transition-colors flex items-center justify-center gap-2">
+                  <span class="material-symbols-outlined text-[18px]">info</span> Ver detalles
+                </a>
+                <button (click)="postular(p)" [disabled]="enviando()"
+                  class="flex-1 px-4 py-2 rounded-lg font-semibold bg-primary text-white hover:bg-primary-dark transition-colors disabled:opacity-50 flex items-center justify-center gap-2">
+                  <span class="material-symbols-outlined text-[18px]">send</span> Postularme
+                </button>
+              </div>
             </div>
           </div>
         }
