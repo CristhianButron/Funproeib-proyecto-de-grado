@@ -23,7 +23,7 @@ import { UsuarioService } from '../../core/services/usuario.service';
           <img src="logo-funproeib.png" alt="Funproeib" class="h-11 w-11 bg-white rounded-lg p-1 object-contain shrink-0" />
           @if (!colapsado()) {
             <div class="min-w-0">
-              <p class="text-white font-bold leading-tight truncate">Funproeib Andes</p>
+              <p class="text-white font-bold leading-tight truncate">FUNPROEIB ANDES</p>
               <p class="text-on-tertiary-container text-xs truncate">Panel Administrativo</p>
             </div>
           }

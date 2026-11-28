@@ -15,7 +15,7 @@ import { ReqDocumentoResponse } from '../../core/models/documento.model';
     <header class="sticky top-0 z-40 bg-white/90 backdrop-blur border-b border-outline-variant">
       <div class="max-w-4xl mx-auto px-6 h-20 flex items-center justify-between">
         <a [routerLink]="auth.esPostulante() ? '/portal' : '/'" class="flex items-center gap-3">
-          <img src="logo-funproeib.png" alt="Funproeib Andes" class="h-12 w-auto object-contain" />
+          <img src="logo-funproeib.png" alt="FUNPROEIB ANDES" class="h-12 w-auto object-contain" />
           <span class="hidden sm:block font-extrabold text-primary-dark">FUNPROEIB ANDES</span>
         </a>
         <a [routerLink]="auth.esPostulante() ? '/portal' : '/'" class="text-sm font-semibold text-primary hover:underline flex items-center gap-1">

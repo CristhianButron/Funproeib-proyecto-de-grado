@@ -13,7 +13,7 @@ import { rutaInicialPorRol } from '../../core/utils/rol-ruta';
     <!-- Panel izquierdo -->
     <div class="hidden lg:flex flex-col items-center justify-center bg-gradient-to-br from-primary-dark to-primary text-white p-12">
       <img src="logo-funproeib.png" alt="Funproeib" class="h-40 w-auto bg-white rounded-3xl p-4 shadow-lg" />
-      <h2 class="text-3xl font-extrabold mt-8 text-center">Funproeib Andes</h2>
+      <h2 class="text-3xl font-extrabold mt-8 text-center">FUNPROEIB ANDES</h2>
       <p class="text-primary-light mt-3 text-center max-w-sm">
         Sistema de gestión académica y verificación de postulaciones
         en programas de formación.

@@ -177,7 +177,7 @@ public class PostulacionServiceImpl implements PostulacionService {
     }
 
     private String mensajeContacto() {
-        return "Puedes contactarte con el equipo de Funproeib Andes al " + telefonoContacto + " para más información.";
+        return "Puedes contactarte con el equipo de FUNPROEIB ANDES al " + telefonoContacto + " para más información.";
     }
 
     private PostulacionResponse mapToResponse(Postulacion p) {

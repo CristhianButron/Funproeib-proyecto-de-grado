@@ -16,7 +16,7 @@ import { ReqDocumentoResponse } from '../../core/models/documento.model';
     <header class="sticky top-0 z-40 bg-white/90 backdrop-blur border-b border-outline-variant">
       <div class="max-w-6xl mx-auto px-6 h-20 flex items-center justify-between">
         <div class="flex items-center gap-3">
-          <img src="logo-funproeib.png" alt="Funproeib Andes" class="h-14 w-auto object-contain" />
+          <img src="logo-funproeib.png" alt="FUNPROEIB ANDES" class="h-14 w-auto object-contain" />
           <div class="hidden sm:block">
             <p class="font-extrabold text-primary-dark leading-tight text-lg">FUNPROEIB ANDES</p>
             <p class="text-xs text-on-surface-variant">Sistema de Gestión Académica y de Postulaciones</p>
@@ -41,7 +41,7 @@ import { ReqDocumentoResponse } from '../../core/models/documento.model';
             Sistema de Postulación y Selección para Programas de Formación
           </span>
           <h1 class="text-4xl md:text-5xl font-extrabold text-primary-dark leading-tight tracking-tight">
-            Postula a los programas de formación de Funproeib Andes
+            Postula a los programas de formación de FUNPROEIB ANDES
           </h1>
           <p class="mt-5 text-on-surface-variant text-lg leading-relaxed">
             Plataforma de registro de postulaciones y selección de participantes
@@ -60,7 +60,7 @@ import { ReqDocumentoResponse } from '../../core/models/documento.model';
         </div>
         <div class="flex justify-center">
           <div class="bg-white rounded-3xl shadow-card-hover p-10 border border-outline-variant">
-            <img src="logo-funproeib.png" alt="Funproeib Andes" class="h-64 w-auto object-contain" />
+            <img src="logo-funproeib.png" alt="FUNPROEIB ANDES" class="h-64 w-auto object-contain" />
           </div>
         </div>
       </div>
@@ -167,7 +167,7 @@ import { ReqDocumentoResponse } from '../../core/models/documento.model';
           }
         </div>
         <p class="text-center text-xs text-on-surface-variant mt-6">
-          (Datos de contacto de ejemplo: reemplázalos por los reales de Funproeib Andes antes de publicar.)
+          (Datos de contacto de ejemplo: reemplázalos por los reales de FUNPROEIB ANDES antes de publicar.)
         </p>
       </div>
     </section>
@@ -183,7 +183,7 @@ import { ReqDocumentoResponse } from '../../core/models/documento.model';
           </div>
         </div>
         <p class="text-on-tertiary-container text-sm text-center">
-          © 2026 Fundación Funproeib Andes · Cochabamba, Bolivia
+          © 2026 Fundación FUNPROEIB ANDES · Cochabamba, Bolivia
         </p>
       </div>
     </footer>

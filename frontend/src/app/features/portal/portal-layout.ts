@@ -11,7 +11,7 @@ import { AuthService } from '../../core/services/auth.service';
       <div class="max-w-6xl mx-auto px-6 h-16 flex items-center justify-between">
         <a routerLink="/portal" class="flex items-center gap-3">
           <img src="logo-funproeib.png" alt="Funproeib" class="h-10 w-auto object-contain" />
-          <span class="font-extrabold text-primary-dark hidden sm:block">Funproeib Andes</span>
+          <span class="font-extrabold text-primary-dark hidden sm:block">FUNPROEIB ANDES</span>
         </a>
         <nav class="flex items-center gap-1">
           <a routerLink="/portal" [routerLinkActiveOptions]="{exact:true}" routerLinkActive="bg-primary-fixed text-primary"

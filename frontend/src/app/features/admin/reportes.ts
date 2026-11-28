@@ -336,7 +336,7 @@ export class ReportesComponent implements OnInit {
       // real de exportar, no cada vez que se abre la pantalla de Reportes.
       const { Workbook } = await import('exceljs');
       const wb = new Workbook();
-      wb.creator = 'Funproeib Andes';
+      wb.creator = 'FUNPROEIB ANDES';
       wb.created = new Date();
 
       this.construirHojaBeneficiarios(wb, datos);

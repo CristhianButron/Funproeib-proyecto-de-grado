@@ -40,11 +40,11 @@ public class EmailServiceImpl implements EmailService {
     @Override
     public void enviarVerificacionCuenta(String destinatario, String nombre, String tokenVerificacion, String contrasenaTemporal) {
         String enlace = frontendUrl + "/verificar-correo?token=" + tokenVerificacion;
-        String asunto = "Verifica tu cuenta - Funproeib Andes";
+        String asunto = "Verifica tu cuenta - FUNPROEIB ANDES";
         String cuerpo = """
                 Hola %s,
 
-                Gracias por registrarte en el sistema de Funproeib Andes.
+                Gracias por registrarte en el sistema de FUNPROEIB ANDES.
 
                 Para activar tu cuenta, verifica tu correo electrónico ingresando al siguiente enlace:
                 %s
@@ -75,11 +75,11 @@ public class EmailServiceImpl implements EmailService {
     @Override
     public void enviarRecuperacionPassword(String destinatario, String nombre, String tokenRecuperacion) {
         String enlace = frontendUrl + "/restablecer-password?token=" + tokenRecuperacion;
-        String asunto = "Recupera tu contraseña - Funproeib Andes";
+        String asunto = "Recupera tu contraseña - FUNPROEIB ANDES";
         String cuerpo = """
                 Hola %s,
 
-                Recibimos una solicitud para restablecer tu contraseña en el sistema de Funproeib Andes.
+                Recibimos una solicitud para restablecer tu contraseña en el sistema de FUNPROEIB ANDES.
 
                 Si fuiste tú, ingresa al siguiente enlace para definir una nueva contraseña:
                 %s
@@ -105,11 +105,11 @@ public class EmailServiceImpl implements EmailService {
 
     @Override
     public void enviarCuentaCreadaPorAdmin(String destinatario, String nombre, String contrasenaTemporal) {
-        String asunto = "Se creó tu cuenta - Funproeib Andes";
+        String asunto = "Se creó tu cuenta - FUNPROEIB ANDES";
         String cuerpo = """
                 Hola %s,
 
-                Un administrador creó una cuenta para vos en el sistema de Funproeib Andes.
+                Un administrador creó una cuenta para vos en el sistema de FUNPROEIB ANDES.
 
                 Tu contraseña temporal es: %s
 
@@ -134,7 +134,7 @@ public class EmailServiceImpl implements EmailService {
 
     @Override
     public void enviarRechazoIdentidad(String destinatario, String nombre) {
-        String asunto = "Tu cuenta fue dada de baja - Funproeib Andes";
+        String asunto = "Tu cuenta fue dada de baja - FUNPROEIB ANDES";
         String cuerpo = """
                 Hola %s,
 
@@ -143,10 +143,10 @@ public class EmailServiceImpl implements EmailService {
 
                 Por este motivo, y por tratarse de un intento de falsificación de
                 identidad, tu cuenta y tu postulación fueron dadas de baja del sistema
-                de Funproeib Andes.
+                de FUNPROEIB ANDES.
 
                 Si consideras que esto es un error, puedes contactarte con el equipo de
-                Funproeib Andes para aclararlo.
+                FUNPROEIB ANDES para aclararlo.
                 """.formatted(nombre);
 
         if (!mailEnabled || mailSender.isEmpty()) {
