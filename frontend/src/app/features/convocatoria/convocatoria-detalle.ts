@@ -2,8 +2,10 @@ import { Component, OnInit, signal } from '@angular/core';
 import { ActivatedRoute, Router, RouterLink } from '@angular/router';
 import { ProgramaService } from '../../core/services/programa.service';
 import { PostulacionService } from '../../core/services/postulacion.service';
+import { ReqDocumentoService } from '../../core/services/reqdoc.service';
 import { AuthService } from '../../core/services/auth.service';
 import { ProgramaResponse } from '../../core/models/programa.model';
+import { ReqDocumentoResponse } from '../../core/models/documento.model';
 
 @Component({
   selector: 'app-convocatoria-detalle',
@@ -77,14 +79,18 @@ import { ProgramaResponse } from '../../core/models/programa.model';
               </section>
             }
 
-            @if (p.requisitosGenerales.length > 0) {
+            @if (requisitos().length > 0) {
               <section class="mt-8">
-                <h2 class="font-bold text-primary-dark text-lg mb-3">Requisitos generales</h2>
+                <h2 class="font-bold text-primary-dark text-lg mb-3">Requisitos</h2>
                 <ul class="space-y-2">
-                  @for (r of p.requisitosGenerales; track $index) {
+                  @for (r of requisitos(); track r.id) {
                     <li class="flex items-start gap-2 text-on-surface-variant">
                       <span class="material-symbols-outlined text-[18px] text-secondary mt-0.5">check_circle</span>
-                      <span>{{ r }}</span>
+                      <span>
+                        {{ r.nombreDocumento }}
+                        <span class="text-xs font-bold ml-1" [class]="r.obligatorio ? 'text-error' : 'text-on-surface-variant'">{{ r.obligatorio ? '(obligatorio)' : '(opcional)' }}</span>
+                        @if (r.descripcion) { <span class="block text-xs text-on-surface-variant">{{ r.descripcion }}</span> }
+                      </span>
                     </li>
                   }
                 </ul>
@@ -124,6 +130,7 @@ import { ProgramaResponse } from '../../core/models/programa.model';
 })
 export class ConvocatoriaDetalleComponent implements OnInit {
   programa = signal<ProgramaResponse | null>(null);
+  requisitos = signal<ReqDocumentoResponse[]>([]);
   cargando = signal(true);
   noEncontrado = signal(false);
   enviando = signal(false);
@@ -135,6 +142,7 @@ export class ConvocatoriaDetalleComponent implements OnInit {
     private router: Router,
     private programaService: ProgramaService,
     private postulacionService: PostulacionService,
+    private reqDocService: ReqDocumentoService,
     public auth: AuthService,
   ) {}
 
@@ -143,6 +151,10 @@ export class ConvocatoriaDetalleComponent implements OnInit {
     this.programaService.obtenerPorId(id).subscribe({
       next: (p) => { this.programa.set(p); this.cargando.set(false); },
       error: () => { this.noEncontrado.set(true); this.cargando.set(false); },
+    });
+    this.reqDocService.listarPorPrograma(id).subscribe({
+      next: (r) => this.requisitos.set(r),
+      error: () => {},
     });
   }
 

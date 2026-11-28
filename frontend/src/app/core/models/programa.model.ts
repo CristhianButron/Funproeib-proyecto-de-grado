@@ -10,7 +10,6 @@ export interface ProgramaRequest {
   cuposDisponibles: number;
   descripcion?: string;
   modulos?: string[];
-  requisitosGenerales?: string[];
 }
 
 export interface ProgramaResponse {
@@ -24,5 +23,4 @@ export interface ProgramaResponse {
   estado: EstadoPrograma;
   descripcion?: string;
   modulos: string[];
-  requisitosGenerales: string[];
 }

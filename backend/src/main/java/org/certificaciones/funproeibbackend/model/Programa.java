@@ -46,8 +46,9 @@ public class Programa {
     private EstadoPrograma estado;
 
     // Contenido público de la convocatoria (pantalla de detalle para
-    // postulantes y visitantes anónimos), separado de los requisitos de
-    // documentos (ReqDocumento) que son para la carga de archivos.
+    // postulantes y visitantes anónimos). Los requisitos que se muestran ahí
+    // son los ReqDocumento que ya existían (carga de archivos/enlaces): no
+    // hay una lista de "requisitos" separada.
     @Column(name = "descripcion", columnDefinition = "TEXT")
     private String descripcion;
 
@@ -57,11 +58,4 @@ public class Programa {
     @OrderColumn(name = "orden")
     @Builder.Default
     private List<String> modulos = new ArrayList<>();
-
-    @ElementCollection(fetch = FetchType.LAZY)
-    @CollectionTable(name = "programa_requisito_general", joinColumns = @JoinColumn(name = "id_programa"))
-    @Column(name = "requisito", length = 255)
-    @OrderColumn(name = "orden")
-    @Builder.Default
-    private List<String> requisitosGenerales = new ArrayList<>();
 }

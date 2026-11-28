@@ -1,15 +1,17 @@
 import { of, throwError } from 'rxjs';
-import { ProgramasAdminComponent } from './programas-admin';
+import { ProgramaFormComponent } from './programa-form';
 import { CriterioEvaluacionResponse } from '../../core/models/evaluacion.model';
 
 function criterio(id: number, orden: number, nombreCriterio: string, activo = true): CriterioEvaluacionResponse {
   return { id, orden, nombreCriterio, descripcion: '', activo };
 }
 
-describe('ProgramasAdminComponent - CRUD de criterios de evaluación', () => {
-  let component: ProgramasAdminComponent;
+describe('ProgramaFormComponent - CRUD de criterios de evaluación', () => {
+  let component: ProgramaFormComponent;
   let criterioServiceFake: any;
-  const programaServiceFake = { listarTodos: vi.fn(() => of([])) };
+  const routeFake = { snapshot: { paramMap: { get: () => null } } };
+  const routerFake = { navigate: vi.fn() };
+  const programaServiceFake = {};
   const reqDocServiceFake = {};
   const preguntaServiceFake = {};
   const confirmDialogFake = { confirmar: vi.fn() };
@@ -25,7 +27,8 @@ describe('ProgramasAdminComponent - CRUD de criterios de evaluación', () => {
       actualizar: vi.fn(),
       cambiarActivo: vi.fn(),
     };
-    component = new ProgramasAdminComponent(
+    component = new ProgramaFormComponent(
+      routeFake as any, routerFake as any,
       programaServiceFake as any, criterioServiceFake, reqDocServiceFake as any, preguntaServiceFake as any,
       confirmDialogFake as any,
     );

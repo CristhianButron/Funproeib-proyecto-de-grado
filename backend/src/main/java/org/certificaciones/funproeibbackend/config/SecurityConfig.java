@@ -73,8 +73,11 @@ public class SecurityConfig {
                         .requestMatchers(HttpMethod.GET, "/api/ubicaciones/**").permitAll()
 
                         // Público: el landing y la pantalla de "convocatoria completa" los
-                        // muestran a cualquier visitante, no solo a usuarios logueados.
+                        // muestran a cualquier visitante, no solo a usuarios logueados. Los
+                        // requisitos de documentos también, porque ahí es donde se muestran
+                        // los "requisitos" de la convocatoria.
                         .requestMatchers(HttpMethod.GET, "/api/programas", "/api/programas/*").permitAll()
+                        .requestMatchers(HttpMethod.GET, "/api/req-documentos/programa/*").permitAll()
 
                         // Solo administrador: gestión de usuarios, catálogos y reportes.
                         .requestMatchers(HttpMethod.GET, "/api/usuarios", "/api/usuarios/pendientes-identidad").hasRole("ADMIN")

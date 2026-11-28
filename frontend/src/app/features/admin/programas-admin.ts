@@ -2,14 +2,7 @@ import { Component, OnInit, signal, computed } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { RouterLink } from '@angular/router';
 import { ProgramaService } from '../../core/services/programa.service';
-import { CriterioService } from '../../core/services/criterio.service';
-import { ReqDocumentoService } from '../../core/services/reqdoc.service';
-import { PreguntaService } from '../../core/services/pregunta.service';
-import { ConfirmDialogService } from '../../core/services/confirm-dialog.service';
-import { ProgramaResponse, ProgramaRequest, EstadoPrograma } from '../../core/models/programa.model';
-import { CriterioEvaluacionResponse } from '../../core/models/evaluacion.model';
-import { ReqDocumentoResponse } from '../../core/models/documento.model';
-import { PreguntaResponse } from '../../core/models/pregunta.model';
+import { ProgramaResponse, EstadoPrograma } from '../../core/models/programa.model';
 
 @Component({
   selector: 'app-programas-admin',
@@ -21,9 +14,9 @@ import { PreguntaResponse } from '../../core/models/pregunta.model';
         <h1 class="text-3xl font-extrabold text-primary-dark">Programas de formación</h1>
         <p class="text-on-surface-variant">Crea y gestiona las convocatorias.</p>
       </div>
-      <button (click)="abrirCrear()" class="px-5 py-3 rounded-xl bg-primary text-white font-bold hover:bg-primary-dark transition-colors flex items-center gap-2 shadow-card">
+      <a routerLink="/admin/programas/nuevo" class="px-5 py-3 rounded-xl bg-primary text-white font-bold hover:bg-primary-dark transition-colors flex items-center gap-2 shadow-card">
         <span class="material-symbols-outlined">add</span> Crear programa
-      </button>
+      </a>
     </div>
 
     @if (mensaje()) {
@@ -82,14 +75,9 @@ import { PreguntaResponse } from '../../core/models/pregunta.model';
                 <option value="ABIERTO">Abierto</option>
                 <option value="CERRADO">Cerrado</option>
               </select>
-              <div class="flex items-center gap-1">
-                <button (click)="abrirEditar(p)" class="p-1.5 rounded-lg text-on-surface-variant hover:bg-surface-high transition-colors" title="Editar" aria-label="Editar programa">
-                  <span class="material-symbols-outlined text-[18px]">edit</span>
-                </button>
-                <button (click)="configurar(p)" class="px-3 py-1.5 rounded-lg text-primary hover:bg-primary-fixed transition-colors text-xs font-bold flex items-center gap-1">
-                  <span class="material-symbols-outlined text-[16px]">tune</span> Configurar
-                </button>
-              </div>
+              <a [routerLink]="['/admin/programas', p.id]" class="px-3 py-1.5 rounded-lg text-primary hover:bg-primary-fixed transition-colors text-xs font-bold flex items-center gap-1">
+                <span class="material-symbols-outlined text-[16px]">edit</span> Editar programa
+              </a>
             </div>
           </div>
         } @empty {
@@ -102,283 +90,10 @@ import { PreguntaResponse } from '../../core/models/pregunta.model';
     }
   </div>
 
-  <!-- Modal crear/editar -->
-  @if (modalForm()) {
-    <div class="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4" (click)="modalForm.set(false)">
-      <div class="bg-white w-full max-w-xl rounded-2xl shadow-xl overflow-hidden max-h-[90vh] flex flex-col" (click)="$event.stopPropagation()">
-        <div class="bg-primary text-white px-6 py-4 flex items-center justify-between">
-          <h2 class="font-bold text-lg flex items-center gap-2">
-            <span class="material-symbols-outlined">{{ editandoId() ? 'edit' : 'add_circle' }}</span>
-            {{ editandoId() ? 'Editar programa' : 'Nuevo programa' }}
-          </h2>
-          <button (click)="modalForm.set(false)" aria-label="Cerrar"><span class="material-symbols-outlined">close</span></button>
-        </div>
-
-        <!-- Indicador de pasos -->
-        <div class="flex items-center px-6 pt-5 pb-2 bg-surface-low border-b border-outline-variant">
-          @for (paso of pasosForm; track paso.titulo; let i = $index; let last = $last) {
-            <button (click)="pasoForm.set(i)" class="flex items-center gap-2 shrink-0" [attr.aria-current]="pasoForm() === i ? 'step' : null">
-              <span class="w-7 h-7 rounded-full flex items-center justify-center text-xs font-bold shrink-0"
-                [class]="pasoForm() === i ? 'bg-primary text-white' : (pasoForm() > i ? 'bg-secondary-light text-on-secondary-container' : 'bg-surface-high text-on-surface-variant')">
-                @if (pasoForm() > i) { <span class="material-symbols-outlined text-[16px]">check</span> } @else { {{ i + 1 }} }
-              </span>
-              <span class="text-sm font-semibold" [class]="pasoForm() === i ? 'text-primary-dark' : 'text-on-surface-variant'">{{ paso.titulo }}</span>
-            </button>
-            @if (!last) { <div class="flex-1 h-0.5 mx-2" [class]="pasoForm() > i ? 'bg-secondary' : 'bg-outline-variant'"></div> }
-          }
-        </div>
-
-        <div class="p-6 space-y-4 overflow-y-auto custom-scrollbar">
-          @if (pasoForm() === 0) {
-          <div>
-            <label class="block text-sm font-semibold mb-1">Nombre del programa *</label>
-            <input [(ngModel)]="form.nombre" class="campo" placeholder="Ej: Diplomado en Educación Intercultural" />
-          </div>
-          <div class="grid grid-cols-2 gap-4">
-            <div>
-              <label class="block text-sm font-semibold mb-1">Tipo *</label>
-              <select [(ngModel)]="form.tipo" class="campo">
-                <option value="DIPLOMADO">Diplomado</option>
-                <option value="CURSO">Curso</option>
-                <option value="TALLER">Taller</option>
-              </select>
-            </div>
-            <div>
-              <label class="block text-sm font-semibold mb-1">Edición</label>
-              <input [(ngModel)]="form.edicion" class="campo" placeholder="Ej: 2026-I" maxlength="10" />
-            </div>
-            <div>
-              <label class="block text-sm font-semibold mb-1">Fecha inicio *</label>
-              <input type="date" [(ngModel)]="form.fechaInicio" class="campo" />
-            </div>
-            <div>
-              <label class="block text-sm font-semibold mb-1">Fecha fin *</label>
-              <input type="date" [(ngModel)]="form.fechaFin" [min]="hoy" class="campo" />
-            </div>
-            <div>
-              <label class="block text-sm font-semibold mb-1">Cupos disponibles *</label>
-              <input type="number" min="1" [(ngModel)]="form.cuposDisponibles" class="campo" placeholder="30" />
-            </div>
-          </div>
-          }
-
-          @if (pasoForm() === 1) {
-          <section>
-            <p class="text-xs text-on-surface-variant mb-4">
-              Esto es lo que verá cualquier visitante en la pantalla de "convocatoria completa" antes de postularse.
-            </p>
-            <div class="mb-4">
-              <label class="block text-sm font-semibold mb-1">Descripción general</label>
-              <textarea [(ngModel)]="form.descripcion" rows="4" class="campo w-full" placeholder="Describe de qué se trata el programa, a quién está dirigido, etc."></textarea>
-            </div>
-
-            <div class="mb-4">
-              <label class="block text-sm font-semibold mb-2">Módulos</label>
-              <div class="space-y-1 mb-2">
-                @for (m of form.modulos; track $index; let i = $index) {
-                  <div class="flex items-center justify-between bg-surface-low rounded-lg px-3 py-1.5">
-                    <span class="text-sm">{{ m }}</span>
-                    <button (click)="quitarModulo(i)" class="text-error hover:bg-error-container rounded p-1" title="Quitar" aria-label="Quitar módulo"><span class="material-symbols-outlined text-[16px]">close</span></button>
-                  </div>
-                } @empty { <p class="text-xs text-on-surface-variant">Sin módulos aún.</p> }
-              </div>
-              <div class="flex gap-2">
-                <input [(ngModel)]="nuevoModulo" (keydown.enter)="$event.preventDefault(); agregarModulo()" class="campo flex-1" placeholder="Ej: Módulo 1: Fundamentos" />
-                <button (click)="agregarModulo()" class="px-3 rounded-lg bg-primary text-white font-semibold hover:bg-primary-dark transition-colors text-sm">+</button>
-              </div>
-            </div>
-
-            <div>
-              <label class="block text-sm font-semibold mb-2">Requisitos generales</label>
-              <div class="space-y-1 mb-2">
-                @for (r of form.requisitosGenerales; track $index; let i = $index) {
-                  <div class="flex items-center justify-between bg-surface-low rounded-lg px-3 py-1.5">
-                    <span class="text-sm">{{ r }}</span>
-                    <button (click)="quitarRequisito(i)" class="text-error hover:bg-error-container rounded p-1" title="Quitar" aria-label="Quitar requisito"><span class="material-symbols-outlined text-[16px]">close</span></button>
-                  </div>
-                } @empty { <p class="text-xs text-on-surface-variant">Sin requisitos aún.</p> }
-              </div>
-              <div class="flex gap-2">
-                <input [(ngModel)]="nuevoRequisito" (keydown.enter)="$event.preventDefault(); agregarRequisito()" class="campo flex-1" placeholder="Ej: Ser mayor de 18 años" />
-                <button (click)="agregarRequisito()" class="px-3 rounded-lg bg-primary text-white font-semibold hover:bg-primary-dark transition-colors text-sm">+</button>
-              </div>
-            </div>
-          </section>
-          }
-        </div>
-        <div class="bg-surface-low px-6 py-4 flex items-center justify-between border-t border-outline-variant">
-          @if (pasoForm() === 0) {
-            <button (click)="modalForm.set(false)" class="px-5 py-2 rounded-lg font-semibold text-on-surface-variant hover:bg-surface-high transition-colors">Cancelar</button>
-            <button (click)="pasoForm.set(1)" class="px-5 py-2 rounded-lg font-bold bg-primary text-white hover:bg-primary-dark transition-colors flex items-center gap-1">
-              Siguiente <span class="material-symbols-outlined text-[18px]">arrow_forward</span>
-            </button>
-          } @else {
-            <button (click)="pasoForm.set(0)" class="px-4 py-2 rounded-lg font-semibold text-on-surface-variant hover:bg-surface-high transition-colors flex items-center gap-1">
-              <span class="material-symbols-outlined text-[18px]">arrow_back</span> Atrás
-            </button>
-            <button (click)="guardar()" [disabled]="guardando()" class="px-5 py-2 rounded-lg font-bold bg-primary text-white hover:bg-primary-dark transition-colors disabled:opacity-50">
-              {{ guardando() ? 'Guardando...' : (editandoId() ? 'Guardar cambios' : 'Guardar programa') }}
-            </button>
-          }
-        </div>
-      </div>
-    </div>
-  }
-
-  <!-- Modal configurar (en pasos) -->
-  @if (programaConfig(); as pc) {
-    <div class="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4" (click)="programaConfig.set(null)">
-      <div class="bg-white w-full max-w-2xl rounded-2xl shadow-xl overflow-hidden max-h-[90vh] flex flex-col" (click)="$event.stopPropagation()">
-        <div class="bg-tertiary text-white px-6 py-4 flex items-center justify-between">
-          <div>
-            <h2 class="font-bold text-lg">{{ pc.nombre }}</h2>
-            <p class="text-on-tertiary-container text-sm">Requisitos, preguntas y criterios</p>
-          </div>
-          <button (click)="programaConfig.set(null)" aria-label="Cerrar"><span class="material-symbols-outlined">close</span></button>
-        </div>
-
-        <!-- Indicador de pasos -->
-        <div class="flex items-center px-6 pt-5 pb-2 bg-surface-low border-b border-outline-variant">
-          @for (paso of pasosConfig; track paso.titulo; let i = $index; let last = $last) {
-            <button (click)="pasoConfig.set(i)" class="flex items-center gap-2 shrink-0" [attr.aria-current]="pasoConfig() === i ? 'step' : null">
-              <span class="w-7 h-7 rounded-full flex items-center justify-center text-xs font-bold shrink-0"
-                [class]="pasoConfig() === i ? 'bg-primary text-white' : (pasoConfig() > i ? 'bg-secondary-light text-on-secondary-container' : 'bg-surface-high text-on-surface-variant')">
-                @if (pasoConfig() > i) { <span class="material-symbols-outlined text-[16px]">check</span> } @else { {{ i + 1 }} }
-              </span>
-              <span class="text-sm font-semibold hidden sm:inline" [class]="pasoConfig() === i ? 'text-primary-dark' : 'text-on-surface-variant'">{{ paso.titulo }}</span>
-            </button>
-            @if (!last) { <div class="flex-1 h-0.5 mx-2" [class]="pasoConfig() > i ? 'bg-secondary' : 'bg-outline-variant'"></div> }
-          }
-        </div>
-
-        <div class="p-6 overflow-y-auto custom-scrollbar">
-
-          <!-- Paso 1: Requisitos -->
-          @if (pasoConfig() === 0) {
-          <section>
-            <h3 class="font-bold text-primary-dark flex items-center gap-2 mb-3"><span class="material-symbols-outlined">description</span> Requisitos de documentos</h3>
-            <div class="space-y-2 mb-4">
-              @for (r of requisitos(); track r.id) {
-                <div class="flex items-center justify-between bg-surface-low rounded-lg px-4 py-2">
-                  <div>
-                    <p class="font-semibold text-sm">{{ r.nombreDocumento }}
-                      <span class="text-xs font-bold ml-2" [class]="r.obligatorio ? 'text-error' : 'text-on-surface-variant'">{{ r.obligatorio ? 'Obligatorio' : 'Opcional' }}</span>
-                    </p>
-                    <p class="text-xs text-on-surface-variant">{{ r.descripcion }} · {{ r.tipoPermitido === 'ENLACE' ? 'Enlace' : 'Archivo' }}</p>
-                  </div>
-                </div>
-              } @empty { <p class="text-sm text-on-surface-variant">Sin requisitos aún.</p> }
-            </div>
-            <div class="grid grid-cols-2 gap-2 bg-surface rounded-lg p-3">
-              <input [(ngModel)]="nuevoReq.nombreDocumento" class="campo col-span-2" placeholder="Nombre del documento (ej: Hoja de vida)" />
-              <input [(ngModel)]="nuevoReq.descripcion" class="campo col-span-2" placeholder="Descripción (opcional)" />
-              <select [(ngModel)]="nuevoReq.tipoPermitido" class="campo"><option value="PDF">Archivo (PDF, Word o imagen)</option><option value="ENLACE">Enlace</option></select>
-              <select [(ngModel)]="nuevoReq.obligatorio" class="campo"><option [ngValue]="true">Obligatorio</option><option [ngValue]="false">Opcional</option></select>
-              <button (click)="agregarReq(pc.id)" class="col-span-2 py-2 rounded-lg bg-primary text-white font-semibold hover:bg-primary-dark transition-colors text-sm">+ Agregar requisito</button>
-            </div>
-          </section>
-          }
-
-          <!-- Paso 2: Preguntas -->
-          @if (pasoConfig() === 1) {
-          <section>
-            <h3 class="font-bold text-primary-dark flex items-center gap-2 mb-3"><span class="material-symbols-outlined">quiz</span> Preguntas de postulación</h3>
-            <p class="text-xs text-on-surface-variant mb-3">El postulante responderá estas preguntas con texto. El evaluador las leerá para calificar los criterios.</p>
-            <div class="space-y-2 mb-4">
-              @for (q of preguntas(); track q.id) {
-                <div class="flex items-center justify-between bg-surface-low rounded-lg px-4 py-2">
-                  <p class="font-semibold text-sm flex-1">{{ q.orden }}. {{ q.enunciado }}</p>
-                  <button (click)="eliminarPregunta(q)" class="text-error hover:bg-error-container rounded p-1" title="Eliminar" aria-label="Eliminar pregunta"><span class="material-symbols-outlined text-[18px]">delete</span></button>
-                </div>
-              } @empty { <p class="text-sm text-on-surface-variant">Sin preguntas aún.</p> }
-            </div>
-            <div class="bg-surface rounded-lg p-3 space-y-2">
-              <textarea [(ngModel)]="nuevaPregunta" rows="2" class="campo w-full" placeholder="Ej: ¿Cuántas veces hiciste voluntariado y cuál te gustó más? Describe tu experiencia."></textarea>
-              <button (click)="agregarPregunta(pc.id)" class="w-full py-2 rounded-lg bg-primary text-white font-semibold hover:bg-primary-dark transition-colors text-sm">+ Agregar pregunta</button>
-            </div>
-          </section>
-          }
-
-          <!-- Paso 3: Criterios -->
-          @if (pasoConfig() === 2) {
-          <section>
-            <h3 class="font-bold text-primary-dark flex items-center gap-2 mb-3"><span class="material-symbols-outlined">checklist</span> Criterios de evaluación</h3>
-            <p class="text-xs text-on-surface-variant mb-3">
-              Son los mismos para todos los programas (no se configuran por programa). Cada uno se califica de 1 a 10, y el puntaje total de la evaluación se ajusta solo para sumar 100: ahora mismo hay
-              <b>{{ criteriosActivos().length }}</b> activo(s), cada uno vale hasta <b>{{ valorPorCriterio() }}</b> pts.
-            </p>
-            <div class="space-y-2 mb-4">
-              @for (c of criterios(); track c.id) {
-                <div class="bg-surface-low rounded-lg px-4 py-2" [class.opacity-50]="!c.activo">
-                  @if (editandoCriterioId() === c.id) {
-                    <input [(ngModel)]="edicionCriterio.nombreCriterio" class="campo mb-1" placeholder="Nombre" />
-                    <input [(ngModel)]="edicionCriterio.descripcion" class="campo mb-2" placeholder="Descripción (opcional)" />
-                    <div class="flex gap-2">
-                      <button (click)="guardarEdicionCriterio(c)" [disabled]="guardandoCriterio()" class="px-3 py-1 rounded-lg bg-primary text-white text-xs font-bold hover:bg-primary-dark transition-colors">Guardar</button>
-                      <button (click)="cancelarEdicionCriterio()" class="px-3 py-1 rounded-lg text-on-surface-variant hover:bg-surface-high text-xs font-semibold">Cancelar</button>
-                    </div>
-                  } @else {
-                    <div class="flex items-center justify-between gap-2">
-                      <div class="min-w-0">
-                        <p class="font-semibold text-sm">{{ c.orden }}. {{ c.nombreCriterio }}
-                          @if (!c.activo) { <span class="ml-1 px-2 py-0.5 rounded-full text-xs font-bold bg-surface-high text-on-surface-variant">Inactivo</span> }
-                        </p>
-                        @if (c.descripcion) { <p class="text-xs text-on-surface-variant">{{ c.descripcion }}</p> }
-                      </div>
-                      <div class="flex items-center gap-1 shrink-0">
-                        <button (click)="iniciarEdicionCriterio(c)" class="px-2 py-1 rounded-lg text-primary hover:bg-primary-fixed text-xs font-semibold">Editar</button>
-                        @if (c.activo) {
-                          <button (click)="desactivarCriterio(c)" class="px-2 py-1 rounded-lg text-error hover:bg-error-container text-xs font-semibold">Desactivar</button>
-                        } @else {
-                          <button (click)="activarCriterio(c)" class="px-2 py-1 rounded-lg text-secondary hover:bg-secondary-light text-xs font-semibold">Reactivar</button>
-                        }
-                      </div>
-                    </div>
-                  }
-                </div>
-              } @empty { <p class="text-sm text-on-surface-variant">Sin criterios aún.</p> }
-            </div>
-            <div class="grid grid-cols-2 gap-2 bg-surface rounded-lg p-3">
-              <div class="col-span-2">
-                <input [(ngModel)]="nuevoCriterio.nombreCriterio" (ngModelChange)="nombreCriterioInvalido.set(false)"
-                  class="campo w-full" [class.campo-invalido]="nombreCriterioInvalido()" placeholder="Nombre del criterio (ej: Trabajo en equipo)" />
-                @if (nombreCriterioInvalido()) { <p class="text-xs text-error mt-1">Campo requerido</p> }
-              </div>
-              <input [(ngModel)]="nuevoCriterio.descripcion" class="campo col-span-2" placeholder="Descripción (opcional)" />
-              <button (click)="agregarCriterio()" [disabled]="guardandoCriterio()" class="col-span-2 py-2 rounded-lg bg-primary text-white font-semibold hover:bg-primary-dark transition-colors text-sm">+ Agregar criterio</button>
-            </div>
-          </section>
-          }
-        </div>
-
-        <div class="bg-surface-low px-6 py-4 flex items-center justify-between border-t border-outline-variant">
-          <button (click)="pasoConfig.set(pasoConfig() - 1)" [disabled]="pasoConfig() === 0"
-            class="px-4 py-2 rounded-lg font-semibold text-on-surface-variant hover:bg-surface-high transition-colors disabled:opacity-0 flex items-center gap-1">
-            <span class="material-symbols-outlined text-[18px]">arrow_back</span> Atrás
-          </button>
-          @if (pasoConfig() < pasosConfig.length - 1) {
-            <button (click)="pasoConfig.set(pasoConfig() + 1)" class="px-5 py-2 rounded-lg font-bold bg-primary text-white hover:bg-primary-dark transition-colors flex items-center gap-1">
-              Siguiente <span class="material-symbols-outlined text-[18px]">arrow_forward</span>
-            </button>
-          } @else {
-            <button (click)="programaConfig.set(null)" class="px-5 py-2 rounded-lg font-bold bg-secondary text-white hover:opacity-90 transition-colors flex items-center gap-1">
-              <span class="material-symbols-outlined text-[18px]">check</span> Finalizar
-            </button>
-          }
-        </div>
-      </div>
-    </div>
-  }
   `,
-  styles: [`
-    .campo { width:100%; padding:.5rem .7rem; border:1px solid #c5c5d3; border-radius:.5rem; outline:none; font-size:.875rem; }
-    .campo:focus { border-color:#9a4a2e; box-shadow:0 0 0 2px rgba(154,74,46,.2); }
-    .campo-invalido { border-color:#ba1a1a; }
-  `],
 })
 export class ProgramasAdminComponent implements OnInit {
   estados: EstadoPrograma[] = ['BORRADOR', 'ACTIVO', 'ABIERTO', 'CERRADO'];
-  hoy = new Date().toISOString().slice(0, 10);
 
   programas = signal<ProgramaResponse[]>([]);
   busqueda = '';
@@ -390,49 +105,13 @@ export class ProgramasAdminComponent implements OnInit {
   });
 
   cargando = signal(true);
-  guardando = signal(false);
-  modalForm = signal(false);
-  editandoId = signal<number | null>(null);
-  pasoForm = signal(0);
-  pasosForm = [{ titulo: 'Datos generales' }, { titulo: 'Descripción pública' }];
-  nuevoModulo = '';
-  nuevoRequisito = '';
-  programaConfig = signal<ProgramaResponse | null>(null);
-  pasoConfig = signal(0);
-  pasosConfig = [{ titulo: 'Requisitos' }, { titulo: 'Preguntas' }, { titulo: 'Criterios' }];
-  criterios = signal<CriterioEvaluacionResponse[]>([]);
-  criteriosActivos = computed(() => this.criterios().filter(c => c.activo));
-  valorPorCriterio = computed(() => {
-    const n = this.criteriosActivos().length;
-    return n > 0 ? (100 / n).toFixed(2) : '0.00';
-  });
-  requisitos = signal<ReqDocumentoResponse[]>([]);
-  preguntas = signal<PreguntaResponse[]>([]);
   mensaje = signal<string | null>(null);
   mensajeError = signal(false);
 
-  form: ProgramaRequest = this.vacio();
-  nuevoReq: { nombreDocumento: string; descripcion: string; tipoPermitido: 'PDF' | 'ENLACE'; obligatorio: boolean } =
-    { nombreDocumento: '', descripcion: '', tipoPermitido: 'PDF', obligatorio: true };
-  nuevaPregunta = '';
-
-  nuevoCriterio = { nombreCriterio: '', descripcion: '' };
-  editandoCriterioId = signal<number | null>(null);
-  edicionCriterio = { nombreCriterio: '', descripcion: '' };
-  guardandoCriterio = signal(false);
-  nombreCriterioInvalido = signal(false);
-
-  constructor(
-    private programaService: ProgramaService,
-    private criterioService: CriterioService,
-    private reqDocService: ReqDocumentoService,
-    private preguntaService: PreguntaService,
-    private confirmDialog: ConfirmDialogService,
-  ) {}
+  constructor(private programaService: ProgramaService) {}
 
   ngOnInit(): void {
     this.cargar();
-    this.criterioService.listarTodos().subscribe(c => this.criterios.set(c));
   }
 
   cargar(): void {
@@ -443,171 +122,10 @@ export class ProgramasAdminComponent implements OnInit {
     });
   }
 
-  vacio(): ProgramaRequest {
-    return { nombre: '', tipo: 'DIPLOMADO', edicion: '', fechaInicio: '', fechaFin: '', cuposDisponibles: 30, descripcion: '', modulos: [], requisitosGenerales: [] };
-  }
-
-  abrirCrear(): void {
-    this.form = this.vacio(); this.editandoId.set(null); this.pasoForm.set(0);
-    this.nuevoModulo = ''; this.nuevoRequisito = '';
-    this.modalForm.set(true);
-  }
-
-  abrirEditar(p: ProgramaResponse): void {
-    this.form = {
-      nombre: p.nombre, tipo: p.tipo, edicion: p.edicion ?? '', fechaInicio: p.fechaInicio, fechaFin: p.fechaFin, cuposDisponibles: p.cuposDisponibles,
-      descripcion: p.descripcion ?? '', modulos: [...(p.modulos ?? [])], requisitosGenerales: [...(p.requisitosGenerales ?? [])],
-    };
-    this.editandoId.set(p.id);
-    this.pasoForm.set(0);
-    this.nuevoModulo = ''; this.nuevoRequisito = '';
-    this.modalForm.set(true);
-  }
-
-  agregarModulo(): void {
-    const v = this.nuevoModulo.trim();
-    if (!v) return;
-    this.form.modulos = [...(this.form.modulos ?? []), v];
-    this.nuevoModulo = '';
-  }
-
-  quitarModulo(i: number): void {
-    this.form.modulos = (this.form.modulos ?? []).filter((_, idx) => idx !== i);
-  }
-
-  agregarRequisito(): void {
-    const v = this.nuevoRequisito.trim();
-    if (!v) return;
-    this.form.requisitosGenerales = [...(this.form.requisitosGenerales ?? []), v];
-    this.nuevoRequisito = '';
-  }
-
-  quitarRequisito(i: number): void {
-    this.form.requisitosGenerales = (this.form.requisitosGenerales ?? []).filter((_, idx) => idx !== i);
-  }
-
-  guardar(): void {
-    this.guardando.set(true);
-    const id = this.editandoId();
-    const obs = id ? this.programaService.actualizar(id, this.form) : this.programaService.crear(this.form);
-    obs.subscribe({
-      next: () => {
-        this.guardando.set(false);
-        this.modalForm.set(false);
-        this.notificar(id ? 'Programa actualizado' : 'Programa creado', false);
-        this.cargar();
-      },
-      error: (err) => { this.guardando.set(false); this.notificar(err.error?.mensaje || 'Error al guardar', true); },
-    });
-  }
-
   cambiarEstado(p: ProgramaResponse, estado: EstadoPrograma): void {
     this.programaService.cambiarEstado(p.id, estado).subscribe({
       next: (a) => { this.programas.update(l => l.map(x => x.id === p.id ? { ...x, estado: a.estado } : x)); this.notificar('Estado actualizado', false); },
       error: (err) => this.notificar(err.error?.mensaje || 'Error al cambiar estado', true),
-    });
-  }
-
-  configurar(p: ProgramaResponse): void {
-    this.programaConfig.set(p);
-    this.pasoConfig.set(0);
-    this.requisitos.set([]); this.preguntas.set([]);
-    this.reqDocService.listarPorPrograma(p.id).subscribe(r => this.requisitos.set(r));
-    this.preguntaService.listarPorPrograma(p.id).subscribe(q => this.preguntas.set(q));
-  }
-
-  agregarReq(idPrograma: number): void {
-    if (!this.nuevoReq.nombreDocumento) return;
-    this.reqDocService.crear({ idPrograma, ...this.nuevoReq }).subscribe({
-      next: (r) => { this.requisitos.update(l => [...l, r]); this.nuevoReq = { nombreDocumento: '', descripcion: '', tipoPermitido: 'PDF', obligatorio: true }; this.notificar('Requisito agregado', false); },
-      error: (err) => this.notificar(err.error?.mensaje || 'Error al agregar requisito', true),
-    });
-  }
-
-  agregarPregunta(idPrograma: number): void {
-    if (!this.nuevaPregunta.trim()) return;
-    const orden = this.preguntas().length + 1;
-    this.preguntaService.crear({ idPrograma, enunciado: this.nuevaPregunta.trim(), orden }).subscribe({
-      next: (q) => { this.preguntas.update(l => [...l, q]); this.nuevaPregunta = ''; this.notificar('Pregunta agregada', false); },
-      error: (err) => this.notificar(err.error?.mensaje || 'Error al agregar pregunta', true),
-    });
-  }
-
-  async eliminarPregunta(q: PreguntaResponse): Promise<void> {
-    const confirmado = await this.confirmDialog.confirmar({
-      titulo: 'Eliminar pregunta',
-      mensaje: `¿Eliminar la pregunta "${q.enunciado}"?`,
-      textoConfirmar: 'Eliminar',
-      peligroso: true,
-    });
-    if (!confirmado) return;
-
-    this.preguntaService.eliminar(q.id).subscribe({
-      next: () => { this.preguntas.update(l => l.filter(x => x.id !== q.id)); this.notificar('Pregunta eliminada', false); },
-      error: (err) => this.notificar(err.error?.mensaje || 'Error al eliminar', true),
-    });
-  }
-
-  agregarCriterio(): void {
-    if (!this.nuevoCriterio.nombreCriterio.trim()) { this.nombreCriterioInvalido.set(true); return; }
-    this.guardandoCriterio.set(true);
-    this.criterioService.crear({
-      nombreCriterio: this.nuevoCriterio.nombreCriterio.trim(),
-      descripcion: this.nuevoCriterio.descripcion.trim() || undefined,
-    }).subscribe({
-      next: (c) => {
-        this.guardandoCriterio.set(false);
-        this.criterios.update(l => [...l, c]);
-        this.nuevoCriterio = { nombreCriterio: '', descripcion: '' };
-        this.notificar(`Criterio agregado. Ahora cada criterio activo vale ${this.valorPorCriterio()} puntos.`, false);
-      },
-      error: (err) => { this.guardandoCriterio.set(false); this.notificar(err.error?.mensaje || 'Error al agregar el criterio', true); },
-    });
-  }
-
-  iniciarEdicionCriterio(c: CriterioEvaluacionResponse): void {
-    this.editandoCriterioId.set(c.id);
-    this.edicionCriterio = { nombreCriterio: c.nombreCriterio, descripcion: c.descripcion ?? '' };
-  }
-
-  cancelarEdicionCriterio(): void {
-    this.editandoCriterioId.set(null);
-  }
-
-  guardarEdicionCriterio(c: CriterioEvaluacionResponse): void {
-    if (!this.edicionCriterio.nombreCriterio.trim()) { this.notificar('El nombre no puede quedar vacío', true); return; }
-    this.guardandoCriterio.set(true);
-    this.criterioService.actualizar(c.id, {
-      nombreCriterio: this.edicionCriterio.nombreCriterio.trim(),
-      descripcion: this.edicionCriterio.descripcion.trim() || undefined,
-    }).subscribe({
-      next: (actualizado) => {
-        this.guardandoCriterio.set(false);
-        this.criterios.update(l => l.map(x => x.id === actualizado.id ? actualizado : x));
-        this.editandoCriterioId.set(null);
-        this.notificar('Criterio actualizado', false);
-      },
-      error: (err) => { this.guardandoCriterio.set(false); this.notificar(err.error?.mensaje || 'Error al actualizar el criterio', true); },
-    });
-  }
-
-  desactivarCriterio(c: CriterioEvaluacionResponse): void {
-    this.criterioService.cambiarActivo(c.id, false).subscribe({
-      next: (actualizado) => {
-        this.criterios.update(l => l.map(x => x.id === actualizado.id ? actualizado : x));
-        this.notificar(`Criterio desactivado. Ahora cada criterio activo vale ${this.valorPorCriterio()} puntos.`, false);
-      },
-      error: (err) => this.notificar(err.error?.mensaje || 'Error al desactivar el criterio', true),
-    });
-  }
-
-  activarCriterio(c: CriterioEvaluacionResponse): void {
-    this.criterioService.cambiarActivo(c.id, true).subscribe({
-      next: (actualizado) => {
-        this.criterios.update(l => l.map(x => x.id === actualizado.id ? actualizado : x));
-        this.notificar(`Criterio reactivado. Ahora cada criterio activo vale ${this.valorPorCriterio()} puntos.`, false);
-      },
-      error: (err) => this.notificar(err.error?.mensaje || 'Error al reactivar el criterio', true),
     });
   }
 

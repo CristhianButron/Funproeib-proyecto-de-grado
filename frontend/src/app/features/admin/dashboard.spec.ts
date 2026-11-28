@@ -18,7 +18,7 @@ function programaFake(overrides: Partial<ProgramaResponse> = {}): ProgramaRespon
   return {
     id: 1, nombre: 'Diplomado EIB', tipo: 'DIPLOMADO', fechaInicio: '2026-01-01',
     fechaFin: '2026-06-01', cuposDisponibles: 20, estado: 'ABIERTO',
-    modulos: [], requisitosGenerales: [],
+    modulos: [],
     ...overrides,
   };
 }

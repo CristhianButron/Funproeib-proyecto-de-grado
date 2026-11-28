@@ -1,7 +1,11 @@
 import { Component, OnInit, signal } from '@angular/core';
 import { RouterLink } from '@angular/router';
+import { forkJoin, of } from 'rxjs';
+import { catchError } from 'rxjs/operators';
 import { ProgramaService } from '../../core/services/programa.service';
+import { ReqDocumentoService } from '../../core/services/reqdoc.service';
 import { ProgramaResponse } from '../../core/models/programa.model';
+import { ReqDocumentoResponse } from '../../core/models/documento.model';
 
 @Component({
   selector: 'app-landing',
@@ -123,12 +127,12 @@ import { ProgramaResponse } from '../../core/models/programa.model';
                     <p class="flex items-center gap-2"><span class="material-symbols-outlined text-[16px] text-primary">event</span>{{ p.fechaInicio }} → {{ p.fechaFin }}</p>
                     <p class="flex items-center gap-2"><span class="material-symbols-outlined text-[16px] text-primary">groups</span>{{ p.cuposDisponibles }} cupos</p>
                   </div>
-                  @if (p.requisitosGenerales.length > 0) {
+                  @if (requisitosPorPrograma()[p.id]?.length) {
                     <div class="mt-3">
-                      <p class="text-xs font-bold text-on-surface-variant uppercase mb-1">Requisitos generales</p>
+                      <p class="text-xs font-bold text-on-surface-variant uppercase mb-1">Requisitos</p>
                       <ul class="text-sm text-on-surface-variant space-y-1">
-                        @for (r of p.requisitosGenerales.slice(0, 3); track $index) {
-                          <li class="flex items-start gap-1.5"><span class="material-symbols-outlined text-[14px] text-secondary mt-0.5">check_circle</span>{{ r }}</li>
+                        @for (r of requisitosPorPrograma()[p.id].slice(0, 3); track r.id) {
+                          <li class="flex items-start gap-1.5"><span class="material-symbols-outlined text-[14px] text-secondary mt-0.5">check_circle</span>{{ r.nombreDocumento }}</li>
                         }
                       </ul>
                     </div>
@@ -204,8 +208,9 @@ export class LandingComponent implements OnInit {
   ];
 
   programasAbiertos = signal<ProgramaResponse[]>([]);
+  requisitosPorPrograma = signal<Record<number, ReqDocumentoResponse[]>>({});
 
-  constructor(private programaService: ProgramaService) {}
+  constructor(private programaService: ProgramaService, private reqDocService: ReqDocumentoService) {}
 
   iconoTipo(tipo: string): string {
     const map: Record<string, string> = { DIPLOMADO: 'school', CURSO: 'menu_book', TALLER: 'construction' };
@@ -216,8 +221,17 @@ export class LandingComponent implements OnInit {
     this.programaService.listarTodos().subscribe({
       next: (data) => {
         this.programas.set(data);
-        this.programasAbiertos.set(data.filter(p => p.estado === 'ABIERTO'));
+        const abiertos = data.filter(p => p.estado === 'ABIERTO');
+        this.programasAbiertos.set(abiertos);
         this.cargando.set(false);
+
+        if (abiertos.length > 0) {
+          forkJoin(abiertos.map(p => this.reqDocService.listarPorPrograma(p.id).pipe(catchError(() => of([]))))).subscribe((listas) => {
+            const mapa: Record<number, ReqDocumentoResponse[]> = {};
+            abiertos.forEach((p, i) => mapa[p.id] = listas[i]);
+            this.requisitosPorPrograma.set(mapa);
+          });
+        }
       },
       error: () => this.cargando.set(false),
     });

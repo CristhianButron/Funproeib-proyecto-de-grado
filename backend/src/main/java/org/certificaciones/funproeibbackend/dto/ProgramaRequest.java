@@ -33,6 +33,4 @@ public class ProgramaRequest {
     private String descripcion;
 
     private List<@Size(max = 255) String> modulos;
-
-    private List<@Size(max = 255) String> requisitosGenerales;
 }

@@ -20,5 +20,4 @@ public class ProgramaResponse {
     private EstadoPrograma estado;
     private String descripcion;
     private List<String> modulos;
-    private List<String> requisitosGenerales;
 }

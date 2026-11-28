@@ -46,7 +46,6 @@ public class ProgramaServiceImpl implements ProgramaService {
                 .estado(EstadoPrograma.BORRADOR) // todo programa nace en borrador
                 .descripcion(request.getDescripcion())
                 .modulos(request.getModulos() != null ? new ArrayList<>(request.getModulos()) : new ArrayList<>())
-                .requisitosGenerales(request.getRequisitosGenerales() != null ? new ArrayList<>(request.getRequisitosGenerales()) : new ArrayList<>())
                 .build();
 
         return mapToResponse(programaRepository.save(programa));
@@ -86,7 +85,6 @@ public class ProgramaServiceImpl implements ProgramaService {
         programa.setCuposDisponibles(request.getCuposDisponibles());
         programa.setDescripcion(request.getDescripcion());
         programa.setModulos(request.getModulos() != null ? new ArrayList<>(request.getModulos()) : new ArrayList<>());
-        programa.setRequisitosGenerales(request.getRequisitosGenerales() != null ? new ArrayList<>(request.getRequisitosGenerales()) : new ArrayList<>());
 
         return mapToResponse(programaRepository.save(programa));
     }
@@ -141,7 +139,6 @@ public class ProgramaServiceImpl implements ProgramaService {
                 .estado(programa.getEstado())
                 .descripcion(programa.getDescripcion())
                 .modulos(List.copyOf(programa.getModulos()))
-                .requisitosGenerales(List.copyOf(programa.getRequisitosGenerales()))
                 .build();
     }
 }

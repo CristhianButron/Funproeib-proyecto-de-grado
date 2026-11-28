@@ -22,6 +22,8 @@ export const routes: Routes = [
     children: [
       { path: '', loadComponent: () => import('./features/admin/dashboard').then(m => m.AdminDashboardComponent) },
       { path: 'programas', loadComponent: () => import('./features/admin/programas-admin').then(m => m.ProgramasAdminComponent) },
+      { path: 'programas/nuevo', loadComponent: () => import('./features/admin/programa-form').then(m => m.ProgramaFormComponent) },
+      { path: 'programas/:id', loadComponent: () => import('./features/admin/programa-form').then(m => m.ProgramaFormComponent) },
       { path: 'postulantes', loadComponent: () => import('./features/admin/postulantes').then(m => m.PostulantesComponent) },
       { path: 'beneficiarios', loadComponent: () => import('./features/admin/beneficiarios').then(m => m.BeneficiariosComponent) },
       { path: 'beneficiarios/:id', loadComponent: () => import('./features/admin/ficha-beneficiario').then(m => m.FichaBeneficiarioComponent) },
