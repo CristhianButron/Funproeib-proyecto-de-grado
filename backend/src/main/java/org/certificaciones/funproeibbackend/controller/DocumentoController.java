@@ -12,6 +12,7 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
+import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 
@@ -75,11 +76,14 @@ public class DocumentoController {
     }
 
     // Solo ADMIN o el dueño, no EVALUADOR (igual que verificar): borrar un
-    // documento ya verificado se rechaza del lado del servicio.
+    // documento ya verificado se rechaza del lado del servicio, salvo que lo
+    // pida un ADMIN (corrigiendo un error del postulante desde la ficha).
     @PreAuthorize("hasRole('ADMIN') or @recursoAuth.esDuenoDeDocumento(#id, authentication.name)")
     @DeleteMapping("/{id}")
-    public ResponseEntity<Void> eliminar(@PathVariable Long id) {
-        documentoService.eliminar(id);
+    public ResponseEntity<Void> eliminar(@PathVariable Long id, Authentication authentication) {
+        boolean esAdmin = authentication.getAuthorities().stream()
+                .anyMatch(a -> a.getAuthority().equals("ROLE_ADMIN"));
+        documentoService.eliminar(id, esAdmin);
         return ResponseEntity.noContent().build();
     }
 }

@@ -5,6 +5,7 @@ import { PostulacionService } from '../../core/services/postulacion.service';
 import { DocumentoService } from '../../core/services/documento.service';
 import { UsuarioService } from '../../core/services/usuario.service';
 import { ProgramaService } from '../../core/services/programa.service';
+import { ConfirmDialogService } from '../../core/services/confirm-dialog.service';
 import { PostulacionResponse, EstadoPostulacion, EstadoAprovechamiento } from '../../core/models/postulacion.model';
 import { DocumentoResponse } from '../../core/models/documento.model';
 import { UsuarioResponse } from '../../core/models/usuario.model';
@@ -111,6 +112,10 @@ const LABEL_APROVECHAMIENTO: Record<EstadoAprovechamiento, string> = {
                     } @else {
                       <button (click)="verificar(d)" class="px-3 py-1 rounded-lg text-xs font-bold bg-primary text-white hover:bg-primary-dark transition-colors">Verificar</button>
                     }
+                    <button type="button" (click)="eliminarDocumento(d)" class="p-1 rounded-lg text-error hover:bg-error-container transition-colors"
+                      title="Eliminar documento" aria-label="Eliminar documento">
+                      <span class="material-symbols-outlined text-[18px]">delete</span>
+                    </button>
                   </div>
                 </div>
               } @empty {
@@ -179,6 +184,7 @@ export class FichaPostulacionComponent implements OnInit {
     private documentoService: DocumentoService,
     private usuarioService: UsuarioService,
     private programaService: ProgramaService,
+    private confirmDialog: ConfirmDialogService,
   ) {}
 
   ngOnInit(): void {
@@ -210,6 +216,28 @@ export class FichaPostulacionComponent implements OnInit {
     this.documentoService.verificar(d.id).subscribe({
       next: (actualizado) => { d.verificado = actualizado.verificado; this.notificar('Documento verificado', false); },
       error: (err) => this.notificar(err.error?.mensaje || 'No se pudo verificar el documento', true),
+    });
+  }
+
+  // A diferencia del "Quitar" del propio postulante (que no puede tocar un
+  // documento ya verificado), el admin sí puede eliminar uno verificado
+  // desde acá: es la forma de corregir un error del postulante que ya pasó
+  // revisión, sin tener que esperar a que el postulante lo note.
+  async eliminarDocumento(d: DocumentoResponse): Promise<void> {
+    const confirmado = await this.confirmDialog.confirmar({
+      titulo: 'Eliminar documento',
+      mensaje: `¿Eliminar "${d.nombreReqDocumento}"? El postulante podrá volver a subirlo.`,
+      textoConfirmar: 'Eliminar',
+      peligroso: true,
+    });
+    if (!confirmado) return;
+
+    this.documentoService.eliminar(d.id).subscribe({
+      next: () => {
+        this.documentos.update(l => l.filter(x => x.id !== d.id));
+        this.notificar('Documento eliminado', false);
+      },
+      error: (err) => this.notificar(err.error?.mensaje || 'No se pudo eliminar el documento', true),
     });
   }
 

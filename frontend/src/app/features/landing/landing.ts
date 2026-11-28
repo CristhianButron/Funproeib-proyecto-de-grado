@@ -14,8 +14,8 @@ import { ProgramaResponse } from '../../core/models/programa.model';
         <div class="flex items-center gap-3">
           <img src="logo-funproeib.png" alt="Funproeib Andes" class="h-14 w-auto object-contain" />
           <div class="hidden sm:block">
-            <p class="font-extrabold text-primary-dark leading-tight text-lg">Funproeib Andes</p>
-            <p class="text-xs text-on-surface-variant">Gestión Académica y Postulaciones</p>
+            <p class="font-extrabold text-primary-dark leading-tight text-lg">FUNPROEIB ANDES</p>
+            <p class="text-xs text-on-surface-variant">Sistema de Gestión Académica y de Postulaciones</p>
           </div>
         </div>
         <div class="flex items-center gap-3">
@@ -34,15 +34,14 @@ import { ProgramaResponse } from '../../core/models/programa.model';
       <div class="max-w-6xl mx-auto px-6 py-16 grid md:grid-cols-2 gap-10 items-center">
         <div>
           <span class="inline-block px-3 py-1 rounded-full bg-secondary-light text-on-secondary-container text-xs font-bold mb-4">
-            Educación Intercultural Bilingüe
+            Sistema de Postulación y Selección para Programas de Formación
           </span>
           <h1 class="text-4xl md:text-5xl font-extrabold text-primary-dark leading-tight tracking-tight">
             Postula a los programas de formación de Funproeib Andes
           </h1>
           <p class="mt-5 text-on-surface-variant text-lg leading-relaxed">
-            Plataforma para gestionar convocatorias, postulaciones y evaluación de
-            programas de formación en educación intercultural bilingüe, liderazgo
-            indígena y revitalización lingüística.
+            Plataforma de registro de postulaciones y selección de participantes
+            para programas de formación.
           </p>
           <div class="mt-8 flex flex-wrap gap-4">
             <a routerLink="/registro" class="px-7 py-3 rounded-xl font-bold bg-primary text-white hover:bg-primary-dark transition-all shadow-card flex items-center gap-2">
@@ -120,14 +119,38 @@ import { ProgramaResponse } from '../../core/models/programa.model';
       </div>
     </section>
 
+    <!-- Contacto -->
+    <section class="bg-surface">
+      <div class="max-w-6xl mx-auto px-6 py-14">
+        <div class="text-center mb-10">
+          <h2 class="text-3xl font-extrabold text-primary-dark">¿Tienes dudas?</h2>
+          <p class="text-on-surface-variant mt-2">Escríbenos o llámanos, el equipo organizador te puede ayudar.</p>
+        </div>
+        <div class="grid sm:grid-cols-3 gap-6 max-w-4xl mx-auto">
+          @for (c of contacto; track c.titulo) {
+            <div class="bg-white rounded-2xl p-6 border border-outline-variant shadow-card text-center">
+              <div class="w-12 h-12 mx-auto rounded-xl bg-primary-fixed text-primary flex items-center justify-center mb-4">
+                <span class="material-symbols-outlined">{{ c.icono }}</span>
+              </div>
+              <h3 class="font-bold text-on-surface">{{ c.titulo }}</h3>
+              <p class="text-on-surface-variant text-sm mt-1">{{ c.valor }}</p>
+            </div>
+          }
+        </div>
+        <p class="text-center text-xs text-on-surface-variant mt-6">
+          (Datos de contacto de ejemplo: reemplázalos por los reales de Funproeib Andes antes de publicar.)
+        </p>
+      </div>
+    </section>
+
     <!-- CTA Footer -->
     <footer class="bg-tertiary text-white mt-auto">
       <div class="max-w-6xl mx-auto px-6 py-10 flex flex-col md:flex-row items-center justify-between gap-6">
         <div class="flex items-center gap-3">
           <img src="logo-funproeib.png" alt="Funproeib" class="h-12 w-auto bg-white rounded-lg p-1" />
           <div>
-            <p class="font-bold">Funproeib Andes</p>
-            <p class="text-on-tertiary-container text-sm">Sistema de Gestión Académica</p>
+            <p class="font-bold">FUNPROEIB ANDES</p>
+            <p class="text-on-tertiary-container text-sm">Sistema de Gestión Académica y de Postulaciones</p>
           </div>
         </div>
         <p class="text-on-tertiary-container text-sm text-center">
@@ -146,6 +169,13 @@ export class LandingComponent implements OnInit {
     { icono: 'verified', titulo: 'Postulación en línea', texto: 'Regístrate y postula a las convocatorias abiertas sin trámites en papel.' },
     { icono: 'fact_check', titulo: 'Verificación de requisitos', texto: 'Carga tus documentos y el sistema valida automáticamente los requisitos.' },
     { icono: 'workspace_premium', titulo: 'Evaluación transparente', texto: 'Tu postulación es evaluada con criterios estandarizados y públicos.' },
+  ];
+
+  // TODO: reemplazar por los datos de contacto reales de Funproeib Andes.
+  contacto = [
+    { icono: 'mail', titulo: 'Correo', valor: 'contacto@funproeib.org' },
+    { icono: 'call', titulo: 'Teléfono', valor: '+591 4 XXXXXXX' },
+    { icono: 'location_on', titulo: 'Dirección', valor: 'Cochabamba, Bolivia' },
   ];
 
   programasAbiertos = signal<ProgramaResponse[]>([]);

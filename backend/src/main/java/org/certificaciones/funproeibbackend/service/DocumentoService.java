@@ -14,5 +14,5 @@ public interface DocumentoService {
     List<DocumentoResponse> listarPorPostulacion(Long idPostulacion);
     DocumentoResponse verificar(Long idDocumento);
     void verificarTodosDePostulacion(Long idPostulacion);
-    void eliminar(Long idDocumento);
+    void eliminar(Long idDocumento, boolean esAdmin);
 }

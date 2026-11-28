@@ -207,14 +207,16 @@ public class DocumentoServiceImpl implements DocumentoService {
 
     // Para poder borrar/reemplazar un documento si la persona se equivocó al
     // subirlo, pero no después de que un admin ya lo verificó -en ese punto
-    // ya no es "corregir un error", sino deshacer una revisión hecha-.
+    // ya no es "corregir un error", sino deshacer una revisión hecha-, salvo
+    // que quien borra sea justamente un ADMIN corrigiendo el documento desde
+    // la ficha del postulante/beneficiario.
     @Override
     @Transactional
-    public void eliminar(Long idDocumento) {
+    public void eliminar(Long idDocumento, boolean esAdmin) {
         Documento documento = documentoRepository.findById(idDocumento)
                 .orElseThrow(() -> new ResourceNotFoundException("Documento no encontrado con id: " + idDocumento));
 
-        if (Boolean.TRUE.equals(documento.getVerificado())) {
+        if (!esAdmin && Boolean.TRUE.equals(documento.getVerificado())) {
             throw new BusinessException("No se puede eliminar un documento ya verificado");
         }
 

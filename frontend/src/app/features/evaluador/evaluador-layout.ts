@@ -57,10 +57,8 @@ import { AuthService } from '../../core/services/auth.service';
 
       <div class="px-3 pt-4 border-t border-tertiary-container space-y-1">
         <button (click)="alternarColapsado()" [title]="colapsado() ? 'Expandir menú' : 'Colapsar menú'"
-          class="hidden lg:flex w-full items-center gap-3 px-4 py-2.5 rounded-xl text-on-tertiary-container hover:bg-tertiary-container hover:text-white transition-colors"
-          [class.justify-center]="colapsado()">
+          class="hidden lg:flex w-full items-center justify-center py-2.5 rounded-xl text-on-tertiary-container hover:bg-tertiary-container hover:text-white transition-colors">
           <span class="material-symbols-outlined shrink-0">{{ colapsado() ? 'chevron_right' : 'chevron_left' }}</span>
-          @if (!colapsado()) { <span class="font-medium text-sm">Colapsar menú</span> }
         </button>
         <button (click)="salir()" [title]="colapsado() ? 'Cerrar sesión' : ''"
           class="w-full flex items-center gap-3 px-4 py-3 rounded-xl text-on-tertiary-container hover:bg-tertiary-container hover:text-white transition-colors"
