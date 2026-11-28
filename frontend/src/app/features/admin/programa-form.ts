@@ -17,22 +17,32 @@ type SeccionId = 'datos' | 'descripcion' | 'requisitos' | 'preguntas' | 'criteri
   selector: 'app-programa-form',
   imports: [FormsModule, RouterLink],
   template: `
-  <div>
-    <div class="flex items-center justify-between mb-6 flex-wrap gap-3">
-      <div>
-        <nav class="text-xs text-on-surface-variant mb-1">
-          <a routerLink="/admin/programas" class="hover:underline">Programas de formación</a>
-          <span> / {{ idPrograma() ? (programa()?.nombre || '...') : 'Nuevo programa' }}</span>
-        </nav>
-        <h1 class="text-2xl font-extrabold text-primary-dark">{{ idPrograma() ? 'Editar programa' : 'Nuevo programa' }}</h1>
-      </div>
-      <div class="flex items-center gap-3">
-        <a routerLink="/admin/programas" class="px-4 py-2 rounded-lg font-semibold text-on-surface-variant hover:bg-surface-high transition-colors">Cancelar</a>
-        @if (seccionActiva() === 'datos' || seccionActiva() === 'descripcion') {
-          <button (click)="guardarDatos()" [disabled]="guardando()" class="px-5 py-2.5 rounded-xl font-bold bg-primary text-white hover:bg-primary-dark transition-colors disabled:opacity-50 flex items-center gap-2 shadow-card">
-            <span class="material-symbols-outlined text-[18px]">save</span> {{ guardando() ? 'Guardando...' : (idPrograma() ? 'Guardar cambios' : 'Guardar programa') }}
-          </button>
-        }
+  <div class="max-w-6xl mx-auto">
+    <!-- Encabezado -->
+    <div class="bg-white rounded-2xl shadow-card border border-outline-variant overflow-hidden mb-6">
+      <div class="h-1.5 bg-gradient-to-r from-primary to-secondary"></div>
+      <div class="p-6 flex items-center justify-between flex-wrap gap-4">
+        <div class="min-w-0">
+          <nav class="text-xs text-on-surface-variant mb-1.5 flex items-center gap-1">
+            <a routerLink="/admin/programas" class="hover:underline hover:text-primary transition-colors">Programas de formación</a>
+            <span class="material-symbols-outlined text-[14px]">chevron_right</span>
+            <span class="font-semibold text-on-surface truncate">{{ idPrograma() ? (programa()?.nombre || '...') : 'Nuevo programa' }}</span>
+          </nav>
+          <div class="flex items-center gap-3 flex-wrap">
+            <h1 class="text-2xl font-extrabold text-primary-dark">{{ idPrograma() ? 'Editar programa' : 'Nuevo programa' }}</h1>
+            @if (programa(); as p) {
+              <span class="px-3 py-1 rounded-full text-xs font-bold" [class]="badgeEstado(p.estado)">{{ p.estado }}</span>
+            }
+          </div>
+        </div>
+        <div class="flex items-center gap-3 shrink-0">
+          <a routerLink="/admin/programas" class="px-4 py-2.5 rounded-xl font-semibold text-on-surface-variant hover:bg-surface-low transition-colors">Cancelar</a>
+          @if (seccionActiva() === 'datos' || seccionActiva() === 'descripcion') {
+            <button (click)="guardarDatos()" [disabled]="guardando()" class="px-5 py-2.5 rounded-xl font-bold bg-primary text-white hover:bg-primary-dark transition-colors disabled:opacity-50 flex items-center gap-2 shadow-card">
+              <span class="material-symbols-outlined text-[18px]">save</span> {{ guardando() ? 'Guardando...' : (idPrograma() ? 'Guardar cambios' : 'Guardar programa') }}
+            </button>
+          }
+        </div>
       </div>
     </div>
 
@@ -46,83 +56,110 @@ type SeccionId = 'datos' | 'descripcion' | 'requisitos' | 'preguntas' | 'criteri
     @if (cargando()) {
       <p class="text-on-surface-variant py-10 text-center">Cargando...</p>
     } @else {
-      <div class="grid lg:grid-cols-[260px_1fr] gap-6 items-start">
+      <div class="grid lg:grid-cols-[280px_1fr] gap-6 items-start">
         <!-- Nav lateral de secciones -->
-        <nav class="bg-white rounded-xl shadow-card border border-outline-variant p-2 space-y-1">
-          @for (s of secciones; track s.id) {
-            <button (click)="irASeccion(s.id)" [disabled]="s.requiereId && !idPrograma()"
-              class="w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-left text-sm font-semibold transition-colors"
-              [class]="seccionActiva() === s.id ? 'bg-primary-fixed text-primary' : (s.requiereId && !idPrograma() ? 'text-outline-variant cursor-not-allowed' : 'text-on-surface-variant hover:bg-surface-low')">
-              <span class="material-symbols-outlined text-[20px]">{{ s.requiereId && !idPrograma() ? 'lock' : s.icono }}</span>
-              {{ s.titulo }}
-            </button>
-          }
+        <nav class="bg-white rounded-2xl shadow-card border border-outline-variant p-3">
+          <p class="text-xs font-bold text-on-surface-variant uppercase tracking-wide px-3 pt-1 pb-2">Secciones</p>
+          <div class="space-y-1">
+            @for (s of secciones; track s.id) {
+              @let bloqueada = s.requiereId && !idPrograma();
+              <button (click)="irASeccion(s.id)" [disabled]="bloqueada"
+                class="w-full flex items-center gap-3 px-3 py-3 rounded-xl text-left transition-colors"
+                [class]="seccionActiva() === s.id ? 'bg-primary text-white shadow-card' : (bloqueada ? 'opacity-50 cursor-not-allowed' : 'text-on-surface-variant hover:bg-surface-low')">
+                <span class="w-9 h-9 rounded-lg flex items-center justify-center shrink-0" [class]="seccionActiva() === s.id ? 'bg-white/15' : 'bg-primary-fixed text-primary'">
+                  <span class="material-symbols-outlined text-[19px]">{{ bloqueada ? 'lock' : s.icono }}</span>
+                </span>
+                <span class="text-sm font-semibold leading-tight">{{ s.titulo }}</span>
+              </button>
+            }
+          </div>
           @if (!idPrograma()) {
-            <p class="text-xs text-on-surface-variant px-3 pt-2">Guarda los datos generales para habilitar requisitos, preguntas y criterios.</p>
+            <p class="text-xs text-on-surface-variant px-3 pt-3 mt-2 border-t border-outline-variant leading-relaxed">
+              Guarda los datos generales para habilitar requisitos, preguntas y criterios.
+            </p>
           }
         </nav>
 
         <!-- Contenido de la sección activa -->
-        <div class="bg-white rounded-xl shadow-card border border-outline-variant p-6 min-h-[420px]">
+        <div class="bg-white rounded-2xl shadow-card border border-outline-variant p-8 min-h-[460px]">
 
           @if (seccionActiva() === 'datos') {
-          <section class="space-y-4 max-w-xl">
-            <div>
-              <label class="block text-sm font-semibold mb-1">Nombre del programa *</label>
-              <input [(ngModel)]="form.nombre" class="campo" placeholder="Ej: Diplomado en Educación Intercultural" />
+          <section>
+            <div class="flex items-center gap-3 mb-6 pb-5 border-b border-outline-variant">
+              <span class="w-11 h-11 rounded-xl bg-primary-fixed text-primary flex items-center justify-center shrink-0"><span class="material-symbols-outlined">edit_note</span></span>
+              <div>
+                <h2 class="font-bold text-on-surface text-lg">Datos generales</h2>
+                <p class="text-xs text-on-surface-variant">Información básica de la convocatoria.</p>
+              </div>
             </div>
-            <div class="grid grid-cols-2 gap-4">
+            <div class="space-y-5 max-w-xl">
               <div>
-                <label class="block text-sm font-semibold mb-1">Tipo *</label>
-                <select [(ngModel)]="form.tipo" class="campo">
-                  <option value="DIPLOMADO">Diplomado</option>
-                  <option value="CURSO">Curso</option>
-                  <option value="TALLER">Taller</option>
-                </select>
+                <label class="block text-sm font-semibold mb-1.5">Nombre del programa *</label>
+                <input [(ngModel)]="form.nombre" class="campo" placeholder="Ej: Diplomado en Educación Intercultural" />
               </div>
-              <div>
-                <label class="block text-sm font-semibold mb-1">Edición</label>
-                <input [(ngModel)]="form.edicion" class="campo" placeholder="Ej: 2026-I" maxlength="10" />
-              </div>
-              <div>
-                <label class="block text-sm font-semibold mb-1">Fecha inicio *</label>
-                <input type="date" [(ngModel)]="form.fechaInicio" class="campo" />
-              </div>
-              <div>
-                <label class="block text-sm font-semibold mb-1">Fecha fin *</label>
-                <input type="date" [(ngModel)]="form.fechaFin" [min]="hoy" class="campo" />
-              </div>
-              <div>
-                <label class="block text-sm font-semibold mb-1">Cupos disponibles *</label>
-                <input type="number" min="1" [(ngModel)]="form.cuposDisponibles" class="campo" placeholder="30" />
+              <div class="grid grid-cols-2 gap-4">
+                <div>
+                  <label class="block text-sm font-semibold mb-1.5">Tipo *</label>
+                  <select [(ngModel)]="form.tipo" class="campo">
+                    <option value="DIPLOMADO">Diplomado</option>
+                    <option value="CURSO">Curso</option>
+                    <option value="TALLER">Taller</option>
+                  </select>
+                </div>
+                <div>
+                  <label class="block text-sm font-semibold mb-1.5">Edición</label>
+                  <input [(ngModel)]="form.edicion" class="campo" placeholder="Ej: 2026-I" maxlength="10" />
+                </div>
+                <div>
+                  <label class="block text-sm font-semibold mb-1.5">Fecha inicio *</label>
+                  <input type="date" [(ngModel)]="form.fechaInicio" class="campo" />
+                </div>
+                <div>
+                  <label class="block text-sm font-semibold mb-1.5">Fecha fin *</label>
+                  <input type="date" [(ngModel)]="form.fechaFin" [min]="hoy" class="campo" />
+                </div>
+                <div>
+                  <label class="block text-sm font-semibold mb-1.5">Cupos disponibles *</label>
+                  <input type="number" min="1" [(ngModel)]="form.cuposDisponibles" class="campo" placeholder="30" />
+                </div>
               </div>
             </div>
           </section>
           }
 
           @if (seccionActiva() === 'descripcion') {
-          <section class="max-w-xl">
-            <p class="text-xs text-on-surface-variant mb-4">
-              Esto es lo que verá cualquier visitante en la pantalla pública de "convocatoria completa" antes de postularse.
-            </p>
-            <div class="mb-4">
-              <label class="block text-sm font-semibold mb-1">Descripción general</label>
-              <textarea [(ngModel)]="form.descripcion" rows="4" class="campo w-full" placeholder="Describe de qué se trata el programa, a quién está dirigido, etc."></textarea>
-            </div>
-
-            <div>
-              <label class="block text-sm font-semibold mb-2">Módulos</label>
-              <div class="space-y-1 mb-2">
-                @for (m of form.modulos; track $index; let i = $index) {
-                  <div class="flex items-center justify-between bg-surface-low rounded-lg px-3 py-1.5">
-                    <span class="text-sm">{{ m }}</span>
-                    <button (click)="quitarModulo(i)" class="text-error hover:bg-error-container rounded p-1" title="Quitar" aria-label="Quitar módulo"><span class="material-symbols-outlined text-[16px]">close</span></button>
-                  </div>
-                } @empty { <p class="text-xs text-on-surface-variant">Sin módulos aún.</p> }
+          <section>
+            <div class="flex items-center gap-3 mb-2 pb-5 border-b border-outline-variant">
+              <span class="w-11 h-11 rounded-xl bg-primary-fixed text-primary flex items-center justify-center shrink-0"><span class="material-symbols-outlined">description</span></span>
+              <div>
+                <h2 class="font-bold text-on-surface text-lg">Descripción pública</h2>
+                <p class="text-xs text-on-surface-variant">Esto es lo que verá cualquier visitante en la convocatoria completa antes de postularse.</p>
               </div>
-              <div class="flex gap-2">
-                <input [(ngModel)]="nuevoModulo" (keydown.enter)="$event.preventDefault(); agregarModulo()" class="campo flex-1" placeholder="Ej: Módulo 1: Fundamentos" />
-                <button (click)="agregarModulo()" class="px-3 rounded-lg bg-primary text-white font-semibold hover:bg-primary-dark transition-colors text-sm">+</button>
+            </div>
+            <div class="max-w-xl mt-6">
+              <div class="mb-6">
+                <label class="block text-sm font-semibold mb-1.5">Descripción general</label>
+                <textarea [(ngModel)]="form.descripcion" rows="4" class="campo w-full" placeholder="Describe de qué se trata el programa, a quién está dirigido, etc."></textarea>
+              </div>
+
+              <div>
+                <label class="block text-sm font-semibold mb-2">Módulos</label>
+                <div class="space-y-2 mb-3">
+                  @for (m of form.modulos; track $index; let i = $index) {
+                    <div class="flex items-center justify-between rounded-xl border border-outline-variant px-4 py-2.5">
+                      <span class="text-sm font-medium text-on-surface flex items-center gap-2">
+                        <span class="material-symbols-outlined text-[18px] text-primary">menu_book</span>{{ m }}
+                      </span>
+                      <button (click)="quitarModulo(i)" class="text-error hover:bg-error-container rounded-lg p-1.5 transition-colors" title="Quitar" aria-label="Quitar módulo"><span class="material-symbols-outlined text-[16px]">close</span></button>
+                    </div>
+                  } @empty { <p class="text-sm text-on-surface-variant italic">Sin módulos aún.</p> }
+                </div>
+                <div class="flex gap-2">
+                  <input [(ngModel)]="nuevoModulo" (keydown.enter)="$event.preventDefault(); agregarModulo()" class="campo flex-1" placeholder="Ej: Módulo 1: Fundamentos" />
+                  <button (click)="agregarModulo()" class="px-4 rounded-xl bg-primary text-white font-semibold hover:bg-primary-dark transition-colors text-sm flex items-center gap-1 shrink-0">
+                    <span class="material-symbols-outlined text-[18px]">add</span> Agregar
+                  </button>
+                </div>
               </div>
             </div>
           </section>
@@ -130,95 +167,115 @@ type SeccionId = 'datos' | 'descripcion' | 'requisitos' | 'preguntas' | 'criteri
 
           @if (seccionActiva() === 'requisitos') {
           <section>
-            <h3 class="font-bold text-primary-dark flex items-center gap-2 mb-1"><span class="material-symbols-outlined">fact_check</span> Requisitos de documentos</h3>
-            <p class="text-xs text-on-surface-variant mb-3">Estos son los que se piden al postulante al cargar documentos, y también lo que se muestra como "Requisitos" en la convocatoria pública.</p>
-            <div class="space-y-2 mb-4">
-              @for (r of requisitos(); track r.id) {
-                <div class="flex items-center justify-between bg-surface-low rounded-lg px-4 py-2">
-                  <div>
-                    <p class="font-semibold text-sm">{{ r.nombreDocumento }}
-                      <span class="text-xs font-bold ml-2" [class]="r.obligatorio ? 'text-error' : 'text-on-surface-variant'">{{ r.obligatorio ? 'Obligatorio' : 'Opcional' }}</span>
-                    </p>
-                    <p class="text-xs text-on-surface-variant">{{ r.descripcion }} · {{ r.tipoPermitido === 'ENLACE' ? 'Enlace' : 'Archivo' }}</p>
-                  </div>
-                </div>
-              } @empty { <p class="text-sm text-on-surface-variant">Sin requisitos aún.</p> }
+            <div class="flex items-center gap-3 mb-2 pb-5 border-b border-outline-variant">
+              <span class="w-11 h-11 rounded-xl bg-primary-fixed text-primary flex items-center justify-center shrink-0"><span class="material-symbols-outlined">fact_check</span></span>
+              <div>
+                <h2 class="font-bold text-on-surface text-lg">Requisitos de documentos</h2>
+                <p class="text-xs text-on-surface-variant">Lo que se pide al postulante al cargar documentos, y lo que se muestra como "Requisitos" en la convocatoria pública.</p>
+              </div>
             </div>
-            <div class="grid grid-cols-2 gap-2 bg-surface rounded-lg p-3 max-w-xl">
+            <div class="space-y-2 my-6 max-w-2xl">
+              @for (r of requisitos(); track r.id) {
+                <div class="rounded-xl border border-outline-variant px-5 py-3">
+                  <div class="flex items-center gap-2">
+                    <p class="font-semibold text-sm text-on-surface">{{ r.nombreDocumento }}</p>
+                    <span class="px-2 py-0.5 rounded-full text-xs font-bold" [class]="r.obligatorio ? 'bg-error-container text-on-error-container' : 'bg-surface-high text-on-surface-variant'">{{ r.obligatorio ? 'Obligatorio' : 'Opcional' }}</span>
+                  </div>
+                  <p class="text-xs text-on-surface-variant mt-1">{{ r.descripcion }} · {{ r.tipoPermitido === 'ENLACE' ? 'Enlace' : 'Archivo' }}</p>
+                </div>
+              } @empty { <p class="text-sm text-on-surface-variant italic">Sin requisitos aún.</p> }
+            </div>
+            <div class="grid grid-cols-2 gap-3 bg-surface rounded-xl border border-outline-variant p-4 max-w-2xl">
               <input [(ngModel)]="nuevoReq.nombreDocumento" class="campo col-span-2" placeholder="Nombre del documento (ej: Hoja de vida)" />
               <input [(ngModel)]="nuevoReq.descripcion" class="campo col-span-2" placeholder="Descripción (opcional)" />
               <select [(ngModel)]="nuevoReq.tipoPermitido" class="campo"><option value="PDF">Archivo (PDF, Word o imagen)</option><option value="ENLACE">Enlace</option></select>
               <select [(ngModel)]="nuevoReq.obligatorio" class="campo"><option [ngValue]="true">Obligatorio</option><option [ngValue]="false">Opcional</option></select>
-              <button (click)="agregarReq()" class="col-span-2 py-2 rounded-lg bg-primary text-white font-semibold hover:bg-primary-dark transition-colors text-sm">+ Agregar requisito</button>
+              <button (click)="agregarReq()" class="col-span-2 py-2.5 rounded-lg bg-primary text-white font-semibold hover:bg-primary-dark transition-colors text-sm flex items-center justify-center gap-1">
+                <span class="material-symbols-outlined text-[18px]">add</span> Agregar requisito
+              </button>
             </div>
           </section>
           }
 
           @if (seccionActiva() === 'preguntas') {
           <section>
-            <h3 class="font-bold text-primary-dark flex items-center gap-2 mb-3"><span class="material-symbols-outlined">quiz</span> Preguntas de postulación</h3>
-            <p class="text-xs text-on-surface-variant mb-3">El postulante responderá estas preguntas con texto. El evaluador las leerá para calificar los criterios.</p>
-            <div class="space-y-2 mb-4">
-              @for (q of preguntas(); track q.id) {
-                <div class="flex items-center justify-between bg-surface-low rounded-lg px-4 py-2">
-                  <p class="font-semibold text-sm flex-1">{{ q.orden }}. {{ q.enunciado }}</p>
-                  <button (click)="eliminarPregunta(q)" class="text-error hover:bg-error-container rounded p-1" title="Eliminar" aria-label="Eliminar pregunta"><span class="material-symbols-outlined text-[18px]">delete</span></button>
-                </div>
-              } @empty { <p class="text-sm text-on-surface-variant">Sin preguntas aún.</p> }
+            <div class="flex items-center gap-3 mb-2 pb-5 border-b border-outline-variant">
+              <span class="w-11 h-11 rounded-xl bg-primary-fixed text-primary flex items-center justify-center shrink-0"><span class="material-symbols-outlined">quiz</span></span>
+              <div>
+                <h2 class="font-bold text-on-surface text-lg">Preguntas de postulación</h2>
+                <p class="text-xs text-on-surface-variant">El postulante responderá estas preguntas con texto. El evaluador las leerá para calificar los criterios.</p>
+              </div>
             </div>
-            <div class="bg-surface rounded-lg p-3 space-y-2 max-w-xl">
+            <div class="space-y-2 my-6 max-w-2xl">
+              @for (q of preguntas(); track q.id) {
+                <div class="flex items-center justify-between gap-3 rounded-xl border border-outline-variant px-5 py-3">
+                  <p class="font-medium text-sm text-on-surface flex-1">{{ q.orden }}. {{ q.enunciado }}</p>
+                  <button (click)="eliminarPregunta(q)" class="text-error hover:bg-error-container rounded-lg p-1.5 transition-colors shrink-0" title="Eliminar" aria-label="Eliminar pregunta"><span class="material-symbols-outlined text-[18px]">delete</span></button>
+                </div>
+              } @empty { <p class="text-sm text-on-surface-variant italic">Sin preguntas aún.</p> }
+            </div>
+            <div class="bg-surface rounded-xl border border-outline-variant p-4 space-y-3 max-w-2xl">
               <textarea [(ngModel)]="nuevaPregunta" rows="2" class="campo w-full" placeholder="Ej: ¿Cuántas veces hiciste voluntariado y cuál te gustó más? Describe tu experiencia."></textarea>
-              <button (click)="agregarPregunta()" class="w-full py-2 rounded-lg bg-primary text-white font-semibold hover:bg-primary-dark transition-colors text-sm">+ Agregar pregunta</button>
+              <button (click)="agregarPregunta()" class="w-full py-2.5 rounded-lg bg-primary text-white font-semibold hover:bg-primary-dark transition-colors text-sm flex items-center justify-center gap-1">
+                <span class="material-symbols-outlined text-[18px]">add</span> Agregar pregunta
+              </button>
             </div>
           </section>
           }
 
           @if (seccionActiva() === 'criterios') {
           <section>
-            <h3 class="font-bold text-primary-dark flex items-center gap-2 mb-3"><span class="material-symbols-outlined">checklist</span> Criterios de evaluación</h3>
-            <p class="text-xs text-on-surface-variant mb-3">
-              Son los mismos para todos los programas (no se configuran por programa). Cada uno se califica de 1 a 10, y el puntaje total de la evaluación se ajusta solo para sumar 100: ahora mismo hay
-              <b>{{ criteriosActivos().length }}</b> activo(s), cada uno vale hasta <b>{{ valorPorCriterio() }}</b> pts.
-            </p>
-            <div class="space-y-2 mb-4">
+            <div class="flex items-center gap-3 mb-2 pb-5 border-b border-outline-variant">
+              <span class="w-11 h-11 rounded-xl bg-primary-fixed text-primary flex items-center justify-center shrink-0"><span class="material-symbols-outlined">checklist</span></span>
+              <div>
+                <h2 class="font-bold text-on-surface text-lg">Criterios de evaluación</h2>
+                <p class="text-xs text-on-surface-variant">
+                  Son los mismos para todos los programas. Cada uno se califica de 1 a 10, y el puntaje total se ajusta para sumar 100: hay
+                  <b>{{ criteriosActivos().length }}</b> activo(s), cada uno vale hasta <b>{{ valorPorCriterio() }}</b> pts.
+                </p>
+              </div>
+            </div>
+            <div class="space-y-2 my-6 max-w-2xl">
               @for (c of criterios(); track c.id) {
-                <div class="bg-surface-low rounded-lg px-4 py-2" [class.opacity-50]="!c.activo">
+                <div class="rounded-xl border border-outline-variant px-5 py-3" [class.opacity-50]="!c.activo">
                   @if (editandoCriterioId() === c.id) {
-                    <input [(ngModel)]="edicionCriterio.nombreCriterio" class="campo mb-1" placeholder="Nombre" />
-                    <input [(ngModel)]="edicionCriterio.descripcion" class="campo mb-2" placeholder="Descripción (opcional)" />
+                    <input [(ngModel)]="edicionCriterio.nombreCriterio" class="campo mb-2" placeholder="Nombre" />
+                    <input [(ngModel)]="edicionCriterio.descripcion" class="campo mb-3" placeholder="Descripción (opcional)" />
                     <div class="flex gap-2">
-                      <button (click)="guardarEdicionCriterio(c)" [disabled]="guardandoCriterio()" class="px-3 py-1 rounded-lg bg-primary text-white text-xs font-bold hover:bg-primary-dark transition-colors">Guardar</button>
-                      <button (click)="cancelarEdicionCriterio()" class="px-3 py-1 rounded-lg text-on-surface-variant hover:bg-surface-high text-xs font-semibold">Cancelar</button>
+                      <button (click)="guardarEdicionCriterio(c)" [disabled]="guardandoCriterio()" class="px-3 py-1.5 rounded-lg bg-primary text-white text-xs font-bold hover:bg-primary-dark transition-colors">Guardar</button>
+                      <button (click)="cancelarEdicionCriterio()" class="px-3 py-1.5 rounded-lg text-on-surface-variant hover:bg-surface-high text-xs font-semibold">Cancelar</button>
                     </div>
                   } @else {
                     <div class="flex items-center justify-between gap-2">
                       <div class="min-w-0">
-                        <p class="font-semibold text-sm">{{ c.orden }}. {{ c.nombreCriterio }}
+                        <p class="font-semibold text-sm text-on-surface">{{ c.orden }}. {{ c.nombreCriterio }}
                           @if (!c.activo) { <span class="ml-1 px-2 py-0.5 rounded-full text-xs font-bold bg-surface-high text-on-surface-variant">Inactivo</span> }
                         </p>
-                        @if (c.descripcion) { <p class="text-xs text-on-surface-variant">{{ c.descripcion }}</p> }
+                        @if (c.descripcion) { <p class="text-xs text-on-surface-variant mt-0.5">{{ c.descripcion }}</p> }
                       </div>
                       <div class="flex items-center gap-1 shrink-0">
-                        <button (click)="iniciarEdicionCriterio(c)" class="px-2 py-1 rounded-lg text-primary hover:bg-primary-fixed text-xs font-semibold">Editar</button>
+                        <button (click)="iniciarEdicionCriterio(c)" class="px-2.5 py-1.5 rounded-lg text-primary hover:bg-primary-fixed text-xs font-semibold transition-colors">Editar</button>
                         @if (c.activo) {
-                          <button (click)="desactivarCriterio(c)" class="px-2 py-1 rounded-lg text-error hover:bg-error-container text-xs font-semibold">Desactivar</button>
+                          <button (click)="desactivarCriterio(c)" class="px-2.5 py-1.5 rounded-lg text-error hover:bg-error-container text-xs font-semibold transition-colors">Desactivar</button>
                         } @else {
-                          <button (click)="activarCriterio(c)" class="px-2 py-1 rounded-lg text-secondary hover:bg-secondary-light text-xs font-semibold">Reactivar</button>
+                          <button (click)="activarCriterio(c)" class="px-2.5 py-1.5 rounded-lg text-secondary hover:bg-secondary-light text-xs font-semibold transition-colors">Reactivar</button>
                         }
                       </div>
                     </div>
                   }
                 </div>
-              } @empty { <p class="text-sm text-on-surface-variant">Sin criterios aún.</p> }
+              } @empty { <p class="text-sm text-on-surface-variant italic">Sin criterios aún.</p> }
             </div>
-            <div class="grid grid-cols-2 gap-2 bg-surface rounded-lg p-3 max-w-xl">
+            <div class="grid grid-cols-2 gap-3 bg-surface rounded-xl border border-outline-variant p-4 max-w-2xl">
               <div class="col-span-2">
                 <input [(ngModel)]="nuevoCriterio.nombreCriterio" (ngModelChange)="nombreCriterioInvalido.set(false)"
                   class="campo w-full" [class.campo-invalido]="nombreCriterioInvalido()" placeholder="Nombre del criterio (ej: Trabajo en equipo)" />
                 @if (nombreCriterioInvalido()) { <p class="text-xs text-error mt-1">Campo requerido</p> }
               </div>
               <input [(ngModel)]="nuevoCriterio.descripcion" class="campo col-span-2" placeholder="Descripción (opcional)" />
-              <button (click)="agregarCriterio()" [disabled]="guardandoCriterio()" class="col-span-2 py-2 rounded-lg bg-primary text-white font-semibold hover:bg-primary-dark transition-colors text-sm">+ Agregar criterio</button>
+              <button (click)="agregarCriterio()" [disabled]="guardandoCriterio()" class="col-span-2 py-2.5 rounded-lg bg-primary text-white font-semibold hover:bg-primary-dark transition-colors text-sm flex items-center justify-center gap-1">
+                <span class="material-symbols-outlined text-[18px]">add</span> Agregar criterio
+              </button>
             </div>
           </section>
           }
@@ -228,7 +285,7 @@ type SeccionId = 'datos' | 'descripcion' | 'requisitos' | 'preguntas' | 'criteri
   </div>
   `,
   styles: [`
-    .campo { width:100%; padding:.5rem .7rem; border:1px solid #c5c5d3; border-radius:.5rem; outline:none; font-size:.875rem; }
+    .campo { width:100%; padding:.6rem .8rem; border:1px solid #c5c5d3; border-radius:.65rem; outline:none; font-size:.875rem; transition: all .15s; }
     .campo:focus { border-color:#1d4e74; box-shadow:0 0 0 2px rgba(29,78,116,.2); }
     .campo-invalido { border-color:#ba1a1a; }
   `],
@@ -307,6 +364,16 @@ export class ProgramaFormComponent implements OnInit {
     });
     this.reqDocService.listarPorPrograma(id).subscribe(r => this.requisitos.set(r));
     this.preguntaService.listarPorPrograma(id).subscribe(q => this.preguntas.set(q));
+  }
+
+  badgeEstado(estado: string): string {
+    const map: Record<string, string> = {
+      BORRADOR: 'bg-surface-high text-on-surface-variant',
+      ACTIVO: 'bg-primary-fixed text-primary',
+      ABIERTO: 'bg-secondary-light text-on-secondary-container',
+      CERRADO: 'bg-error-container text-on-error-container',
+    };
+    return map[estado] ?? '';
   }
 
   irASeccion(id: SeccionId): void {
