@@ -9,6 +9,7 @@ import { UsuarioActualizarRequest } from '../../core/models/usuario.model';
 import { CARRERAS } from '../../core/constants/carreras';
 import { SelectBuscableComponent } from '../../core/components/select-buscable.component';
 import { PasswordRequisitosComponent } from '../../core/components/password-requisitos.component';
+import { TelefonoInputComponent } from '../../core/components/telefono-input.component';
 
 const OPCIONES_ETNIA = [
   'NINGUNA', 'Quechua', 'Aymara', 'Guaraní', 'Chiquitano', 'Mojeño', 'Guarayo',
@@ -24,7 +25,7 @@ type Pestana = 'personal' | 'perfil' | 'ubicacion' | 'seguridad';
 
 @Component({
   selector: 'app-mi-perfil',
-  imports: [ReactiveFormsModule, FormsModule, SelectBuscableComponent, PasswordRequisitosComponent],
+  imports: [ReactiveFormsModule, FormsModule, SelectBuscableComponent, PasswordRequisitosComponent, TelefonoInputComponent],
   template: `
   <div class="max-w-3xl mx-auto">
     <!-- Encabezado de perfil -->
@@ -65,15 +66,15 @@ type Pestana = 'personal' | 'perfil' | 'ubicacion' | 'seguridad';
           <div class="grid sm:grid-cols-3 gap-4 mb-4">
             <div>
               <label class="block text-sm font-semibold mb-1">Nombre(s) *</label>
-              <input formControlName="nombre" class="campo" />
+              <input formControlName="nombre" class="campo uppercase" />
             </div>
             <div>
               <label class="block text-sm font-semibold mb-1">Apellido paterno *</label>
-              <input formControlName="apellidoPaterno" class="campo" />
+              <input formControlName="apellidoPaterno" class="campo uppercase" />
             </div>
             <div>
               <label class="block text-sm font-semibold mb-1">Apellido materno</label>
-              <input formControlName="apellidoMaterno" class="campo" />
+              <input formControlName="apellidoMaterno" class="campo uppercase" />
             </div>
           </div>
           <div class="grid sm:grid-cols-2 gap-4">
@@ -84,10 +85,7 @@ type Pestana = 'personal' | 'perfil' | 'ubicacion' | 'seguridad';
             </div>
             <div>
               <label class="block text-sm font-semibold mb-1">Teléfono</label>
-              <input formControlName="telefono" class="campo" placeholder="Ej: +591 700xxxxx" inputmode="tel" (input)="soloNumerosConPrefijo($event)" />
-              @if (form.get('telefono')?.value && form.get('telefono')?.invalid) {
-                <p class="text-xs text-error mt-1">El teléfono debe contener solo números, con un "+" opcional al inicio para el prefijo.</p>
-              }
+              <app-telefono-input formControlName="telefono" />
             </div>
             <div>
               <label class="block text-sm font-semibold mb-1">Cédula de Identidad</label>
@@ -136,7 +134,7 @@ type Pestana = 'personal' | 'perfil' | 'ubicacion' | 'seguridad';
                 @for (op of opcionesEtnia; track op) { <option [value]="op">{{ op === 'OTRA' ? 'Otra' : op === 'NINGUNA' ? 'Ninguna / Prefiero no indicar' : op }}</option> }
               </select>
               @if (etniaSeleccion.value === 'OTRA') {
-                <input [formControl]="etniaOtroTexto" class="campo mt-2" placeholder="Especifica tu autoidentificación étnica" />
+                <input [formControl]="etniaOtroTexto" class="campo mt-2 uppercase" placeholder="Especifica tu autoidentificación étnica" />
               }
             </div>
             <div>
@@ -166,7 +164,7 @@ type Pestana = 'personal' | 'perfil' | 'ubicacion' | 'seguridad';
                 </button>
               </div>
               @if (carreraSeleccionEsOtra()) {
-                <input [(ngModel)]="carreraOtroTexto" [ngModelOptions]="{standalone: true}" class="campo mt-2" placeholder="Especifica la carrera o profesión" />
+                <input [(ngModel)]="carreraOtroTexto" [ngModelOptions]="{standalone: true}" class="campo mt-2 uppercase" placeholder="Especifica la carrera o profesión" />
               }
               @if (carreras().length > 0) {
                 <ul class="mt-2 space-y-1">
@@ -203,7 +201,7 @@ type Pestana = 'personal' | 'perfil' | 'ubicacion' | 'seguridad';
             </div>
             <div class="sm:col-span-2">
               <label class="block text-sm font-semibold mb-1">Provincia de nacimiento</label>
-              <input formControlName="provinciaNacimiento" class="campo" />
+              <input formControlName="provinciaNacimiento" class="campo uppercase" />
             </div>
           </div>
 
@@ -223,7 +221,7 @@ type Pestana = 'personal' | 'perfil' | 'ubicacion' | 'seguridad';
             </div>
             <div class="sm:col-span-2">
               <label class="block text-sm font-semibold mb-1">Dirección de domicilio</label>
-              <input formControlName="direccionDomicilio" class="campo" />
+              <input formControlName="direccionDomicilio" class="campo uppercase" />
             </div>
           </div>
         }
@@ -359,7 +357,7 @@ export class MiPerfilComponent implements OnInit {
       nombre: ['', [Validators.required, Validators.maxLength(80)]],
       apellidoPaterno: ['', [Validators.required, Validators.maxLength(80)]],
       apellidoMaterno: ['', Validators.maxLength(80)],
-      telefono: ['', Validators.pattern(/^\+?[0-9]+$/)],
+      telefono: [''],
       genero: ['', Validators.required],
       fechaNacimiento: ['', Validators.required],
       nivelEducativo: ['', Validators.required],
@@ -484,15 +482,6 @@ export class MiPerfilComponent implements OnInit {
     this.carreras.update(l => l.filter((_, i) => i !== index));
   }
 
-  soloNumerosConPrefijo(event: Event): void {
-    const input = event.target as HTMLInputElement;
-    const tienePrefijo = input.value.startsWith('+');
-    const soloDigitos = input.value.replace(/\D/g, '');
-    const limpio = tienePrefijo ? '+' + soloDigitos : soloDigitos;
-    if (limpio !== input.value) {
-      this.form.get('telefono')?.setValue(limpio);
-    }
-  }
 
   async guardar(): Promise<void> {
     if (this.form.invalid || !this.idCiudadSeleccionada() || !this.idCiudadNacimientoSeleccionada()) return;

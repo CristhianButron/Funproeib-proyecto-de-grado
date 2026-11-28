@@ -1,0 +1,46 @@
+export interface CodigoPais {
+  pais: string;
+  codigo: string;
+}
+
+// Bolivia primero (es donde opera FUNPROEIB ANDES); el resto, alfabético.
+export const CODIGOS_PAIS: CodigoPais[] = [
+  { pais: 'Bolivia', codigo: '+591' },
+  { pais: 'Alemania', codigo: '+49' },
+  { pais: 'Argentina', codigo: '+54' },
+  { pais: 'Australia', codigo: '+61' },
+  { pais: 'Bélgica', codigo: '+32' },
+  { pais: 'Brasil', codigo: '+55' },
+  { pais: 'Canadá', codigo: '+1' },
+  { pais: 'Chile', codigo: '+56' },
+  { pais: 'China', codigo: '+86' },
+  { pais: 'Colombia', codigo: '+57' },
+  { pais: 'Corea del Sur', codigo: '+82' },
+  { pais: 'Costa Rica', codigo: '+506' },
+  { pais: 'Cuba', codigo: '+53' },
+  { pais: 'Dinamarca', codigo: '+45' },
+  { pais: 'Ecuador', codigo: '+593' },
+  { pais: 'El Salvador', codigo: '+503' },
+  { pais: 'España', codigo: '+34' },
+  { pais: 'Estados Unidos', codigo: '+1' },
+  { pais: 'Francia', codigo: '+33' },
+  { pais: 'Guatemala', codigo: '+502' },
+  { pais: 'Honduras', codigo: '+504' },
+  { pais: 'India', codigo: '+91' },
+  { pais: 'Italia', codigo: '+39' },
+  { pais: 'Japón', codigo: '+81' },
+  { pais: 'México', codigo: '+52' },
+  { pais: 'Nicaragua', codigo: '+505' },
+  { pais: 'Noruega', codigo: '+47' },
+  { pais: 'Países Bajos', codigo: '+31' },
+  { pais: 'Panamá', codigo: '+507' },
+  { pais: 'Paraguay', codigo: '+595' },
+  { pais: 'Perú', codigo: '+51' },
+  { pais: 'Portugal', codigo: '+351' },
+  { pais: 'Reino Unido', codigo: '+44' },
+  { pais: 'República Dominicana', codigo: '+1' },
+  { pais: 'Suecia', codigo: '+46' },
+  { pais: 'Suiza', codigo: '+41' },
+  { pais: 'Uruguay', codigo: '+598' },
+  { pais: 'Venezuela', codigo: '+58' },
+];

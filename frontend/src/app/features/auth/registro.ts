@@ -7,10 +7,11 @@ import { CiudadResponse, PaisResponse } from '../../core/models/ubicacion.model'
 import { UsuarioRegistroRequest } from '../../core/models/usuario.model';
 import { CARRERAS } from '../../core/constants/carreras';
 import { SelectBuscableComponent } from '../../core/components/select-buscable.component';
+import { TelefonoInputComponent } from '../../core/components/telefono-input.component';
 
 @Component({
   selector: 'app-registro',
-  imports: [ReactiveFormsModule, FormsModule, RouterLink, SelectBuscableComponent],
+  imports: [ReactiveFormsModule, FormsModule, RouterLink, SelectBuscableComponent, TelefonoInputComponent],
   template: `
   <div class="min-h-screen bg-surface py-10 px-4">
     <div class="max-w-3xl mx-auto">
@@ -51,15 +52,15 @@ import { SelectBuscableComponent } from '../../core/components/select-buscable.c
           <div class="grid sm:grid-cols-3 gap-4 mb-4">
             <div>
               <label class="block text-sm font-semibold mb-1">Nombre(s) *</label>
-              <input formControlName="nombre" class="campo" placeholder="Ej: Juan" />
+              <input formControlName="nombre" class="campo uppercase" placeholder="Ej: Juan" />
             </div>
             <div>
               <label class="block text-sm font-semibold mb-1">Apellido paterno *</label>
-              <input formControlName="apellidoPaterno" class="campo" placeholder="Ej: Mamani" />
+              <input formControlName="apellidoPaterno" class="campo uppercase" placeholder="Ej: Mamani" />
             </div>
             <div>
               <label class="block text-sm font-semibold mb-1">Apellido materno</label>
-              <input formControlName="apellidoMaterno" class="campo" placeholder="Ej: Quispe" />
+              <input formControlName="apellidoMaterno" class="campo uppercase" placeholder="Ej: Quispe" />
             </div>
           </div>
           <div class="grid sm:grid-cols-2 gap-4">
@@ -69,7 +70,7 @@ import { SelectBuscableComponent } from '../../core/components/select-buscable.c
             </div>
             <div>
               <label class="block text-sm font-semibold mb-1">Teléfono</label>
-              <input formControlName="telefono" class="campo" placeholder="Ej: 700xxxxx" />
+              <app-telefono-input formControlName="telefono" />
             </div>
             <div>
               <label class="block text-sm font-semibold mb-1">Cédula de Identidad *</label>
@@ -81,7 +82,7 @@ import { SelectBuscableComponent } from '../../core/components/select-buscable.c
             </div>
             <div>
               <label class="block text-sm font-semibold mb-1">Extensión</label>
-              <input formControlName="ciExtension" class="campo" placeholder="Opcional" />
+              <input formControlName="ciExtension" class="campo uppercase" placeholder="Opcional" />
             </div>
           </div>
           <p class="text-xs text-on-surface-variant mt-3 flex items-center gap-1">
@@ -126,7 +127,7 @@ import { SelectBuscableComponent } from '../../core/components/select-buscable.c
                 @for (op of opcionesEtnia; track op) { <option [value]="op">{{ op === 'OTRA' ? 'Otra' : op === 'NINGUNA' ? 'Ninguna / Prefiero no indicar' : op }}</option> }
               </select>
               @if (etniaSeleccion.value === 'OTRA') {
-                <input [formControl]="etniaOtroTexto" class="campo mt-2" placeholder="Especifica tu autoidentificación étnica" />
+                <input [formControl]="etniaOtroTexto" class="campo mt-2 uppercase" placeholder="Especifica tu autoidentificación étnica" />
               }
             </div>
             <div>
@@ -157,7 +158,7 @@ import { SelectBuscableComponent } from '../../core/components/select-buscable.c
               </div>
               @if (carreraSeleccionEsOtra()) {
                 <input [(ngModel)]="carreraOtroTexto" [ngModelOptions]="{standalone: true}" (keydown.enter)="$event.preventDefault(); agregarCarrera()"
-                  class="campo mt-2" placeholder="Especifica la carrera o profesión" />
+                  class="campo mt-2 uppercase" placeholder="Especifica la carrera o profesión" />
               }
               @if (carreras().length > 0) {
                 <ul class="mt-2 space-y-1">
@@ -196,7 +197,7 @@ import { SelectBuscableComponent } from '../../core/components/select-buscable.c
             </div>
             <div class="sm:col-span-2">
               <label class="block text-sm font-semibold mb-1">Provincia de nacimiento</label>
-              <input formControlName="provinciaNacimiento" class="campo" placeholder="Si la conoces (opcional)" />
+              <input formControlName="provinciaNacimiento" class="campo uppercase" placeholder="Si la conoces (opcional)" />
             </div>
           </div>
 
@@ -216,7 +217,7 @@ import { SelectBuscableComponent } from '../../core/components/select-buscable.c
             </div>
             <div class="sm:col-span-2">
               <label class="block text-sm font-semibold mb-1">Dirección de domicilio</label>
-              <input formControlName="direccionDomicilio" class="campo" placeholder="Si quieres indicarla (opcional)" />
+              <input formControlName="direccionDomicilio" class="campo uppercase" placeholder="Si quieres indicarla (opcional)" />
             </div>
           </div>
         </div>

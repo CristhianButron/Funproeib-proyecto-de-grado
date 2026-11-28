@@ -132,15 +132,15 @@ import { RolUsuario, UsuarioCrearRequest, UsuarioEditarBasicoRequest, UsuarioRes
           <div class="grid grid-cols-2 gap-4">
             <div class="col-span-2">
               <label class="block text-sm font-semibold mb-1">Nombre *</label>
-              <input [(ngModel)]="formCrear.nombre" class="campo" />
+              <input [(ngModel)]="formCrear.nombre" class="campo uppercase" />
             </div>
             <div>
               <label class="block text-sm font-semibold mb-1">Apellido paterno *</label>
-              <input [(ngModel)]="formCrear.apellidoPaterno" class="campo" />
+              <input [(ngModel)]="formCrear.apellidoPaterno" class="campo uppercase" />
             </div>
             <div>
               <label class="block text-sm font-semibold mb-1">Apellido materno</label>
-              <input [(ngModel)]="formCrear.apellidoMaterno" class="campo" />
+              <input [(ngModel)]="formCrear.apellidoMaterno" class="campo uppercase" />
             </div>
             <div class="col-span-2">
               <label class="block text-sm font-semibold mb-1">Correo *</label>
@@ -152,7 +152,7 @@ import { RolUsuario, UsuarioCrearRequest, UsuarioEditarBasicoRequest, UsuarioRes
             </div>
             <div>
               <label class="block text-sm font-semibold mb-1">Extensión</label>
-              <input [(ngModel)]="formCrear.ciExtension" class="campo" placeholder="LP, CB..." />
+              <input [(ngModel)]="formCrear.ciExtension" class="campo uppercase" placeholder="LP, CB..." />
             </div>
             <div class="col-span-2">
               <label class="block text-sm font-semibold mb-1">Rol *</label>
@@ -186,15 +186,15 @@ import { RolUsuario, UsuarioCrearRequest, UsuarioEditarBasicoRequest, UsuarioRes
           <div class="grid grid-cols-2 gap-4">
             <div class="col-span-2">
               <label class="block text-sm font-semibold mb-1">Nombre *</label>
-              <input [(ngModel)]="formEditar.nombre" class="campo" />
+              <input [(ngModel)]="formEditar.nombre" class="campo uppercase" />
             </div>
             <div>
               <label class="block text-sm font-semibold mb-1">Apellido paterno *</label>
-              <input [(ngModel)]="formEditar.apellidoPaterno" class="campo" />
+              <input [(ngModel)]="formEditar.apellidoPaterno" class="campo uppercase" />
             </div>
             <div>
               <label class="block text-sm font-semibold mb-1">Apellido materno</label>
-              <input [(ngModel)]="formEditar.apellidoMaterno" class="campo" />
+              <input [(ngModel)]="formEditar.apellidoMaterno" class="campo uppercase" />
             </div>
             <div>
               <label class="block text-sm font-semibold mb-1">CI *</label>
@@ -202,7 +202,7 @@ import { RolUsuario, UsuarioCrearRequest, UsuarioEditarBasicoRequest, UsuarioRes
             </div>
             <div>
               <label class="block text-sm font-semibold mb-1">Extensión</label>
-              <input [(ngModel)]="formEditar.ciExtension" class="campo" placeholder="LP, CB..." />
+              <input [(ngModel)]="formEditar.ciExtension" class="campo uppercase" placeholder="LP, CB..." />
             </div>
           </div>
         </div>

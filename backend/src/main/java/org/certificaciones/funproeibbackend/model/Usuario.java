@@ -119,7 +119,7 @@ public class Usuario {
     @JoinColumn(name = "id_ciudad")
     private Ciudad ciudad;
 
-    @Column(name = "telefono", length = 20)
+    @Column(name = "telefono", length = 25)
     private String telefono;
 
     @Enumerated(EnumType.STRING)

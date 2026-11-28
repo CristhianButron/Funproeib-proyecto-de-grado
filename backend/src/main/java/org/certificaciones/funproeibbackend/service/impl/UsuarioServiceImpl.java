@@ -47,9 +47,11 @@ import java.security.SecureRandom;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.Period;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.UUID;
+import java.util.stream.Collectors;
 
 @Service
 @RequiredArgsConstructor
@@ -109,13 +111,13 @@ public class UsuarioServiceImpl implements UsuarioService {
         String contrasenaTemporal = generarContrasenaTemporal();
 
         Usuario usuario = Usuario.builder()
-                .nombre(request.getNombre())
-                .apellidoPaterno(request.getApellidoPaterno())
-                .apellidoMaterno(request.getApellidoMaterno())
+                .nombre(mayus(request.getNombre()))
+                .apellidoPaterno(mayus(request.getApellidoPaterno()))
+                .apellidoMaterno(mayus(request.getApellidoMaterno()))
                 .correo(request.getCorreo())
                 .contrasenaHash(passwordEncoder.encode(contrasenaTemporal))
                 .ci(request.getCi())
-                .ciExtension(request.getCiExtension())
+                .ciExtension(mayus(request.getCiExtension()))
                 .rol(RolUsuario.POSTULANTE)
                 .fechaRegistro(LocalDate.now())
                 .activo(true)
@@ -125,15 +127,15 @@ public class UsuarioServiceImpl implements UsuarioService {
                 .debeCambiarPassword(true)
                 .genero(request.getGenero())
                 .fechaNacimiento(request.getFechaNacimiento())
-                .autoidentificacionEtnica(request.getAutoidentificacionEtnica())
+                .autoidentificacionEtnica(mayus(request.getAutoidentificacionEtnica()))
                 .nivelEducativo(request.getNivelEducativo())
                 .ciudad(ciudad)
                 .telefono(request.getTelefono())
                 .estadoCivil(request.getEstadoCivil())
                 .ciudadNacimiento(ciudadNacimiento)
-                .provinciaNacimiento(request.getProvinciaNacimiento())
-                .direccionDomicilio(request.getDireccionDomicilio())
-                .carreras(request.getCarreras() != null ? request.getCarreras() : List.of())
+                .provinciaNacimiento(mayus(request.getProvinciaNacimiento()))
+                .direccionDomicilio(mayus(request.getDireccionDomicilio()))
+                .carreras(mayus(request.getCarreras()))
                 .build();
 
         Usuario guardado = usuarioRepository.save(usuario);
@@ -160,13 +162,13 @@ public class UsuarioServiceImpl implements UsuarioService {
         String contrasenaTemporal = generarContrasenaTemporal();
 
         Usuario usuario = Usuario.builder()
-                .nombre(request.getNombre())
-                .apellidoPaterno(request.getApellidoPaterno())
-                .apellidoMaterno(request.getApellidoMaterno())
+                .nombre(mayus(request.getNombre()))
+                .apellidoPaterno(mayus(request.getApellidoPaterno()))
+                .apellidoMaterno(mayus(request.getApellidoMaterno()))
                 .correo(request.getCorreo())
                 .contrasenaHash(passwordEncoder.encode(contrasenaTemporal))
                 .ci(request.getCi())
-                .ciExtension(request.getCiExtension())
+                .ciExtension(mayus(request.getCiExtension()))
                 .rol(request.getRol())
                 .fechaRegistro(LocalDate.now())
                 .activo(true)
@@ -285,22 +287,22 @@ public class UsuarioServiceImpl implements UsuarioService {
         Ciudad ciudadNacimiento = ciudadRepository.findById(request.getIdCiudadNacimiento())
                 .orElseThrow(() -> new ResourceNotFoundException("Ciudad de nacimiento no encontrada con id: " + request.getIdCiudadNacimiento()));
 
-        usuario.setNombre(request.getNombre());
-        usuario.setApellidoPaterno(request.getApellidoPaterno());
-        usuario.setApellidoMaterno(request.getApellidoMaterno());
+        usuario.setNombre(mayus(request.getNombre()));
+        usuario.setApellidoPaterno(mayus(request.getApellidoPaterno()));
+        usuario.setApellidoMaterno(mayus(request.getApellidoMaterno()));
         usuario.setCi(request.getCi());
-        usuario.setCiExtension(request.getCiExtension());
+        usuario.setCiExtension(mayus(request.getCiExtension()));
         usuario.setGenero(request.getGenero());
         usuario.setFechaNacimiento(request.getFechaNacimiento());
-        usuario.setAutoidentificacionEtnica(request.getAutoidentificacionEtnica());
+        usuario.setAutoidentificacionEtnica(mayus(request.getAutoidentificacionEtnica()));
         usuario.setNivelEducativo(request.getNivelEducativo());
         usuario.setCiudad(ciudad);
         usuario.setTelefono(request.getTelefono());
         usuario.setEstadoCivil(request.getEstadoCivil());
         usuario.setCiudadNacimiento(ciudadNacimiento);
-        usuario.setProvinciaNacimiento(request.getProvinciaNacimiento());
-        usuario.setDireccionDomicilio(request.getDireccionDomicilio());
-        usuario.setCarreras(request.getCarreras() != null ? request.getCarreras() : List.of());
+        usuario.setProvinciaNacimiento(mayus(request.getProvinciaNacimiento()));
+        usuario.setDireccionDomicilio(mayus(request.getDireccionDomicilio()));
+        usuario.setCarreras(mayus(request.getCarreras()));
 
         usuarioRepository.save(usuario);
         return mapToResponse(usuario);
@@ -315,11 +317,11 @@ public class UsuarioServiceImpl implements UsuarioService {
             throw new BusinessException("Ya existe un usuario registrado con ese CI");
         }
 
-        usuario.setNombre(request.getNombre());
-        usuario.setApellidoPaterno(request.getApellidoPaterno());
-        usuario.setApellidoMaterno(request.getApellidoMaterno());
+        usuario.setNombre(mayus(request.getNombre()));
+        usuario.setApellidoPaterno(mayus(request.getApellidoPaterno()));
+        usuario.setApellidoMaterno(mayus(request.getApellidoMaterno()));
         usuario.setCi(request.getCi());
-        usuario.setCiExtension(request.getCiExtension());
+        usuario.setCiExtension(mayus(request.getCiExtension()));
 
         usuarioRepository.save(usuario);
         return mapToResponse(usuario);
@@ -581,6 +583,25 @@ public class UsuarioServiceImpl implements UsuarioService {
     private Usuario buscarUsuario(Long id) {
         return usuarioRepository.findById(id)
                 .orElseThrow(() -> new ResourceNotFoundException("Usuario no encontrado con id: " + id));
+    }
+
+    // Todo dato de texto del postulante se guarda en mayúsculas -salvo el
+    // correo- para que la sistematización interna de la fundación (reportes,
+    // bases de datos) sea consistente sin importar cómo lo haya tipeado cada
+    // quien.
+    private static String mayus(String texto) {
+        return texto == null ? null : texto.toUpperCase();
+    }
+
+    // Collectors.toList() y no Stream.toList(): Hibernate necesita mutar en
+    // el sitio la colección de "carreras" (un @ElementCollection) al
+    // sincronizarla, y la lista inmutable que devuelve Stream.toList()
+    // lanza UnsupportedOperationException en ese momento.
+    private static List<String> mayus(List<String> textos) {
+        if (textos == null) {
+            return new ArrayList<>();
+        }
+        return textos.stream().map(UsuarioServiceImpl::mayus).collect(Collectors.toCollection(ArrayList::new));
     }
 
     private String generarContrasenaTemporal() {

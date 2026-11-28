@@ -46,19 +46,6 @@ describe('MiPerfilComponent (lógica de formulario)', () => {
     expect(component.idCiudadNacimientoSeleccionada()).toBe(20);
   });
 
-  it('el control teléfono rechaza letras pero acepta un "+" de prefijo', () => {
-    component.form.patchValue({ telefono: '+591700AB' });
-    expect(component.form.get('telefono')?.valid).toBe(false);
-    component.form.patchValue({ telefono: '+59170011111' });
-    expect(component.form.get('telefono')?.valid).toBe(true);
-  });
-
-  it('soloNumerosConPrefijo limpia los caracteres no numéricos y conserva el "+" inicial', () => {
-    const input = { value: '+70-011-111' } as HTMLInputElement;
-    component.soloNumerosConPrefijo({ target: input } as unknown as Event);
-    expect(component.form.get('telefono')?.value).toBe('+70011111');
-  });
-
   it('agregarCarrera toma la carrera seleccionada del catálogo', () => {
     component.onCarreraChange(component.opcionesCarrera.find(o => o.nombre === 'Ciencias de la Educación')!.id);
     component.agregarCarrera();

@@ -109,7 +109,7 @@ class UsuarioServiceImplTest {
         assertThat(res.getEmailVerificado()).isFalse();
         assertThat(res.getIdentidadVerificada()).isFalse();
         assertThat(res.getDebeCambiarPassword()).isTrue();
-        verify(emailService).enviarVerificacionCuenta(eq("ana@correo.com"), eq("Ana"), anyString(), anyString());
+        verify(emailService).enviarVerificacionCuenta(eq("ana@correo.com"), eq("ANA"), anyString(), anyString());
     }
 
     @Test
@@ -237,7 +237,7 @@ class UsuarioServiceImplTest {
 
         UsuarioResponse res = service.registrar(req, carnetAnverso, carnetReverso);
 
-        assertThat(res.getCarreras()).containsExactly("Licenciatura en Educación");
+        assertThat(res.getCarreras()).containsExactly("LICENCIATURA EN EDUCACIÓN");
     }
 
     @Test
@@ -261,7 +261,7 @@ class UsuarioServiceImplTest {
 
         UsuarioResponse res = service.actualizarPerfil(5L, req);
 
-        assertThat(res.getNombre()).isEqualTo("Ana María");
+        assertThat(res.getNombre()).isEqualTo("ANA MARÍA");
         assertThat(res.getCi()).isEqualTo("2222222");
         assertThat(res.getTelefono()).isEqualTo("70011111");
         verify(usuarioRepository).save(usuario);
